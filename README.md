@@ -24,5 +24,4 @@ Simply put; the whole workflow for this component begins in two main phases.
 ✔️ Each agent uses its local observation (from SUMO via TraCI) and lightweight messages from neighbors.
 ✔️ It feeds this into its own neural network to choose the best action independently.
 ✔️ The action is executed in SUMO via TraCI.
-
 ![alt text](26.png)
