@@ -166,7 +166,7 @@ class SumoEnv:
         avg_speed = total_speed / len(vehicle_ids)
         
         # Speed bonus: +0.01 per m/s of average speed
-        speed_bonus = avg_speed * 0.01
+        speed_bonus = avg_speed * 0.02
         
         # Combined reward
         combined_reward = waiting_penalty + speed_bonus

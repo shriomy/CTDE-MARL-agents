@@ -136,10 +136,6 @@ class Trainer:
 
             if done:
                 break
-
-         # After episode ends, decay epsilon
-        for agent in self.multi_agent.agents.values():
-            agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
         
         return total_reward, episode_loss / max(step_count, 1), step_count
     
@@ -192,7 +188,7 @@ class Trainer:
         epsilon_values = {}
         for agent_id, agent in self.multi_agent.agents.items():
             epsilon_values[agent_id] = agent.epsilon
-            
+
         progress = {
             'episode': episode,
             'rewards': self.episode_rewards,

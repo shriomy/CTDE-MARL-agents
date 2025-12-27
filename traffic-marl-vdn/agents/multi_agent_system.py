@@ -157,14 +157,16 @@ class MultiAgentSystem:
         states_batch, actions_batch, rewards_batch, next_states_batch, dones_batch = \
             self.central_buffer.sample(batch_size)
         
+        device = self.agents[self.agent_ids[0]].device
         # Convert to tensors
-        states_tensor = torch.FloatTensor(states_batch)  # [batch, num_agents, state_dim]
-        actions_tensor = torch.LongTensor(actions_batch)  # [batch, num_agents]
-        rewards_tensor = torch.FloatTensor(rewards_batch)  # [batch]
-        next_states_tensor = torch.FloatTensor(next_states_batch)  # [batch, num_agents, state_dim]
-        dones_tensor = torch.FloatTensor(dones_batch)  # [batch]
+        states_tensor = torch.FloatTensor(states_batch).to(device)  # [batch, num_agents, state_dim]
+        actions_tensor = torch.LongTensor(actions_batch).to(device)  # [batch, num_agents]
+        rewards_tensor = torch.FloatTensor(rewards_batch).to(device)  # [batch]
+        next_states_tensor = torch.FloatTensor(next_states_batch).to(device)  # [batch, num_agents, state_dim]
+        dones_tensor = torch.FloatTensor(dones_batch).to(device)  # [batch]
         
          # Get selected Q-values for each agent
+        # Get selected Q-values for each agent
         selected_qs = []
         for i, agent_id in enumerate(self.agent_ids):
             agent_states = states_tensor[:, i, :]
@@ -174,21 +176,24 @@ class MultiAgentSystem:
             selected_qs.append(selected_q)
 
         # Stack: [batch_size, num_agents]
-        selected_qs_tensor = torch.stack(selected_qs, dim=1).squeeze(-1)
-        q_tot = self.mixer(selected_qs_tensor)
-        
-        # Target calculation
+        selected_qs_tensor = torch.stack(selected_qs, dim=1)  # Remove .squeeze(-1)
+        q_tot = self.mixer(selected_qs_tensor)  # Should output [batch_size]
+
+        # Target calculation - USE MIXER CONSISTENTLY
         with torch.no_grad():
             target_qs = []
             for i, agent_id in enumerate(self.agent_ids):
                 next_agent_states = next_states_tensor[:, i, :]
                 target_q = self.agents[agent_id].target_network(next_agent_states)
-                max_target_q = torch.max(target_q, dim=1)[0]
+                max_target_q = torch.max(target_q, dim=1)[0]  # [batch_size]
                 target_qs.append(max_target_q)
             
-            target_q_tot = torch.sum(torch.stack(target_qs, dim=0), dim=0)
+            # Stack: [batch_size, num_agents] and use mixer
+            target_qs_tensor = torch.stack(target_qs, dim=1)
+            target_q_tot = self.mixer(target_qs_tensor)  # [batch_size]
+            
             target = rewards_tensor + (1 - dones_tensor) * self.agents[self.agent_ids[0]].gamma * target_q_tot
-        
+
         # Calculate loss
         loss = nn.MSELoss()(q_tot, target)
         
@@ -215,9 +220,10 @@ class MultiAgentSystem:
             for agent in self.agents.values():
                 agent.target_network.load_state_dict(agent.q_network.state_dict())
 
-        # for agent in self.agents.values():
-        #     agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
-        
+        if batch_size > 0:  # Only if we actually trained
+            for agent in self.agents.values():
+                agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
+
         return loss.item(), total_norm
     
     def remember(self, experience: tuple):
