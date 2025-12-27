@@ -75,7 +75,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #6 - Created DQN Agent
 
- Merge #7 - 
+ Merge #7 - Created VDN mixing network
 
  Merge #8 -
 
