@@ -46,4 +46,24 @@ Simply put; the whole workflow for this component begins in two main phases.
 
 ### 4. Tools & Technoologies used:
 
-TODO
+<p align="left">
+  <!-- SUMO / TraCI -->
+  <img src="https://img.shields.io/badge/SUMO-Traffic_Simulator-blue?style=flat-square"/>
+  <img src="https://img.shields.io/badge/TraCI-API-lightgrey?style=flat-square"/>
+
+  <!-- Python -->
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="40"/>
+
+  <!-- PyTorch -->
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/pytorch/pytorch-original.svg" width="40"/>
+
+  <!-- Neural Networks (AI generic icon) -->
+  <img src="https://img.shields.io/badge/Neural_Networks-AI-red?style=flat-square"/>
+
+  <!-- React -->
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="40"/>
+
+  <!-- Sockets -->
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/socketio/socketio-original.svg" width="40"/>
+</p>
+ 
