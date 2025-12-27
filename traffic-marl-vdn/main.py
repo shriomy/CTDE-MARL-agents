@@ -131,15 +131,15 @@ class Trainer:
             
             # Log progress
             if step % 100 == 0:
-                # Get epsilon once per 100 steps
-                epsilon_values = [agent.epsilon for agent in self.multi_agent.agents.values()]
-                avg_epsilon = sum(epsilon_values) / len(epsilon_values)
-
                 print(f"Episode {episode}, Step {step}: "
-                      f"Reward={reward:.2f}, Loss={loss:.4f}, Epsilon={avg_epsilon:.3f}")
+                    f"Reward={reward:.2f}, Loss={loss:.4f}")
 
             if done:
                 break
+
+         # After episode ends, decay epsilon
+        for agent in self.multi_agent.agents.values():
+            agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
         
         return total_reward, episode_loss / max(step_count, 1), step_count
     
@@ -177,7 +177,7 @@ class Trainer:
                 
                 # Save training progress
                 self.save_training_progress(episode)
-        
+
         # Training complete
         training_time = time.time() - start_time
         print(f"\nTraining completed in {training_time:.2f} seconds")
@@ -187,11 +187,18 @@ class Trainer:
     
     def save_training_progress(self, episode: int):
         """Save training progress to file"""
+
+         # Collect epsilon values from all agents
+        epsilon_values = {}
+        for agent_id, agent in self.multi_agent.agents.items():
+            epsilon_values[agent_id] = agent.epsilon
+            
         progress = {
             'episode': episode,
             'rewards': self.episode_rewards,
             'lengths': self.episode_lengths,
             'losses': self.losses,
+            'epsilon': epsilon_values,
             'timestamp': datetime.now().isoformat()
         }
         
