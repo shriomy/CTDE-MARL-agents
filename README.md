@@ -79,9 +79,9 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #8 - Created Multi-Agent System
 
- Merge #9 - 
+ Merge #9 - Created Main Training Loop
 
- Merge #10 - 
+ Merge #10 - Created Evaluation Script
 
  Merge #11 - 
 
@@ -138,5 +138,8 @@ Simply put; the whole workflow for this component begins in two main phases.
 7. Created DQN Agent -> dqn_agent.py
 8. Created VDN mixing network -> vdn_mixer.py
 9. Created Multi-Agent System -> multi_agent_system.py
+10. Created Main Training Loop -> main.py
+11. Created Evaluation Script -> test.py
+
 
 
