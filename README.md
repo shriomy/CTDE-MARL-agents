@@ -69,7 +69,8 @@ Simply put; the whole workflow for this component begins in two main phases.
  
 
 ### 5. Dated Merges:
-
+ Merge pull request #4 - created basic project structure
+ Merge pull request #4 - Initialized SUMO configs and env wrapper
 
 ### 6. Setup:
 1. mkdir traffic-marl-vdn -> cd traffic-marl-vdn
@@ -88,3 +89,6 @@ Simply put; the whole workflow for this component begins in two main phases.
     mkdir models
     New-Item main.py
     New-Item requirements.txt
+5. Setup SUMO configurations and 1x2 network in sumo_configs
+6. Initialized SUMO environment wrapper in sumo_env.py
+
