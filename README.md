@@ -67,3 +67,24 @@ Simply put; the whole workflow for this component begins in two main phases.
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/socketio/socketio-original.svg" width="40"/>
 </p>
  
+
+### 5. Dated Merges:
+
+
+### 6. Setup:
+1. mkdir traffic-marl-vdn -> cd traffic-marl-vdn
+2. Created Virtual Environment
+    python -m venv venv -> venv\Scripts\activate
+3. Installed Core Dependencies
+    pip install torch numpy pandas matplotlib
+    pip install sumolib traci
+    pip install pyzmq
+4. Created Initial Project Structure
+    mkdir configs
+    mkdir agents
+    mkdir utils
+    mkdir sumo_configs
+    mkdir logs
+    mkdir models
+    New-Item main.py
+    New-Item requirements.txt
