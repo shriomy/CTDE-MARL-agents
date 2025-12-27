@@ -69,8 +69,52 @@ Simply put; the whole workflow for this component begins in two main phases.
  
 
 ### 5. Dated Merges:
- Merge pull request #4 - created basic project structure
- Merge pull request #5 - Initialized SUMO configs and env wrapper
+ Merge #4 - created basic project structure
+
+ Merge #5 - Initialized SUMO configs and env wrapper
+
+ Merge #6 - Created DQN Agent
+
+ Merge #7 - 
+
+ Merge #8 -
+
+ Merge #9 - 
+
+ Merge #10 - 
+
+ Merge #11 - 
+
+ Merge #12 - 
+
+ Merge #13 - 
+
+ Merge #14 - 
+
+ Merge #15 - 
+
+ Merge #16 - 
+
+ Merge #17 - 
+
+ Merge #18 - 
+
+ Merge #19 - 
+
+ Merge #20 - 
+
+ Merge #21 - 
+
+ Merge #22 - 
+
+ Merge #23 - 
+
+ Merge #24 - 
+
+ Merge #25 - 
+ 
+ 
+
 
 ### 6. Setup:
 1. mkdir traffic-marl-vdn -> cd traffic-marl-vdn
@@ -91,4 +135,6 @@ Simply put; the whole workflow for this component begins in two main phases.
     New-Item requirements.txt
 5. Setup SUMO configurations and 1x2 network in sumo_configs
 6. Initialized SUMO environment wrapper in sumo_env.py
+7. Created DQN Agent -> dqn_agent.py
+
 
