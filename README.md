@@ -148,15 +148,15 @@ Simply put; the whole workflow for this component begins in two main phases.
     -> run SUMO
     sumo-gui -c sumo_configs/1x2.sumocfg
 15. next, created the Communication protocol
-16. 
-17. 
+16. Created the MARL system -? multi_agent_system.py
+17. RUN THE SYSTEM -> python main.py
 18. 
 19. 
 20. 
 21. 
 22. 
 23. 
-24. 
+44. 
 
 
 

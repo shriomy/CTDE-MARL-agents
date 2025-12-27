@@ -6,7 +6,7 @@ import zmq
 import threading
 import time
 from collections import defaultdict
-from communication import AgentCommunication
+from agents.communication import AgentCommunication
 
 from agents.dqn_agent import DQNAgent
 from agents.vdn_mixer import VDNMixer, CentralizedBuffer
@@ -34,8 +34,6 @@ class MultiAgentSystem:
         
         # Communication setup (for decentralized execution)
         self.communication_enabled = config.get('enable_communication', True)
-        if self.communication_enabled:
-            self.setup_communication()
         
         # Training parameters
         self.training_step = 0
@@ -85,22 +83,33 @@ class MultiAgentSystem:
         print(f"Communication setup complete on ports {base_port}-{base_port + len(self.agent_ids)-1}")
     
     def send_message(self, sender_id: str, message: dict):
-        """Send message from one agent to others"""
-        if self.communication_enabled and sender_id in self.publishers:
-            self.publishers[sender_id].send_pyobj(message)
+        """Send message from one agent to others via AgentCommunication"""
+        if not self.communication_enabled:
+            return
+        comm = self.communications.get(sender_id)
+        if comm is None:
+            return
+        try:
+            comm.publisher.send_json(message)
+        except Exception:
+            pass
     
     def receive_messages(self, receiver_id: str) -> List[dict]:
-        """Receive messages for an agent"""
-        messages = []
-        if self.communication_enabled and receiver_id in self.subscribers:
-            # Non-blocking receive
-            try:
-                while True:
-                    message = self.subscribers[receiver_id].recv_pyobj(zmq.NOBLOCK)
-                    messages.append(message)
-            except zmq.Again:
-                pass
-        return messages
+        """Receive messages for an agent via AgentCommunication"""
+        if not self.communication_enabled:
+            return []
+        comm = self.communications.get(receiver_id)
+        if comm is None:
+            return []
+        msgs = comm.get_neighbor_messages()  # dict of sender -> {data, timestamp}
+        out = []
+        for sender, payload in msgs.items():
+            out.append({
+                'sender': sender,
+                'state': payload.get('data'),
+                'timestamp': payload.get('timestamp')
+            })
+        return out
     
     def act(self, states: Dict[str, np.ndarray], training_mode: bool = True) -> Dict[str, int]:
         """Get actions from all agents"""
@@ -109,13 +118,18 @@ class MultiAgentSystem:
         # Exchange information between agents
         if self.communication_enabled:
             for agent_id in self.agent_ids:
-                # Send local state to neighbors
-                message = {
-                    'sender': agent_id,
-                    'state': states[agent_id].tolist(),
-                    'timestamp': time.time()
-                }
-                self.send_message(agent_id, message)
+                # Send local state to neighbors using AgentCommunication API
+                comm = self.communications.get(agent_id)
+                if comm is not None:
+                    state_info = {
+                        'queue': states[agent_id][:4].tolist() if hasattr(states[agent_id], 'tolist') else list(states[agent_id][:4]),
+                        'full_state': states[agent_id].tolist() if hasattr(states[agent_id], 'tolist') else list(states[agent_id]),
+                        'timestamp': time.time()
+                    }
+                    try:
+                        comm.send_state(state_info)
+                    except Exception:
+                        pass
         
         # Each agent selects action
         for agent_id, state in states.items():
@@ -135,7 +149,7 @@ class MultiAgentSystem:
     def train_step(self, batch_size: int = 32):
         """Train all agents using centralized experience"""
         if len(self.central_buffer) < batch_size:
-            return 0
+            return 0, 0
         
         # Sample batch from centralized buffer
         states_batch, actions_batch, rewards_batch, next_states_batch, dones_batch = \

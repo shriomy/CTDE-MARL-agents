@@ -1,0 +1,20 @@
+{
+  "sumo_config_path": "sumo_configs/1x2.sumocfg",
+  "use_gui": false,
+  "num_episodes": 100,
+  "max_steps_per_episode": 3600,
+  "save_frequency": 10,
+  "log_frequency": 1,
+  "agent_config": {
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "epsilon_start": 1.0,
+    "epsilon_min": 0.01,
+    "epsilon_decay": 0.995,
+    "buffer_size": 10000,
+    "central_buffer_size": 50000,
+    "batch_size": 32,
+    "target_update_freq": 10,
+    "enable_communication": true
+  }
+}
