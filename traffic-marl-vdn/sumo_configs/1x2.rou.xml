@@ -8,30 +8,30 @@
     
     <!-- ===== ROUTES THROUGH BOTH INTERSECTIONS ===== -->
     <!-- West to East through both intersections -->
-    <route id="W_to_E" edges="J1_west_approach J1_west_in J1_west_out J1_east_exit J2_west_approach J2_west_in J2_west_out J2_east_exit"/>
-    
+    <route id="W_to_E" edges="J1_west_approach J1_west_in J1_east_out J2_west_approach J2_west_in J2_east_out J2_east_exit"/>
+
     <!-- East to West through both intersections -->
-    <route id="E_to_W" edges="J2_east_approach J2_east_in J2_east_out J2_west_exit J1_east_approach J1_east_in J1_east_out J1_west_exit"/>
+    <route id="E_to_W" edges="J2_east_approach J2_east_in J2_west_out J1_east_approach J1_east_in J1_west_out J1_west_exit"/>
     
     <!-- North to South at Intersection 1 -->
-    <route id="N1_to_S1" edges="J1_north_approach J1_north_in J1_north_out J1_south_exit"/>
+    <route id="N1_to_S1" edges="J1_north_approach J1_north_in J1_south_out J1_south_exit"/>
     
     <!-- South to North at Intersection 1 -->
-    <route id="S1_to_N1" edges="J1_south_approach J1_south_in J1_south_out J1_north_exit"/>
+    <route id="S1_to_N1" edges="J1_south_approach J1_south_in J1_north_out J1_north_exit"/>
     
     <!-- North to South at Intersection 2 -->
-    <route id="N2_to_S2" edges="J2_north_approach J2_north_in J2_north_out J2_south_exit"/>
+    <route id="N2_to_S2" edges="J2_north_approach J2_north_in J2_south_out J2_south_exit"/>
     
     <!-- South to North at Intersection 2 -->
-    <route id="S2_to_N2" edges="J2_south_approach J2_south_in J2_south_out J2_north_exit"/>
+    <route id="S2_to_N2" edges="J2_south_approach J2_south_in J2_north_out J2_north_exit"/>
     
     <!-- Turning routes at Intersection 1 -->
-    <route id="W_to_N1" edges="J1_west_approach J1_west_in J1_west_out J1_north_exit"/>
-    <route id="W_to_S1" edges="J1_west_approach J1_west_in J1_west_out J1_south_exit"/>
+    <route id="W_to_N1" edges="J1_west_approach J1_west_in J1_north_out J1_north_exit"/>
+    <route id="W_to_S1" edges="J1_west_approach J1_west_in J1_south_out J1_south_exit"/>
     
     <!-- Turning routes at Intersection 2 -->
-    <route id="E_to_N2" edges="J2_east_approach J2_east_in J2_east_out J2_north_exit"/>
-    <route id="E_to_S2" edges="J2_east_approach J2_east_in J2_east_out J2_south_exit"/>
+    <route id="E_to_N2" edges="J2_east_approach J2_east_in J2_north_out J2_north_exit"/>
+    <route id="E_to_S2" edges="J2_east_approach J2_east_in J2_south_out J2_south_exit"/>
     
     <!-- ===== TRAFFIC FLOWS ===== -->
     <!-- Main through traffic (West to East) -->

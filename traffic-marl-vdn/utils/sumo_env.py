@@ -1,18 +1,18 @@
 import traci
 import sumolib
 import numpy as np
-import time
 from typing import Dict, List, Tuple, Any
 
 class SumoEnv:
-    """Wrapper for SUMO simulation environment"""
+    """Wrapper for SUMO simulation environment for 4-way intersections"""
     
     def __init__(self, config_path: str, use_gui: bool = False):
         self.config_path = config_path
         self.use_gui = use_gui
         self.net = None
-        self.tl_ids = None
+        self.tl_ids = ["J1_center", "J2_center"]  # Your traffic light IDs
         self.sumo_cmd = None
+        self.episode_step = 0
         
     def start(self):
         """Start SUMO simulation"""
@@ -24,15 +24,7 @@ class SumoEnv:
         self.sumo_cmd = [sumo_binary, "-c", self.config_path]
         traci.start(self.sumo_cmd)
         
-        # Load network
-        self.net = traci.net
-        
-        # Get traffic light IDs
-        self.tl_ids = list(traci.trafficlight.getIDList())
-        print(f"Found traffic lights: {self.tl_ids}")
-        
-        # Initialize data structures
-        self.episode_step = 0
+        print(f"SUMO started. Traffic lights: {self.tl_ids}")
         
     def close(self):
         """Close SUMO simulation"""
@@ -45,25 +37,35 @@ class SumoEnv:
         return self.get_state()
     
     def get_state(self) -> Dict[str, np.ndarray]:
-        """Get state for each traffic light"""
+        """Get state for each traffic light - UPDATED FOR 4-WAY INTERSECTIONS"""
         state = {}
         
         for tl_id in self.tl_ids:
             # Get lanes controlled by this traffic light
             controlled_lanes = traci.trafficlight.getControlledLanes(tl_id)
             
-            # Calculate queue length and waiting time for each lane
-            queue_lengths = []
-            waiting_times = []
-            vehicle_counts = []
+            # Group lanes by approach direction
+            queue_by_direction = {"north": 0, "east": 0, "south": 0, "west": 0}
+            waiting_by_direction = {"north": 0, "east": 0, "south": 0, "west": 0}
             
             for lane_id in controlled_lanes:
+                # Extract direction from lane ID
+                if "north" in lane_id.lower():
+                    direction = "north"
+                elif "east" in lane_id.lower():
+                    direction = "east"
+                elif "south" in lane_id.lower():
+                    direction = "south"
+                elif "west" in lane_id.lower():
+                    direction = "west"
+                else:
+                    direction = "unknown"
+                
                 # Get vehicles on this lane
                 vehicles = traci.lane.getLastStepVehicleIDs(lane_id)
                 vehicle_count = len(vehicles)
-                vehicle_counts.append(vehicle_count)
                 
-                # Calculate queue length (vehicles with speed < 0.1 m/s)
+                # Calculate queue (vehicles with speed < 0.1 m/s)
                 queue = 0
                 waiting = 0
                 for veh_id in vehicles:
@@ -72,28 +74,71 @@ class SumoEnv:
                         queue += 1
                         waiting += traci.vehicle.getWaitingTime(veh_id)
                 
-                queue_lengths.append(queue)
-                waiting_times.append(waiting)
+                queue_by_direction[direction] += queue
+                waiting_by_direction[direction] += waiting
             
             # Get current phase
             current_phase = traci.trafficlight.getPhase(tl_id)
             phase_duration = traci.trafficlight.getPhaseDuration(tl_id)
             
-            # Normalize state values
-            max_vehicles_per_lane = 20  # Assumption
-            
-            # Create state vector
+            # Create state vector (16 features)
             state_vector = np.array([
-                np.mean(vehicle_counts) / max_vehicles_per_lane,
-                np.mean(queue_lengths) / max_vehicles_per_lane,
-                np.mean(waiting_times) / 100.0,  # Normalize by 100 seconds
-                current_phase / 4.0,  # Assuming 4 phases
-                phase_duration / 60.0  # Normalize by 60 seconds
+                # Queue lengths per direction (4)
+                queue_by_direction["north"] / 20.0,  # Normalized
+                queue_by_direction["east"] / 20.0,
+                queue_by_direction["south"] / 20.0,
+                queue_by_direction["west"] / 20.0,
+                
+                # Waiting times per direction (4)
+                waiting_by_direction["north"] / 100.0,
+                waiting_by_direction["east"] / 100.0,
+                waiting_by_direction["south"] / 100.0,
+                waiting_by_direction["west"] / 100.0,
+                
+                # Current phase info (3)
+                current_phase / 8.0,  # Assuming up to 8 phases
+                phase_duration / 60.0,
+                1.0 if current_phase < 4 else 0.0,  # Is it N-S green?
+                
+                # Traffic density approaching (4)
+                self._get_approaching_density(tl_id, "north"),
+                self._get_approaching_density(tl_id, "east"),
+                self._get_approaching_density(tl_id, "south"),
+                self._get_approaching_density(tl_id, "west"),
+                
+                # Current simulation time (1) - for rush hour patterns
+                traci.simulation.getTime() / 3600.0
             ])
             
             state[tl_id] = state_vector
-            
+        
         return state
+    
+    def _get_approaching_density(self, tl_id: str, direction: str) -> float:
+        """Get density of vehicles approaching from given direction"""
+        # Map direction to incoming edge IDs
+        edge_map = {
+            "J1_center": {
+                "north": "J1_north_approach",
+                "east": "J1_east_approach",  # From J2
+                "south": "J1_south_approach",
+                "west": "J1_west_approach"
+            },
+            "J2_center": {
+                "north": "J2_north_approach",
+                "east": "J2_east_approach",
+                "south": "J2_south_approach",
+                "west": "J2_west_approach"  # From J1
+            }
+        }
+        
+        try:
+            edge_id = edge_map[tl_id][direction]
+            vehicles = traci.edge.getLastStepVehicleIDs(edge_id)
+            # Normalize by edge length and lanes
+            return len(vehicles) / 50.0  # Assuming max 50 vehicles
+        except:
+            return 0.0
     
     def get_reward(self) -> float:
         """Calculate global reward based on waiting time"""
@@ -114,6 +159,10 @@ class SumoEnv:
         
         Args:
             actions: Dictionary mapping traffic light ID to action index
+                    0: Extend current phase
+                    1: Switch to NS green  
+                    2: Switch to EW green
+                    3: Emergency priority
             
         Returns:
             next_state: New state after action
@@ -123,14 +172,23 @@ class SumoEnv:
         """
         # Apply actions to traffic lights
         for tl_id, action in actions.items():
-            if action == 0:
-                # Keep current phase
-                pass
-            elif action == 1:
-                # Switch to next phase
-                current_phase = traci.trafficlight.getPhase(tl_id)
-                next_phase = (current_phase + 1) % 4  # Assuming 4 phases
-                traci.trafficlight.setPhase(tl_id, next_phase)
+            current_phase = traci.trafficlight.getPhase(tl_id)
+            
+            if action == 0:  # Extend current phase
+                traci.trafficlight.setPhaseDuration(tl_id, 10)  # Extend by 10 seconds
+                
+            elif action == 1:  # Switch to NS green
+                if current_phase != 0:
+                    traci.trafficlight.setPhase(tl_id, 0)
+                    
+            elif action == 2:  # Switch to EW green
+                if current_phase != 2:
+                    traci.trafficlight.setPhase(tl_id, 2)
+                    
+            elif action == 3:  # Emergency priority
+                # Force green in specific direction
+                traci.trafficlight.setPhase(tl_id, 0)  # Force NS green
+                traci.trafficlight.setPhaseDuration(tl_id, 20)
         
         # Advance simulation by 1 second
         traci.simulationStep()

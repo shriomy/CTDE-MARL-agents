@@ -6,6 +6,7 @@ import zmq
 import threading
 import time
 from collections import defaultdict
+from agents.communication import AgentCommunication
 
 from agents.dqn_agent import DQNAgent
 from agents.vdn_mixer import VDNMixer, CentralizedBuffer
@@ -33,11 +34,28 @@ class MultiAgentSystem:
         
         # Communication setup (for decentralized execution)
         self.communication_enabled = config.get('enable_communication', True)
-        if self.communication_enabled:
-            self.setup_communication()
         
         # Training parameters
         self.training_step = 0
+
+        # Define neighbor relationships (who talks to whom)
+        self.neighbor_map = {
+        "J1_center": ["J2_center"],  # J1 talks to J2
+        "J2_center": ["J1_center"]   # J2 talks to J1
+        }
+
+         # Initialize communication for each agent
+        self.communications = {}
+        for agent_id in agent_ids:
+            neighbors = self.neighbor_map.get(agent_id, [])
+            self.communications[agent_id] = AgentCommunication(
+                agent_id=agent_id,
+                neighbor_ids=neighbors,
+                config=config
+            )
+        
+        # Track previous actions for coordination
+        self.previous_actions = {agent_id: 0 for agent_id in agent_ids}
         
     def setup_communication(self):
         """Setup ZeroMQ communication between agents"""
@@ -65,22 +83,33 @@ class MultiAgentSystem:
         print(f"Communication setup complete on ports {base_port}-{base_port + len(self.agent_ids)-1}")
     
     def send_message(self, sender_id: str, message: dict):
-        """Send message from one agent to others"""
-        if self.communication_enabled and sender_id in self.publishers:
-            self.publishers[sender_id].send_pyobj(message)
+        """Send message from one agent to others via AgentCommunication"""
+        if not self.communication_enabled:
+            return
+        comm = self.communications.get(sender_id)
+        if comm is None:
+            return
+        try:
+            comm.publisher.send_json(message)
+        except Exception:
+            pass
     
     def receive_messages(self, receiver_id: str) -> List[dict]:
-        """Receive messages for an agent"""
-        messages = []
-        if self.communication_enabled and receiver_id in self.subscribers:
-            # Non-blocking receive
-            try:
-                while True:
-                    message = self.subscribers[receiver_id].recv_pyobj(zmq.NOBLOCK)
-                    messages.append(message)
-            except zmq.Again:
-                pass
-        return messages
+        """Receive messages for an agent via AgentCommunication"""
+        if not self.communication_enabled:
+            return []
+        comm = self.communications.get(receiver_id)
+        if comm is None:
+            return []
+        msgs = comm.get_neighbor_messages()  # dict of sender -> {data, timestamp}
+        out = []
+        for sender, payload in msgs.items():
+            out.append({
+                'sender': sender,
+                'state': payload.get('data'),
+                'timestamp': payload.get('timestamp')
+            })
+        return out
     
     def act(self, states: Dict[str, np.ndarray], training_mode: bool = True) -> Dict[str, int]:
         """Get actions from all agents"""
@@ -89,13 +118,18 @@ class MultiAgentSystem:
         # Exchange information between agents
         if self.communication_enabled:
             for agent_id in self.agent_ids:
-                # Send local state to neighbors
-                message = {
-                    'sender': agent_id,
-                    'state': states[agent_id].tolist(),
-                    'timestamp': time.time()
-                }
-                self.send_message(agent_id, message)
+                # Send local state to neighbors using AgentCommunication API
+                comm = self.communications.get(agent_id)
+                if comm is not None:
+                    state_info = {
+                        'queue': states[agent_id][:4].tolist() if hasattr(states[agent_id], 'tolist') else list(states[agent_id][:4]),
+                        'full_state': states[agent_id].tolist() if hasattr(states[agent_id], 'tolist') else list(states[agent_id]),
+                        'timestamp': time.time()
+                    }
+                    try:
+                        comm.send_state(state_info)
+                    except Exception:
+                        pass
         
         # Each agent selects action
         for agent_id, state in states.items():
@@ -115,7 +149,7 @@ class MultiAgentSystem:
     def train_step(self, batch_size: int = 32):
         """Train all agents using centralized experience"""
         if len(self.central_buffer) < batch_size:
-            return 0
+            return 0, 0
         
         # Sample batch from centralized buffer
         states_batch, actions_batch, rewards_batch, next_states_batch, dones_batch = \
@@ -221,3 +255,63 @@ class MultiAgentSystem:
         """Load all agent models"""
         for agent_id, agent in self.agents.items():
             agent.load(f"{path}/{agent_id}_model.pth")
+
+    def get_enhanced_state(self, base_state: np.ndarray, agent_id: str) -> np.ndarray:
+        """Enhance state with neighbor information"""
+        # Get messages from neighbors
+        messages = self.communications[agent_id].get_neighbor_messages()
+        
+        # Extract neighbor information
+        neighbor_info = []
+        for neighbor_id, message in messages.items():
+            if "data" in message and "queue" in message["data"]:
+                neighbor_info.extend(message["data"]["queue"])  # Queue lengths
+                neighbor_info.append(message["data"].get("current_phase", 0))
+                neighbor_info.append(message["data"].get("intended_action", 0))
+        
+        # Pad if no neighbor info
+        if not neighbor_info:
+            neighbor_info = [0] * 10  # 10 features from neighbor
+        
+        # Combine base state with neighbor info
+        enhanced_state = np.concatenate([
+            base_state,
+            np.array(neighbor_info[:10])  # Take first 10 neighbor features
+        ])
+        
+        return enhanced_state
+    
+    def act_with_coordination(self, states: Dict[str, np.ndarray], training_mode: bool = True) -> Dict[str, int]:
+        """Get actions with coordination between agents"""
+        actions = {}
+        
+        # Phase 1: Exchange information
+        for agent_id, state in states.items():
+            # Prepare state info to send
+            state_info = {
+                "queue": state[:4].tolist(),  # First 4 are queue lengths
+                "current_phase": int(state[8] * 8),  # Phase index
+                "intended_action": self.agents[agent_id].act(state, explore=False)
+            }
+            
+            # Send to neighbors
+            self.communications[agent_id].send_state(state_info)
+        
+        # Small delay for message propagation
+        time.sleep(0.01)
+        
+        # Phase 2: Select actions with neighbor info
+        for agent_id, state in states.items():
+            # Enhance state with neighbor info
+            enhanced_state = self.get_enhanced_state(state, agent_id)
+            
+            # Select action
+            action = self.agents[agent_id].act(enhanced_state, explore=training_mode)
+            actions[agent_id] = action
+            
+            # Store for next step
+            self.previous_actions[agent_id] = action
+        
+        return actions
+
+    

@@ -29,13 +29,19 @@ class Trainer:
         # Get traffic light IDs from environment
         self.agent_ids = self.env.tl_ids
         print(f"Agents: {self.agent_ids}")
-        
+
+        # Derive state dimension from environment's state vector
+        initial_state = self.env.get_state()
+        sample_agent = self.agent_ids[0]
+        state_dim = int(initial_state[sample_agent].shape[0])
+
         # Initialize multi-agent system
         print("Initializing multi-agent system...")
+        # SumoEnv supports 4 actions (0: extend, 1: NS green, 2: EW green, 3: emergency)
         self.multi_agent = MultiAgentSystem(
             agent_ids=self.agent_ids,
-            state_dim=5,  # From our state vector in SumoEnv
-            action_dim=2,  # 0: keep phase, 1: switch phase
+            state_dim=state_dim,
+            action_dim=4,
             config=self.config['agent_config']
         )
         
@@ -49,7 +55,7 @@ class Trainer:
         default_config = {
             'sumo_config_path': 'sumo_configs/1x2.sumocfg',
             'use_gui': False,
-            'num_episodes': 100,
+            'num_episodes': 25,
             'max_steps_per_episode': 3600,
             'save_frequency': 10,
             'log_frequency': 1,
