@@ -157,7 +157,7 @@ class SumoEnv:
         # Scale: -0.01 per second of average waiting
         # So if avg waiting = 10s → reward = -0.1
         # if avg waiting = 50s → reward = -0.5
-        normalized_reward = -avg_waiting * 0.01
+        normalized_reward = -avg_waiting * 0.1
         
         # Clip to reasonable range
         normalized_reward = max(-1.0, min(0.0, normalized_reward))

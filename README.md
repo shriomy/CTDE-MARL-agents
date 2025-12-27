@@ -87,7 +87,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #12 - Training was completed
 
- Merge #13 - 
+ Merge #13 - second training completed with enhanced configs
 
  Merge #14 - 
 
@@ -113,8 +113,6 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #25 - 
  
- 
-
 
 ### 6. Setup:
 1. mkdir traffic-marl-vdn -> cd traffic-marl-vdn
