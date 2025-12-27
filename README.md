@@ -141,6 +141,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 10. Created Main Training Loop -> main.py
 11. Created Evaluation Script -> test.py
 12. Created the network generator for SUMO -> generate_network.py
+13. Added action definitions -> traffic_actions.py
 13. run SUMO
     -> generate network
     python generate_network.py
