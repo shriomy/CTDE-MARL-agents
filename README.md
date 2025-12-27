@@ -83,7 +83,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #10 - Created Evaluation Script
 
- Merge #11 - 
+ Merge #11 - Created 2 jucntions for SUMO
 
  Merge #12 - 
 
@@ -140,6 +140,12 @@ Simply put; the whole workflow for this component begins in two main phases.
 9. Created Multi-Agent System -> multi_agent_system.py
 10. Created Main Training Loop -> main.py
 11. Created Evaluation Script -> test.py
+12. Created the network generator for SUMO -> generate_network.py
+13. run SUMO
+    -> generate network
+    python generate_network.py
+    -> run SUMO
+    sumo-gui -c sumo_configs/1x2.sumocfg
 
 
 
