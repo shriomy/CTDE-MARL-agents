@@ -69,6 +69,7 @@ Simply put; the whole workflow for this component begins in two main phases.
  
 
 ### 5. Dated Merges:
+ Merge pull request #4 - created basic project structure
 
 
 ### 6. Setup:
