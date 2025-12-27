@@ -77,7 +77,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #7 - Created VDN mixing network
 
- Merge #8 -
+ Merge #8 - Created Multi-Agent System
 
  Merge #9 - 
 
@@ -136,5 +136,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 5. Setup SUMO configurations and 1x2 network in sumo_configs
 6. Initialized SUMO environment wrapper in sumo_env.py
 7. Created DQN Agent -> dqn_agent.py
+8. Created VDN mixing network -> vdn_mixer.py
+9. Created Multi-Agent System -> multi_agent_system.py
 
 
