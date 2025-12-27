@@ -27,7 +27,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
 ✔️ A central trainer (VDN mixer network) samples batches and updates all agent networks using the global reward signal.
 
-![alt text](23.png)
+![alt text](images/23.png)
 ### 2. Decentralized Execution Phase:
 
 ✔️ Trained agents are deployed.
@@ -38,11 +38,11 @@ Simply put; the whole workflow for this component begins in two main phases.
 
 ✔️ The action is executed in SUMO via TraCI.
 
-![alt text](26.png)
+![alt text](images/26.png)
 
 ### 3. Key Components:
 
-![alt text](KEYcompo.png)
+![alt text](images/KEYcompo.png)
 
 ### 4. Tools & Technoologies used:
 
