@@ -142,11 +142,23 @@ Simply put; the whole workflow for this component begins in two main phases.
 11. Created Evaluation Script -> test.py
 12. Created the network generator for SUMO -> generate_network.py
 13. Added action definitions -> traffic_actions.py
-13. run SUMO
+14. run SUMO and see the network
     -> generate network
     python generate_network.py
     -> run SUMO
     sumo-gui -c sumo_configs/1x2.sumocfg
+15. next, created the Communication protocol
+16. 
+17. 
+18. 
+19. 
+20. 
+21. 
+22. 
+23. 
+24. 
+
+
 
 
 
