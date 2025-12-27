@@ -70,7 +70,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
 ### 5. Dated Merges:
  Merge pull request #4 - created basic project structure
- Merge pull request #4 - Initialized SUMO configs and env wrapper
+ Merge pull request #5 - Initialized SUMO configs and env wrapper
 
 ### 6. Setup:
 1. mkdir traffic-marl-vdn -> cd traffic-marl-vdn
