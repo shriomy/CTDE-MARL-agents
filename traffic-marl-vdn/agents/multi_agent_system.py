@@ -239,6 +239,9 @@ class MultiAgentSystem:
         if self.training_step % 10 == 0:
             for agent in self.agents.values():
                 agent.target_network.load_state_dict(agent.q_network.state_dict())
+
+        for agent in self.agents.values():
+            agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
         
         return loss.item(), total_norm
     

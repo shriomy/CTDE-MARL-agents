@@ -141,17 +141,28 @@ class SumoEnv:
             return 0.0
     
     def get_reward(self) -> float:
-        """Calculate global reward based on waiting time"""
-        total_waiting_time = 0
-        
-        # Get waiting time for all vehicles in the network
+        """Calculate normalized global reward"""
         vehicle_ids = traci.vehicle.getIDList()
-        for veh_id in vehicle_ids:
-            total_waiting_time += traci.vehicle.getWaitingTime(veh_id)
         
-        # Negative reward: we want to minimize waiting time
-        reward = -total_waiting_time / max(len(vehicle_ids), 1)
-        return reward
+        if not vehicle_ids or len(vehicle_ids) < 5:
+            return 0.0  # Neutral reward if few vehicles
+    
+        total_waiting = 0
+        for veh_id in vehicle_ids:
+            total_waiting += traci.vehicle.getWaitingTime(veh_id)
+        
+        # Normalize: -1 to 0 range
+        avg_waiting = total_waiting / len(vehicle_ids)
+        
+        # Scale: -0.01 per second of average waiting
+        # So if avg waiting = 10s → reward = -0.1
+        # if avg waiting = 50s → reward = -0.5
+        normalized_reward = -avg_waiting * 0.1
+        
+        # Clip to reasonable range
+        normalized_reward = max(-1.0, min(0.0, normalized_reward))
+        
+        return normalized_reward
     
     def step(self, actions: Dict[str, int]) -> Tuple[Dict[str, np.ndarray], float, bool, Dict]:
         """

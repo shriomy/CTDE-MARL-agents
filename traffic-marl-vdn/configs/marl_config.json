@@ -1,36 +1,22 @@
 {
     "sumo_config_path": "sumo_configs/1x2.sumocfg",
     "use_gui": false,
-    "num_episodes": 1000,
+    "num_episodes": 25,
     "max_steps_per_episode": 3600,
-    "save_frequency": 50,
-    "log_frequency": 10,
+    "save_frequency": 10,
+    "log_frequency": 1,
     
     "agent_config": {
-        "state_dim": 17,
-        "action_dim": 4,
-        "learning_rate": 0.001,
+        "learning_rate": 0.0005,
         "gamma": 0.95,
         "epsilon_start": 1.0,
-        "epsilon_min": 0.01,
-        "epsilon_decay": 0.999,
-        "buffer_size": 10000,
-        "central_buffer_size": 50000,
+        "epsilon_min": 0.05,
+        "epsilon_decay": 0.9995,
+        "buffer_size": 50000,
+        "central_buffer_size": 100000,
         "batch_size": 64,
         "target_update_freq": 100,
         "enable_communication": true,
-        "communication_range": 1
-    },
-    
-    "vdn_config": {
-        "mixer_hidden_dim": 64,
-        "agent_hidden_dim": 128
-    },
-    
-    "training_config": {
-        "warmup_episodes": 50,
-        "eval_frequency": 20,
-        "checkpoint_dir": "models/checkpoints",
-        "log_dir": "logs"
+        "grad_clip": 1.0
     }
 }
