@@ -3,7 +3,7 @@
     "use_gui": false,
     "num_episodes": 25,
     "max_steps_per_episode": 3600,
-    "save_frequency": 10,
+    "save_frequency": 5,
     "log_frequency": 1,
     
     "agent_config": {
