@@ -85,7 +85,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #11 - Created 2 jucntions for SUMO
 
- Merge #12 - 
+ Merge #12 - Training was completed
 
  Merge #13 - 
 

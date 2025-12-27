@@ -11,7 +11,7 @@ from agents.multi_agent_system import MultiAgentSystem
 class Trainer:
     """Main training class for MARL traffic signal control"""
     
-    def __init__(self, config_path: str = "configs/training_config.json"):
+    def __init__(self, config_path: str = "configs/marl_config.json"):
         # Load configuration
         self.config = self.load_config(config_path)
         
@@ -55,7 +55,7 @@ class Trainer:
         default_config = {
             'sumo_config_path': 'sumo_configs/1x2.sumocfg',
             'use_gui': False,
-            'num_episodes': 25,
+            'num_episodes': 50,
             'max_steps_per_episode': 3600,
             'save_frequency': 10,
             'log_frequency': 1,
@@ -131,9 +131,13 @@ class Trainer:
             
             # Log progress
             if step % 100 == 0:
+                # Get epsilon once per 100 steps
+                epsilon_values = [agent.epsilon for agent in self.multi_agent.agents.values()]
+                avg_epsilon = sum(epsilon_values) / len(epsilon_values)
+
                 print(f"Episode {episode}, Step {step}: "
-                      f"Reward={reward:.2f}, Loss={loss:.4f}")
-            
+                      f"Reward={reward:.2f}, Loss={loss:.4f}, Epsilon={avg_epsilon:.3f}")
+
             if done:
                 break
         
