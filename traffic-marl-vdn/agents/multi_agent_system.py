@@ -27,8 +27,10 @@ class MultiAgentSystem:
             self.agents[agent_id] = DQNAgent(state_dim, action_dim, agent_id, config)
         
         # Create VDN mixer
-        self.mixer = VDNMixer(self.num_agents, state_dim, config)
+        self.mixer = VDNMixer(self.num_agents)
         
+        self.target_update_freq = config.get('target_update_freq', 10)
+
         # Centralized replay buffer
         self.central_buffer = CentralizedBuffer(config.get('central_buffer_size', 10000))
         
@@ -162,60 +164,33 @@ class MultiAgentSystem:
         next_states_tensor = torch.FloatTensor(next_states_batch)  # [batch, num_agents, state_dim]
         dones_tensor = torch.FloatTensor(dones_batch)  # [batch]
         
-        # Get Q-values from all agents
-        agent_qs = []
-        target_qs = []
-        
+         # Get selected Q-values for each agent
+        selected_qs = []
         for i, agent_id in enumerate(self.agent_ids):
-            agent = self.agents[agent_id]
-            
-            # Current Q-values
             agent_states = states_tensor[:, i, :]
-            agent_q = agent.q_network(agent_states)  # [batch, action_dim]
-            agent_qs.append(agent_q.unsqueeze(1))  # [batch, 1, action_dim]
-            
-            # Target Q-values
-            with torch.no_grad():
-                next_agent_states = next_states_tensor[:, i, :]
-                target_q = agent.target_network(next_agent_states)  # [batch, action_dim]
-                target_qs.append(target_q.unsqueeze(1))  # [batch, 1, action_dim]
+            agent_actions = actions_tensor[:, i]
+            agent_q = self.agents[agent_id].q_network(agent_states)
+            selected_q = agent_q.gather(1, agent_actions.unsqueeze(1)).squeeze(1)
+            selected_qs.append(selected_q)
+
+        # Stack: [batch_size, num_agents]
+        selected_qs_tensor = torch.stack(selected_qs, dim=1).squeeze(-1)
+        q_tot = self.mixer(selected_qs_tensor)
         
-        # Stack Q-values
-        agent_qs = torch.cat(agent_qs, dim=1)  # [batch, num_agents, action_dim]
-        target_qs = torch.cat(target_qs, dim=1)  # [batch, num_agents, action_dim]
-        
-        # Get joint Q-values using VDN mixer
-        joint_q = self.mixer(agent_qs)  # [batch, action_dim, action_dim, ...]
-        
-        # Get joint action indices
-        # This is complex: we need to index joint_q with the joint actions
-        # For 2 agents:
-        if self.num_agents == 2:
-            # Index joint Q-values with the actual joint actions
-            batch_indices = torch.arange(batch_size)
-            current_q = joint_q[batch_indices, actions_tensor[:, 0], actions_tensor[:, 1]]
-        else:
-            # General case
-            current_q = joint_q
-            for i in range(self.num_agents):
-                current_q = current_q[batch_indices, actions_tensor[:, i]]
-        
-        # Target Q-values
+        # Target calculation
         with torch.no_grad():
-            # Get max over joint actions for next state
-            next_joint_q = self.mixer(target_qs)  # [batch, action_dim, action_dim, ...]
+            target_qs = []
+            for i, agent_id in enumerate(self.agent_ids):
+                next_agent_states = next_states_tensor[:, i, :]
+                target_q = self.agents[agent_id].target_network(next_agent_states)
+                max_target_q = torch.max(target_q, dim=1)[0]
+                target_qs.append(max_target_q)
             
-            if self.num_agents == 2:
-                # For 2 agents: max over both action dimensions
-                max_next_q, _ = torch.max(torch.max(next_joint_q, dim=1)[0], dim=1)
-            else:
-                # General case: max over all action dimensions
-                max_next_q = next_joint_q.max()
-            
-            target_q = rewards_tensor + (1 - dones_tensor) * self.agents[self.agent_ids[0]].gamma * max_next_q
+            target_q_tot = torch.sum(torch.stack(target_qs, dim=0), dim=0)
+            target = rewards_tensor + (1 - dones_tensor) * self.agents[self.agent_ids[0]].gamma * target_q_tot
         
         # Calculate loss
-        loss = nn.MSELoss()(current_q, target_q)
+        loss = nn.MSELoss()(q_tot, target)
         
         # Backpropagation
         for agent in self.agents.values():
@@ -236,12 +211,12 @@ class MultiAgentSystem:
         
         # Update target networks periodically
         self.training_step += 1
-        if self.training_step % 10 == 0:
+        if self.training_step % self.target_update_freq == 0:
             for agent in self.agents.values():
                 agent.target_network.load_state_dict(agent.q_network.state_dict())
 
-        for agent in self.agents.values():
-            agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
+        # for agent in self.agents.values():
+        #     agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
         
         return loss.item(), total_norm
     

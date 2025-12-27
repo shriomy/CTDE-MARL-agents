@@ -6,16 +6,16 @@
   "save_frequency": 5,
   "log_frequency": 1,
   "agent_config": {
-    "learning_rate": 0.0005,
-    "gamma": 0.95,
+    "learning_rate": 0.0001,
+    "gamma": 0.99,
     "epsilon_start": 1.0,
-    "epsilon_min": 0.05,
+    "epsilon_min": 0.01,
     "epsilon_decay": 0.9995,
     "buffer_size": 50000,
     "central_buffer_size": 100000,
     "batch_size": 64,
-    "target_update_freq": 100,
+    "target_update_freq": 1,
     "enable_communication": true,
-    "grad_clip": 1.0
+    "grad_clip": 0.5
   }
 }

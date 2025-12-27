@@ -131,15 +131,15 @@ class Trainer:
             
             # Log progress
             if step % 100 == 0:
-                # Get epsilon once per 100 steps
-                epsilon_values = [agent.epsilon for agent in self.multi_agent.agents.values()]
-                avg_epsilon = sum(epsilon_values) / len(epsilon_values)
-
                 print(f"Episode {episode}, Step {step}: "
-                      f"Reward={reward:.2f}, Loss={loss:.4f}, Epsilon={avg_epsilon:.3f}")
+                    f"Reward={reward:.2f}, Loss={loss:.4f}")
 
             if done:
                 break
+
+         # After episode ends, decay epsilon
+        for agent in self.multi_agent.agents.values():
+            agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
         
         return total_reward, episode_loss / max(step_count, 1), step_count
     

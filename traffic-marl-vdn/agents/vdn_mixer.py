@@ -4,54 +4,25 @@ import numpy as np
 from typing import List, Dict
 
 class VDNMixer(nn.Module):
-    """Value Decomposition Network Mixer"""
+    """Value Decomposition Network Mixer - Simplified"""
     
-    def __init__(self, num_agents: int, state_dim: int, config: dict):
+    def __init__(self, num_agents: int):
         super().__init__()
         self.num_agents = num_agents
-        self.state_dim = state_dim
-        self.config = config
+        # VDN has no learnable parameters - it's just a sum
         
-        # VDN is simple: just sum the Q-values
-        # No learnable parameters in the basic VDN
-        
-    def forward(self, agent_qs: torch.Tensor, states: torch.Tensor = None) -> torch.Tensor:
+    def forward(self, agent_qs: torch.Tensor) -> torch.Tensor:
         """
-        Combine individual Q-values into joint Q-value
+        VDN: Q_tot = Σ Q_i (for chosen actions)
         
         Args:
-            agent_qs: Tensor of shape [batch_size, num_agents, action_dim]
-            states: Global state (not used in basic VDN, but kept for interface)
-            
+            agent_qs: Tensor of shape [batch_size, num_agents]
+                    where each element is Q_i(s_i, a_i) for chosen action
+                    
         Returns:
-            joint_q: Tensor of shape [batch_size, action_dim, action_dim, ...] 
-                    (joint action space)
+            q_tot: Tensor of shape [batch_size]
         """
-        # In VDN: Q_tot = sum(Q_i) for corresponding actions
-        # We need to construct the joint Q-value table
-        
-        batch_size = agent_qs.shape[0]
-        action_dim = agent_qs.shape[2]
-        
-        # Create joint Q-value tensor by summing over agents
-        # This creates a tensor of shape [batch_size, action_dim, action_dim, ...]
-        # with num_agent dimensions of size action_dim
-        
-        # For 2 agents, we can explicitly compute:
-        if self.num_agents == 2:
-            # Expand and sum: Q_tot(a1, a2) = Q1(a1) + Q2(a2)
-            q1 = agent_qs[:, 0, :].unsqueeze(2)  # [batch, action_dim, 1]
-            q2 = agent_qs[:, 1, :].unsqueeze(1)  # [batch, 1, action_dim]
-            joint_q = q1 + q2  # [batch, action_dim, action_dim]
-            
-        else:
-            # For more agents, use iterative expansion
-            joint_q = agent_qs[:, 0, :].unsqueeze(-1)
-            for i in range(1, self.num_agents):
-                joint_q = joint_q.unsqueeze(-1) + agent_qs[:, i, :].unsqueeze(1)
-                # Reshape to add new dimension
-            
-        return joint_q
+        return torch.sum(agent_qs, dim=1)
     
     def get_individual_gradients(self, total_loss: torch.Tensor, agent_qs: torch.Tensor):
         """

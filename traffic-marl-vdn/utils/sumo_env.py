@@ -157,12 +157,24 @@ class SumoEnv:
         # Scale: -0.01 per second of average waiting
         # So if avg waiting = 10s → reward = -0.1
         # if avg waiting = 50s → reward = -0.5
-        normalized_reward = -avg_waiting * 0.1
+        waiting_penalty = -avg_waiting * 0.1
+        
+        # Add bonus for keeping vehicles moving
+        total_speed = 0
+        for veh_id in vehicle_ids:
+            total_speed += traci.vehicle.getSpeed(veh_id)
+        avg_speed = total_speed / len(vehicle_ids)
+        
+        # Speed bonus: +0.01 per m/s of average speed
+        speed_bonus = avg_speed * 0.01
+        
+        # Combined reward
+        combined_reward = waiting_penalty + speed_bonus
         
         # Clip to reasonable range
-        normalized_reward = max(-1.0, min(0.0, normalized_reward))
+        combined_reward = max(-1.0, min(0.0, combined_reward))
         
-        return normalized_reward
+        return combined_reward
     
     def step(self, actions: Dict[str, int]) -> Tuple[Dict[str, np.ndarray], float, bool, Dict]:
         """

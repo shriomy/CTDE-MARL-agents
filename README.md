@@ -89,7 +89,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #13 - second training completed with enhanced configs
 
- Merge #14 - 
+ Merge #14 - Got the learning rate, epsilon deay and grad_clip to a managable level
 
  Merge #15 - 
 
