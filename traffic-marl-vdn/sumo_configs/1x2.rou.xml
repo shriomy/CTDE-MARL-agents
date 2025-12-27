@@ -1,15 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     
-    <!-- Define vehicle types -->
-    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5.0" maxSpeed="50.0"/>
+    <!-- Vehicle types -->
+    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5.0" maxSpeed="50.0" color="1,0,0"/>
+    <vType id="bus" accel="1.2" decel="4.0" sigma="0.5" length="12.0" maxSpeed="30.0" color="0,0,1"/>
+    <vType id="truck" accel="1.3" decel="4.0" sigma="0.5" length="7.5" maxSpeed="40.0" color="0.5,0.5,0.5"/>
     
-    <!-- Define routes -->
-    <route id="route1" edges="e1 e2"/>
-    <route id="route2" edges="e3 e4"/>
+    <!-- ===== ROUTES THROUGH BOTH INTERSECTIONS ===== -->
+    <!-- West to East through both intersections -->
+    <route id="W_to_E" edges="J1_west_approach J1_west_in J1_west_out J1_east_exit J2_west_approach J2_west_in J2_west_out J2_east_exit"/>
     
-    <!-- Generate vehicles -->
-    <flow id="flow1" type="car" route="route1" begin="0" end="3600" period="3"/>
-    <flow id="flow2" type="car" route="route2" begin="0" end="3600" period="5"/>
+    <!-- East to West through both intersections -->
+    <route id="E_to_W" edges="J2_east_approach J2_east_in J2_east_out J2_west_exit J1_east_approach J1_east_in J1_east_out J1_west_exit"/>
+    
+    <!-- North to South at Intersection 1 -->
+    <route id="N1_to_S1" edges="J1_north_approach J1_north_in J1_north_out J1_south_exit"/>
+    
+    <!-- South to North at Intersection 1 -->
+    <route id="S1_to_N1" edges="J1_south_approach J1_south_in J1_south_out J1_north_exit"/>
+    
+    <!-- North to South at Intersection 2 -->
+    <route id="N2_to_S2" edges="J2_north_approach J2_north_in J2_north_out J2_south_exit"/>
+    
+    <!-- South to North at Intersection 2 -->
+    <route id="S2_to_N2" edges="J2_south_approach J2_south_in J2_south_out J2_north_exit"/>
+    
+    <!-- Turning routes at Intersection 1 -->
+    <route id="W_to_N1" edges="J1_west_approach J1_west_in J1_west_out J1_north_exit"/>
+    <route id="W_to_S1" edges="J1_west_approach J1_west_in J1_west_out J1_south_exit"/>
+    
+    <!-- Turning routes at Intersection 2 -->
+    <route id="E_to_N2" edges="J2_east_approach J2_east_in J2_east_out J2_north_exit"/>
+    <route id="E_to_S2" edges="J2_east_approach J2_east_in J2_east_out J2_south_exit"/>
+    
+    <!-- ===== TRAFFIC FLOWS ===== -->
+    <!-- Main through traffic (West to East) -->
+    <flow id="flow_W_to_E" type="car" route="W_to_E" begin="0" end="3600" period="8"/>
+    
+    <!-- Main through traffic (East to West) -->
+    <flow id="flow_E_to_W" type="car" route="E_to_W" begin="0" end="3600" period="10"/>
+    
+    <!-- North-South traffic at Intersection 1 -->
+    <flow id="flow_N1_to_S1" type="car" route="N1_to_S1" begin="0" end="3600" period="12"/>
+    <flow id="flow_S1_to_N1" type="car" route="S1_to_N1" begin="0" end="3600" period="15"/>
+    
+    <!-- North-South traffic at Intersection 2 -->
+    <flow id="flow_N2_to_S2" type="car" route="N2_to_S2" begin="0" end="3600" period="12"/>
+    <flow id="flow_S2_to_N2" type="car" route="S2_to_N2" begin="0" end="3600" period="15"/>
+    
+    <!-- Turning traffic -->
+    <flow id="flow_W_to_N1" type="car" route="W_to_N1" begin="0" end="3600" period="20"/>
+    <flow id="flow_W_to_S1" type="car" route="W_to_S1" begin="0" end="3600" period="25"/>
+    <flow id="flow_E_to_N2" type="car" route="E_to_N2" begin="0" end="3600" period="20"/>
+    <flow id="flow_E_to_S2" type="car" route="E_to_S2" begin="0" end="3600" period="25"/>
+    
+    <!-- Heavy vehicles -->
+    <flow id="flow_truck_W_to_E" type="truck" route="W_to_E" begin="0" end="3600" period="60"/>
+    <flow id="flow_bus_N1_to_S1" type="bus" route="N1_to_S1" begin="0" end="3600" period="120"/>
     
 </routes>
