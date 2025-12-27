@@ -157,7 +157,7 @@ class SumoEnv:
         # Scale: -0.01 per second of average waiting
         # So if avg waiting = 10s → reward = -0.1
         # if avg waiting = 50s → reward = -0.5
-        waiting_penalty = -avg_waiting * 0.1
+        waiting_penalty = -avg_waiting * 0.01
         
         # Add bonus for keeping vehicles moving
         total_speed = 0
