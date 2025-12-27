@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
 import pandas as pd
+from main import Trainer
 
 class TrainingVisualizer:
     """Visualize training progress in real-time"""
@@ -101,3 +102,32 @@ class TrainingVisualizer:
         plt.draw()
         plt.pause(0.01)
 
+    def train_with_visualization():
+        trainer = Trainer(config_path="configs/marl_config.json")
+        visualizer = TrainingVisualizer()
+        
+        for episode in range(trainer.config['num_episodes']):
+            # Train episode
+            episode_reward, avg_loss, episode_length = trainer.train_episode(episode)
+            
+            # Collect data for visualization
+            episode_data = {
+                'episode': episode,
+                'reward': episode_reward,
+                'queues': trainer.get_current_queues(),  # You need to add these methods to Trainer
+                'actions': trainer.get_recent_actions(),  # Add this method
+                'comm_rate': trainer.get_communication_rate()  # Add this method
+            }
+            
+            # Update visualization
+            visualizer.update(episode_data)
+            
+            # Rest of training logic (logging, saving, etc.)
+            if episode % trainer.config['log_frequency'] == 0:
+                print(f"Episode {episode}: Reward={episode_reward:.2f}, Loss={avg_loss:.4f}")
+            
+            if episode % trainer.config['save_frequency'] == 0:
+                trainer.multi_agent.save_models(f"models/episode_{episode}")
+
+    if __name__ == "__main__":
+        train_with_visualization()
