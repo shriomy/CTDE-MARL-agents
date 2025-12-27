@@ -1,4 +1,4 @@
-# Create a new file: utils/traffic_actions.py
+import traci
 
 class TrafficActions:
     """Action definitions for 4-way intersections"""

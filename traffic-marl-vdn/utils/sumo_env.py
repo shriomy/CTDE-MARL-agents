@@ -1,4 +1,6 @@
-# In utils/sumo_env.py, update the get_state method:
+import traci
+from typing import Dict, Optional
+import numpy as np
 
 def get_state(self) -> Dict[str, np.ndarray]:
     """Get state for each traffic light - UPDATED FOR 4-WAY INTERSECTIONS"""
