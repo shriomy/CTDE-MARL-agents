@@ -177,7 +177,7 @@ class Trainer:
                 
                 # Save training progress
                 self.save_training_progress(episode)
-        
+
         # Training complete
         training_time = time.time() - start_time
         print(f"\nTraining completed in {training_time:.2f} seconds")
@@ -187,11 +187,18 @@ class Trainer:
     
     def save_training_progress(self, episode: int):
         """Save training progress to file"""
+
+         # Collect epsilon values from all agents
+        epsilon_values = {}
+        for agent_id, agent in self.multi_agent.agents.items():
+            epsilon_values[agent_id] = agent.epsilon
+            
         progress = {
             'episode': episode,
             'rewards': self.episode_rewards,
             'lengths': self.episode_lengths,
             'losses': self.losses,
+            'epsilon': epsilon_values,
             'timestamp': datetime.now().isoformat()
         }
         
