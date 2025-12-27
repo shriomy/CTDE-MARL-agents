@@ -141,40 +141,49 @@ class SumoEnv:
             return 0.0
     
     def get_reward(self) -> float:
-        """Calculate normalized global reward"""
+        """Calculate global reward - better scaling"""
         vehicle_ids = traci.vehicle.getIDList()
         
-        if not vehicle_ids or len(vehicle_ids) < 5:
-            return 0.0  # Neutral reward if few vehicles
-    
+        if not vehicle_ids:
+            return 0.0
+        
+        # 1. Total waiting time penalty
         total_waiting = 0
         for veh_id in vehicle_ids:
             total_waiting += traci.vehicle.getWaitingTime(veh_id)
         
-        # Normalize: -1 to 0 range
-        avg_waiting = total_waiting / len(vehicle_ids)
+        # 2. Queue length penalty (vehicles with speed < 0.1 m/s)
+        total_queue = 0
+        for tl_id in self.tl_ids:
+            lanes = traci.trafficlight.getControlledLanes(tl_id)
+            for lane in lanes:
+                vehicles = traci.lane.getLastStepVehicleIDs(lane)
+                for veh_id in vehicles:
+                    if traci.vehicle.getSpeed(veh_id) < 0.1:
+                        total_queue += 1
         
-        # Scale: -0.01 per second of average waiting
-        # So if avg waiting = 10s → reward = -0.1
-        # if avg waiting = 50s → reward = -0.5
-        waiting_penalty = -avg_waiting * 0.01
-        
-        # Add bonus for keeping vehicles moving
-        total_speed = 0
+        # 3. Stop penalty (vehicles that just stopped)
+        stops = 0
         for veh_id in vehicle_ids:
-            total_speed += traci.vehicle.getSpeed(veh_id)
-        avg_speed = total_speed / len(vehicle_ids)
+            if traci.vehicle.getSpeed(veh_id) < 0.1 and traci.vehicle.getAccumulatedWaitingTime(veh_id) > 0:
+                stops += 1
         
-        # Speed bonus: +0.01 per m/s of average speed
-        speed_bonus = avg_speed * 0.02
+        # Calculate combined reward
+        # Scale to meaningful range [-10, 10]
+        waiting_penalty = -total_waiting * 0.001  # Scale down
+        queue_penalty = -total_queue * 0.1
+        stop_penalty = -stops * 0.05
         
-        # Combined reward
-        combined_reward = waiting_penalty + speed_bonus
+        combined = waiting_penalty + queue_penalty + stop_penalty
         
-        # Clip to reasonable range
-        combined_reward = max(-1.0, min(0.0, combined_reward))
+        # Normalize by number of vehicles
+        if len(vehicle_ids) > 0:
+            combined = combined / len(vehicle_ids)
         
-        return combined_reward
+        # Add small positive baseline to encourage learning
+        combined += 1.0
+        
+        return combined
     
     def step(self, actions: Dict[str, int]) -> Tuple[Dict[str, np.ndarray], float, bool, Dict]:
         """
