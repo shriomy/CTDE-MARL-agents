@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fixed-Time Traffic Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .connected { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        .disconnected { background: #e74c3c; }
+        .connecting { background: #f39c12; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .metrics-bar {
+            background: #ecf0f1;
+            padding: 15px 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .cycle-info {
+            background: #3498db;
+            color: white;
+            padding: 15px 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .cycle-phase {
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .cycle-phase.active {
+            background: rgba(46, 204, 113, 0.5);
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+        
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .agent-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .agent-header {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .agent-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .agent-phase {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .agent-body {
+            padding: 20px;
+        }
+        
+        .queue-section h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .queue-item {
+            margin-bottom: 15px;
+        }
+        
+        .queue-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .queue-bar {
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .queue-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .charts-container {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+        
+        .event-log {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .event-log h3 {
+            margin-bottom: 15px;
+            color: #ecf0f1;
+        }
+        
+        .event {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .event-time {
+            color: #3498db;
+            margin-right: 10px;
+        }
+        
+        .event-agent {
+            color: #2ecc71;
+            margin-right: 10px;
+        }
+        
+        .event-action {
+            color: #e74c3c;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        .action-colors {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .color-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+        
+        .color-box {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+        
+        /* Direction colors */
+        .west { background: #FF6B6B; }
+        .north { background: #4ECDC4; }
+        .east { background: #FFD166; }
+        .south { background: #06D6A0; }
+        
+        /* Queue colors */
+        .queue-low { background: #2ecc71; }
+        .queue-medium { background: #f39c12; }
+        .queue-high { background: #e74c3c; }
+        
+        .phase-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                🚦 Fixed-Time Traffic Control Dashboard
+                <span id="connectionStatus" class="status-indicator disconnected"></span>
+                <span id="connectionText">Disconnected</span>
+            </h1>
+            <div id="timestamp">--:--:--</div>
+        </div>
+        
+        <!-- Cycle Information -->
+        <div class="cycle-info" id="cycleDisplay">
+            <div class="cycle-phase" id="cycle-west">
+                <div>WEST</div>
+                <div class="phase-time">30s</div>
+            </div>
+            <div class="cycle-phase" id="cycle-north">
+                <div>NORTH</div>
+                <div class="phase-time">30s</div>
+            </div>
+            <div class="cycle-phase" id="cycle-east">
+                <div>EAST</div>
+                <div class="phase-time">30s</div>
+            </div>
+            <div class="cycle-phase" id="cycle-south">
+                <div>SOUTH</div>
+                <div class="phase-time">30s</div>
+            </div>
+        </div>
+        
+        <!-- Metrics Bar -->
+        <div class="metrics-bar">
+            <div class="metric-card">
+                <div class="metric-label">Current Step</div>
+                <div class="metric-value" id="stepCount">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Reward</div>
+                <div class="metric-value" id="totalReward">0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Vehicles</div>
+                <div class="metric-value" id="vehicleCount">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Speed</div>
+                <div class="metric-value" id="avgSpeed">0.0 <small>m/s</small></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Wait Time</div>
+                <div class="metric-value" id="avgWait">0.0 <small>s</small></div>
+            </div>
+        </div>
+        
+        <!-- Agents Grid -->
+        <div class="agents-grid" id="agentsContainer">
+            <!-- Agent cards will be inserted here by JavaScript -->
+            <div class="loading">Loading agents...</div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <div class="chart-title">📊 Queue Lengths Over Time</div>
+                <canvas id="queueChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">📈 Reward Over Time</div>
+                <canvas id="rewardChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Direction Legend -->
+        <div class="agent-body" style="margin: 0 30px;">
+            <h4>🎨 Cycle Direction Colors</h4>
+            <div class="action-colors">
+                <div class="color-label"><div class="color-box west"></div> WEST (30s green)</div>
+                <div class="color-label"><div class="color-box north"></div> NORTH (30s green)</div>
+                <div class="color-label"><div class="color-box east"></div> EAST (30s green)</div>
+                <div class="color-label"><div class="color-box south"></div> SOUTH (30s green)</div>
+            </div>
+        </div>
+        
+        <!-- Event Log -->
+        <div class="event-log">
+            <h3>📝 System Events</h3>
+            <div id="eventLog">
+                <!-- Events will be added here -->
+                <div class="event">Waiting for connection to fixed-time controller...</div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Fixed-Time Traffic Control System • Deterministic Cycle: West(30s) → North(30s) → East(30s) → South(30s)</p>
+            <p class="small">WebSocket: ws://localhost:8766 • Yellow time: 3s • No learning, just fixed timing</p>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        let ws = null;
+        let isConnected = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
+        
+        // Agent data store
+        const agents = {};
+        const history = {
+            steps: [],
+            rewards: [],
+            queues: [],
+            vehicles: [],
+            waits: []
+        };
+        
+        // Chart instances
+        let queueChart = null;
+        let rewardChart = null;
+        
+        // Direction names and colors
+        const DIRECTION_NAMES = ["WEST", "NORTH", "EAST", "SOUTH"];
+        const DIRECTION_COLORS = {
+            0: "#FF6B6B",  // West
+            1: "#4ECDC4",  // North
+            2: "#FFD166",  // East
+            3: "#06D6A0"   // South
+        };
+        
+        // Cycle phases
+        const CYCLE_PHASES = [
+            { id: 'west', name: 'WEST', time: 30, color: '#FF6B6B' },
+            { id: 'north', name: 'NORTH', time: 30, color: '#4ECDC4' },
+            { id: 'east', name: 'EAST', time: 30, color: '#FFD166' },
+            { id: 'south', name: 'SOUTH', time: 30, color: '#06D6A0' }
+        ];
+        
+        // Connect to WebSocket
+        function connectWebSocket() {
+            console.log("Connecting to Fixed-Time WebSocket...");
+            updateConnectionStatus("connecting", "Connecting...");
+            
+            ws = new WebSocket("ws://localhost:8766");
+            
+            ws.onopen = function() {
+                console.log("✅ Connected to Fixed-Time controller");
+                isConnected = true;
+                reconnectAttempts = 0;
+                updateConnectionStatus("connected", "Connected");
+                addEvent("System", "Connected to fixed-time controller");
+            };
+            
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error("Error parsing WebSocket message:", error);
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log("❌ Disconnected from WebSocket server");
+                isConnected = false;
+                updateConnectionStatus("disconnected", "Disconnected");
+                
+                // Try to reconnect
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`Reconnecting in 3 seconds... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                    setTimeout(connectWebSocket, 3000);
+                    updateConnectionStatus("connecting", `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                } else {
+                    addEvent("System", "Max reconnection attempts reached");
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error("WebSocket error:", error);
+                addEvent("System", "WebSocket error");
+            };
+        }
+        
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'traffic_update':
+                    handleTrafficUpdate(data.data);
+                    break;
+                case 'system_status':
+                    handleSystemStatus(data.status, data.message);
+                    break;
+                case 'welcome':
+                    addEvent("System", data.message);
+                    break;
+                case 'pong':
+                    // Ignore pong responses
+                    break;
+                default:
+                    console.log("Unknown message type:", data.type);
+            }
+        }
+        
+        // Handle traffic update
+        function handleTrafficUpdate(stepData) {
+            // Update metrics
+            document.getElementById('stepCount').textContent = stepData.step;
+            document.getElementById('totalReward').textContent = stepData.total_reward.toFixed(2);
+            document.getElementById('vehicleCount').textContent = stepData.vehicle_count;
+            document.getElementById('avgSpeed').textContent = stepData.avg_speed.toFixed(1);
+            document.getElementById('avgWait').textContent = stepData.avg_waiting.toFixed(1);
+            
+            // Update timestamp
+            updateTimestamp();
+            
+            // Add to history
+            history.steps.push(stepData.step);
+            history.rewards.push(stepData.reward);
+            history.vehicles.push(stepData.vehicle_count);
+            history.waits.push(stepData.avg_waiting);
+            history.queues.push(stepData.total_queue);
+            
+            // Keep history limited
+            if (history.steps.length > 100) {
+                history.steps.shift();
+                history.rewards.shift();
+                history.vehicles.shift();
+                history.waits.shift();
+                history.queues.shift();
+            }
+            
+            // Update charts
+            updateCharts();
+            
+            // Update cycle display
+            updateCycleDisplay(stepData);
+            
+            // Process agent data
+            if (stepData.agents) {
+                Object.entries(stepData.agents).forEach(([agentId, agentData]) => {
+                    updateAgentDisplay(agentId, agentData);
+                });
+            }
+            
+            // Add event
+            addEvent("Step", `Step ${stepData.step}: ${stepData.vehicle_count} vehicles, Wait: ${stepData.avg_waiting.toFixed(1)}s`);
+        }
+        
+        // Update cycle display
+        function updateCycleDisplay(stepData) {
+            // Get the first agent's cycle position
+            const firstAgent = Object.values(stepData.agents)[0];
+            if (!firstAgent) return;
+            
+            const cyclePos = firstAgent.cycle_position || 0;
+            
+            // Update active phase
+            CYCLE_PHASES.forEach((phase, index) => {
+                const phaseElement = document.getElementById(`cycle-${phase.id}`);
+                if (phaseElement) {
+                    if (index === cyclePos) {
+                        phaseElement.classList.add('active');
+                        phaseElement.style.backgroundColor = phase.color;
+                    } else {
+                        phaseElement.classList.remove('active');
+                        phaseElement.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    }
+                }
+            });
+        }
+        
+        // Handle system status
+        function handleSystemStatus(status, message) {
+            addEvent("System", `${status}: ${message}`);
+        }
+        
+        // Create agent card
+        function createAgentCard(agentId, agentData) {
+            const agentsContainer = document.getElementById('agentsContainer');
+            
+            // Remove loading message if present
+            const loading = agentsContainer.querySelector('.loading');
+            if (loading) loading.remove();
+            
+            // Check if card already exists
+            if (document.getElementById(`agent-${agentId}`)) {
+                return; // Card already exists
+            }
+            
+            const agentCard = document.createElement('div');
+            agentCard.className = 'agent-card';
+            agentCard.id = `agent-${agentId}`;
+            
+            const direction = agentData.current_direction || 0;
+            const directionName = DIRECTION_NAMES[direction] || 'UNKNOWN';
+            const directionColor = DIRECTION_COLORS[direction] || '#666';
+            
+            agentCard.innerHTML = `
+                <div class="agent-header">
+                    <div class="agent-name">${agentId}</div>
+                    <div class="agent-phase" style="background-color: ${directionColor}">
+                        ${directionName}
+                    </div>
+                </div>
+                <div class="agent-body">
+                    <div class="queue-section">
+                        <h4>🚗 Queue Lengths</h4>
+                        ${['West', 'North', 'East', 'South'].map((dir, index) => `
+                            <div class="queue-item">
+                                <div class="queue-label">
+                                    <span>${dir}</span>
+                                    <span id="${agentId}-queue-${dir.toLowerCase()}">0.0</span>
+                                </div>
+                                <div class="queue-bar">
+                                    <div id="${agentId}-bar-${dir.toLowerCase()}" class="queue-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="phase-info">
+                        <div>Phase: ${agentData.current_phase} (${directionName})</div>
+                        <div>Duration: ${agentData.phase_duration.toFixed(1)}s</div>
+                        <div>Cycle Position: ${agentData.cycle_position + 1}/4</div>
+                    </div>
+                </div>
+            `;
+            
+            agentsContainer.appendChild(agentCard);
+            updateAgentDisplay(agentId, agentData);
+        }
+        
+        // Update agent display
+        function updateAgentDisplay(agentId, agentData) {
+            // Create card if it doesn't exist
+            if (!document.getElementById(`agent-${agentId}`)) {
+                createAgentCard(agentId, agentData);
+                return;
+            }
+            
+            const direction = agentData.current_direction || 0;
+            const directionName = DIRECTION_NAMES[direction] || 'UNKNOWN';
+            const directionColor = DIRECTION_COLORS[direction] || '#666';
+            
+            // Update direction
+            const phaseElement = document.querySelector(`#agent-${agentId} .agent-phase`);
+            if (phaseElement) {
+                phaseElement.textContent = directionName;
+                phaseElement.style.backgroundColor = directionColor;
+            }
+            
+            // Update queues
+            const queues = agentData.queues || [0, 0, 0, 0];
+            const directions = ['west', 'north', 'east', 'south'];
+            
+            let totalQueue = 0;
+            directions.forEach((dir, index) => {
+                const queueValue = queues[index] || 0;
+                totalQueue += queueValue;
+                
+                // Update queue number
+                const queueElement = document.getElementById(`${agentId}-queue-${dir}`);
+                if (queueElement) {
+                    queueElement.textContent = queueValue.toFixed(1);
+                }
+                
+                // Update queue bar
+                const barElement = document.getElementById(`${agentId}-bar-${dir}`);
+                if (barElement) {
+                    const percentage = Math.min((queueValue / 20) * 100, 100);
+                    barElement.style.width = `${percentage}%`;
+                    
+                    // Set color based on queue length
+                    if (queueValue > 15) barElement.className = 'queue-fill queue-high';
+                    else if (queueValue > 10) barElement.className = 'queue-fill queue-medium';
+                    else barElement.className = 'queue-fill queue-low';
+                }
+            });
+            
+            // Update phase info
+            const phaseInfo = document.querySelector(`#agent-${agentId} .phase-info`);
+            if (phaseInfo) {
+                phaseInfo.innerHTML = `
+                    <div>Phase: ${agentData.current_phase} (${directionName})</div>
+                    <div>Duration: ${agentData.phase_duration?.toFixed(1) || '0.0'}s</div>
+                    <div>Cycle Position: ${(agentData.cycle_position || 0) + 1}/4</div>
+                `;
+            }
+        }
+        
+        // Update charts
+        function updateCharts() {
+            // Queue Chart
+            if (!queueChart) {
+                const ctx = document.getElementById('queueChart').getContext('2d');
+                queueChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.steps,
+                        datasets: [
+                            {
+                                label: 'Total Queue Length',
+                                data: history.queues,
+                                borderColor: '#FF6B6B',
+                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Vehicle Count',
+                                data: history.vehicles,
+                                borderColor: '#4ECDC4',
+                                backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Count'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Step'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                queueChart.data.labels = history.steps;
+                queueChart.data.datasets[0].data = history.queues;
+                queueChart.data.datasets[1].data = history.vehicles;
+                queueChart.update();
+            }
+            
+            // Reward Chart
+            if (!rewardChart) {
+                const ctx = document.getElementById('rewardChart').getContext('2d');
+                rewardChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.steps,
+                        datasets: [
+                            {
+                                label: 'Reward',
+                                data: history.rewards,
+                                borderColor: '#06D6A0',
+                                backgroundColor: 'rgba(6, 214, 160, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Avg Wait Time',
+                                data: history.waits,
+                                borderColor: '#FFD166',
+                                backgroundColor: 'rgba(255, 209, 102, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Value'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Step'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                rewardChart.data.labels = history.steps;
+                rewardChart.data.datasets[0].data = history.rewards;
+                rewardChart.data.datasets[1].data = history.waits;
+                rewardChart.update();
+            }
+        }
+        
+        // Update connection status
+        function updateConnectionStatus(status, text) {
+            const indicator = document.getElementById('connectionStatus');
+            const textElement = document.getElementById('connectionText');
+            
+            indicator.className = `status-indicator ${status}`;
+            textElement.textContent = text;
+        }
+        
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('timestamp').textContent = timeString;
+        }
+        
+        // Add event to log
+        function addEvent(source, message) {
+            const eventLog = document.getElementById('eventLog');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            const eventElement = document.createElement('div');
+            eventElement.className = 'event';
+            eventElement.innerHTML = `
+                <span class="event-time">${timeString}</span>
+                <span class="event-agent">${source}:</span>
+                <span class="event-action">${message}</span>
+            `;
+            
+            eventLog.insertBefore(eventElement, eventLog.firstChild);
+            
+            // Keep only last 20 events
+            while (eventLog.children.length > 20) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+        }
+        
+        // Initialize dashboard
+        function initDashboard() {
+            console.log("Initializing Fixed-Time Dashboard...");
+            
+            // Update timestamp every second
+            updateTimestamp();
+            setInterval(updateTimestamp, 1000);
+            
+            // Connect to WebSocket
+            connectWebSocket();
+            
+            // Initialize cycle display
+            CYCLE_PHASES.forEach(phase => {
+                const phaseElement = document.getElementById(`cycle-${phase.id}`);
+                if (phaseElement) {
+                    phaseElement.style.border = `2px solid ${phase.color}`;
+                }
+            });
+            
+            addEvent("System", "Dashboard initialized");
+            addEvent("System", "Fixed cycle: WEST(30s) → NORTH(30s) → EAST(30s) → SOUTH(30s)");
+            
+            // Create initial charts with empty data
+            setTimeout(updateCharts, 100);
+        }
+        
+        // Start dashboard when page loads
+        window.addEventListener('load', initDashboard);
+        
+        // Export for debugging
+        window.fixedTimeDashboard = {
+            connectWebSocket,
+            agents,
+            history,
+            addEvent
+        };
+    </script>
+</body>
+</html>

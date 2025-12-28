@@ -101,7 +101,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #19 - Dashboard created for 1x2
 
- Merge #20 - 
+ Merge #20 - starting comparison
 
  Merge #21 - 
 
