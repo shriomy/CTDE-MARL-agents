@@ -99,7 +99,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #18 - Earlier agents were not trained with neighbor comms, now they do. starting sockets
 
- Merge #19 - 
+ Merge #19 - Dashboard created for 1x2
 
  Merge #20 - 
 
