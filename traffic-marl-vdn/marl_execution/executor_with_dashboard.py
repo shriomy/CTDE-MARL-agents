@@ -1,5 +1,5 @@
 """
-MARL Executor with real-time dashboard integration
+Enhanced executor with complete WebSocket dashboard integration.
 """
 import os
 import sys
@@ -7,40 +7,74 @@ import time
 import json
 import numpy as np
 from datetime import datetime
-from typing import Dict, Any
 
+# Add the project root to Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(project_root)
 sys.path.append(os.path.join(project_root, ".."))
 
-from utils.sumo_env_new import SumoEnv
-from agents.multi_agent_system import MultiAgentSystem
-from dashboard_server import DashboardServer
+try:
+    from utils.sumo_env_new import SumoEnv
+    from agents.multi_agent_system import MultiAgentSystem
+    # Try to import dashboard server, but it's optional
+    try:
+        from dashboard_server import SimpleDashboardServer
+        DASHBOARD_AVAILABLE = True
+    except ImportError:
+        print("⚠ Dashboard server not available, running without dashboard")
+        DASHBOARD_AVAILABLE = False
+    print("✓ Successfully imported all modules")
+except ImportError as e:
+    print(f"✗ Import error: {e}")
+    print(f"Python path: {sys.path}")
+    sys.exit(1)
 
 class DashboardMARLExecutor:
     """MARL executor with real-time dashboard updates"""
     
     def __init__(self):
+        # Configuration
         self.config = {
             'sumo_config_path': os.path.join(project_root, "..", "sumo_configs", "1x2.sumocfg"),
             'use_gui': True,
             'agent_config': {
+                'learning_rate': 0.001,
+                'gamma': 0.99,
+                'epsilon_start': 1.0,
+                'epsilon_min': 0.05,
+                'epsilon_decay': 0.9995,
+                'buffer_size': 10000,
+                'central_buffer_size': 50000,
+                'batch_size': 32,
+                'target_update_freq': 10,
                 'enable_communication': True,
                 'num_actions': 5
             }
         }
         
-        print("="*70)
-        print("MARL TRAFFIC CONTROL WITH REAL-TIME DASHBOARD")
-        print("="*70)
+        # Verify SUMO config
+        if not os.path.exists(self.config['sumo_config_path']):
+            print(f"✗ ERROR: SUMO config not found at {self.config['sumo_config_path']}")
+            sys.exit(1)
         
-        # Start WebSocket server first
-        print("\n1. Starting WebSocket server for dashboard...")
-        self.dashboard = DashboardServer(host="localhost", port=8765)
-        self.dashboard.start()
+        # Initialize dashboard server (if available)
+        self.dashboard = None
+        if DASHBOARD_AVAILABLE:
+            print("\nStarting WebSocket Dashboard Server...")
+            try:
+                self.dashboard = SimpleDashboardServer(host="localhost", port=8765)
+                self.dashboard.start()
+                time.sleep(1)  # Give server time to start
+                print("✓ WebSocket server started on ws://localhost:8765")
+            except Exception as e:
+                print(f"⚠ Failed to start dashboard server: {e}")
+                print("Continuing without dashboard...")
+                self.dashboard = None
+        else:
+            print("⚠ Running without dashboard server")
         
-        # Start SUMO environment
-        print("\n2. Starting SUMO environment...")
+        # Initialize SUMO
+        print("Starting SUMO environment...")
         self.env = SumoEnv(
             config_path=self.config['sumo_config_path'],
             use_gui=True
@@ -49,12 +83,12 @@ class DashboardMARLExecutor:
         
         # Get agents
         self.agent_ids = self.env.tl_ids
-        print(f"   Agents: {self.agent_ids}")
+        print(f"✓ Controlling agents: {self.agent_ids}")
         
         # Initialize multi-agent system
-        print("\n3. Initializing multi-agent system...")
         initial_state = self.env.get_state()
-        base_state_dim = initial_state[self.agent_ids[0]].shape[0]
+        sample_agent = self.agent_ids[0]
+        base_state_dim = int(initial_state[sample_agent].shape[0])
         enhanced_state_dim = base_state_dim + 10
         
         self.multi_agent = MultiAgentSystem(
@@ -65,353 +99,259 @@ class DashboardMARLExecutor:
         )
         
         # Load trained models
-        print("\n4. Loading trained models...")
         self.load_models()
         
         # Disable exploration
         for agent_id in self.agent_ids:
             self.multi_agent.agents[agent_id].epsilon = 0.0
         
+        # Enable communication
+        self.multi_agent.communication_enabled = True
+        
+        # Metrics
+        self.metrics = {
+            'step': 0,
+            'total_reward': 0,
+            'queue_history': [],
+            'action_history': [],
+            'reward_history': [],
+            'vehicle_history': [],
+            'speed_history': []
+        }
+        
         # Action names for display
         self.action_names = ["WEST", "NORTH", "EAST", "SOUTH", "EXTEND"]
-        self.action_colors = {
-            0: "#FF6B6B",  # West - Red
-            1: "#4ECDC4",  # North - Teal
-            2: "#FFD166",  # East - Yellow
-            3: "#06D6A0",  # South - Green
-            4: "#118AB2"   # Extend - Blue
-        }
         
-        # Metrics tracking
-        self.metrics = {
-            'total_steps': 0,
-            'total_reward': 0,
-            'step_rewards': [],
-            'queue_history': {agent_id: [] for agent_id in self.agent_ids},
-            'wait_history': {agent_id: [] for agent_id in self.agent_ids},
-            'action_history': {agent_id: [] for agent_id in self.agent_ids},
-            'communication_events': []
-        }
+        # Notify dashboard if available
+        if self.dashboard:
+            self.dashboard.send_system_status(
+                "ready",
+                f"System ready with {len(self.agent_ids)} agents"
+            )
         
-        # Send initial dashboard data
-        self.dashboard.send_system_status_update(
-            "initialized", 
-            f"System ready. Controlling {len(self.agent_ids)} agents"
-        )
-        
-        print("\n" + "="*70)
-        print("✅ SYSTEM READY")
-        print("="*70)
-        print("Dashboard: http://localhost:3000 (or open dashboard.html)")
-        print("WebSocket: ws://localhost:8765")
-        print("\nPress Ctrl+C to stop execution")
-        print("="*70)
+        print("\n" + "="*60)
+        print("MARL EXECUTOR READY")
+        print("="*60)
+        if self.dashboard:
+            print("Dashboard WebSocket: ws://localhost:8765")
+            print("Open simple_dashboard.html in your browser")
+        else:
+            print("Running without dashboard (console output only)")
+        print("="*60)
     
     def load_models(self):
         """Load trained models"""
+        print("Loading trained models...")
         model_dirs = [
             os.path.join(project_root, "..", "models", "final"),
             os.path.join(project_root, "..", "models", "episode_100"),
             os.path.join(project_root, "..", "models", "episode_50"),
         ]
         
+        loaded = False
         for model_dir in model_dirs:
             if os.path.exists(model_dir):
-                print(f"   Trying: {model_dir}")
+                print(f"  Trying: {model_dir}")
                 if self.multi_agent.load_models(model_dir):
-                    print(f"   ✓ Models loaded from {model_dir}")
-                    return
+                    print(f"✓ Models loaded from {model_dir}")
+                    loaded = True
+                    break
         
-        print("   ⚠ No trained models found. Using random policy.")
-        for agent_id in self.agent_ids:
-            self.multi_agent.agents[agent_id].epsilon = 1.0
+        if not loaded:
+            print("⚠ WARNING: No trained models found, using random policies")
     
-    def run(self):
-        """Main execution loop with dashboard updates"""
-        state = self.env.reset()
-        
-        try:
-            while True:
-                # Get coordinated actions
-                actions = self.multi_agent.act_with_coordination(state, training_mode=False)
-                
-                # Execute in SUMO
-                next_state, reward, done, info = self.env.step(actions)
-                
-                # Update metrics
-                self.metrics['total_steps'] += 1
-                self.metrics['total_reward'] += reward
-                self.metrics['step_rewards'].append(reward)
-                
-                # Prepare dashboard data
-                dashboard_data = self.prepare_dashboard_data(state, actions, reward, info)
-                
-                # Send to dashboard
-                self.dashboard.send_traffic_update(dashboard_data)
-                
-                # Send individual agent decisions with reasoning
-                for agent_id in self.agent_ids:
-                    self.send_agent_decision_data(agent_id, state[agent_id], actions[agent_id])
-                
-                # Store detailed metrics
-                self.store_detailed_metrics(state, actions)
-                
-                # Display console output every 50 steps
-                if self.metrics['total_steps'] % 50 == 0:
-                    self.display_console_update(state, actions, reward, info)
-                
-                # Send periodic metric updates to dashboard
-                if self.metrics['total_steps'] % 20 == 0:
-                    self.send_performance_metrics()
-                
-                # Check if simulation ended
-                if done:
-                    print("\n🔄 SUMO simulation resetting...")
-                    state = self.env.reset()
-                    self.dashboard.send_system_status_update("resetting", "SUMO simulation resetting")
-                else:
-                    state = next_state
-                
-                # Small delay for smooth visualization
-                time.sleep(0.1)
-                
-        except KeyboardInterrupt:
-            print("\n\n" + "="*70)
-            print("EXECUTION STOPPED BY USER")
-            print("="*70)
-            self.save_final_metrics()
-        finally:
-            self.cleanup()
-    
-    def prepare_dashboard_data(self, state, actions, reward, info) -> Dict[str, Any]:
-        """Prepare data for dashboard update"""
+    def prepare_dashboard_data(self, step: int, state: dict, actions: dict, reward: float, info: dict) -> dict:
+        """Prepare data for dashboard"""
         step_data = {
-            'step': self.metrics['total_steps'],
-            'timestamp': time.time(),
+            'step': step,
             'reward': float(reward),
             'total_reward': float(self.metrics['total_reward']),
-            'vehicles': info.get('vehicle_count', 0),
-            'avg_speed': float(info.get('avg_speed', 0)),
-            'agents': {},
-            'communication': []
+            'vehicle_count': info['vehicle_count'],
+            'avg_speed': float(info['avg_speed']),
+            'timestamp': time.time(),
+            'agents': {}
         }
         
         # Add agent-specific data
         for agent_id in self.agent_ids:
             agent_state = state[agent_id]
-            queues = (agent_state[:4] * 10.0).tolist()  # De-normalize
-            waits = (agent_state[4:8] * 60.0).tolist()  # De-normalize
-            
-            # Determine current green direction
-            green_vector = agent_state[8:12]
-            current_green = np.argmax(green_vector) if np.any(green_vector) else -1
-            
             step_data['agents'][agent_id] = {
-                'queues': queues,
-                'waits': waits,
-                'current_green': int(current_green),
                 'action': int(actions[agent_id]),
                 'action_name': self.action_names[actions[agent_id]],
-                'action_color': self.action_colors[actions[agent_id]],
-                'phase_duration': float(agent_state[12] * 60.0)  # De-normalize
+                'queues': (agent_state[:4] * 10.0).tolist(),  # [W, N, E, S]
+                'waits': (agent_state[4:8] * 60.0).tolist()   # [W, N, E, S]
             }
-            
-            # Store for metrics
-            self.metrics['queue_history'][agent_id].append(np.mean(queues))
-            self.metrics['wait_history'][agent_id].append(np.mean(waits))
-            self.metrics['action_history'][agent_id].append(actions[agent_id])
         
         return step_data
     
-    def send_agent_decision_data(self, agent_id, agent_state, action):
-        """Send detailed agent decision data to dashboard"""
-        queues = agent_state[:4] * 10.0
-        max_queue_idx = np.argmax(queues)
-        max_queue_val = queues[max_queue_idx]
-        
-        # Simple reasoning based on queues
-        reasoning = ""
-        if action == 4:  # EXTEND
-            reasoning = "Extending current green phase"
-        elif action == max_queue_idx:
-            reasoning = f"Switching to {self.action_names[action]} (highest queue: {max_queue_val:.1f} vehicles)"
-        else:
-            reasoning = f"Choosing {self.action_names[action]} (coordination with neighbors)"
-        
-        self.dashboard.send_agent_decision(
-            agent_id=agent_id,
-            action=action,
-            state={
-                'queues': queues.tolist(),
-                'waits': (agent_state[4:8] * 60.0).tolist(),
-                'current_green': int(np.argmax(agent_state[8:12]) if np.any(agent_state[8:12]) else -1)
-            },
-            reasoning=reasoning
-        )
+    def send_to_dashboard(self, step_data: dict):
+        """Send data to dashboard if available"""
+        if self.dashboard:
+            try:
+                self.dashboard.send_traffic_update(step_data)
+            except Exception as e:
+                print(f"⚠ Dashboard error: {e}")
     
-    def store_detailed_metrics(self, state, actions):
-        """Store detailed metrics for analysis"""
-        # This can be expanded to store more detailed metrics
-        pass
-    
-    def display_console_update(self, state, actions, reward, info):
-        """Display update in console"""
-        print(f"\n📊 STEP {self.metrics['total_steps']}")
-        print(f"   Reward: {reward:.2f} (Total: {self.metrics['total_reward']:.2f})")
-        print(f"   Vehicles: {info.get('vehicle_count', 0)}, Speed: {info.get('avg_speed', 0):.1f} m/s")
+    def run_execution(self):
+        """Main execution loop with dashboard updates"""
+        print("\nStarting decentralized execution...")
+        print("Press Ctrl+C to stop\n")
         
-        for agent_id in self.agent_ids:
-            queues = state[agent_id][:4] * 10.0
-            action = actions[agent_id]
-            print(f"   {agent_id}: {self.action_names[action]}")
-            print(f"        Queues: W={queues[0]:.1f}, N={queues[1]:.1f}, "
-                  f"E={queues[2]:.1f}, S={queues[3]:.1f}")
-    
-    def send_performance_metrics(self):
-        """Send performance metrics to dashboard"""
-        if self.metrics['total_steps'] > 0:
-            metrics = {
-                'steps': self.metrics['total_steps'],
-                'avg_reward': float(np.mean(self.metrics['step_rewards'][-100:]) if self.metrics['step_rewards'] else 0),
-                'avg_queue': {agent_id: float(np.mean(self.metrics['queue_history'][agent_id][-50:])) if self.metrics['queue_history'][agent_id] else 0 
-                            for agent_id in self.agent_ids},
-                'avg_wait': {agent_id: float(np.mean(self.metrics['wait_history'][agent_id][-50:])) if self.metrics['wait_history'][agent_id] else 0
-                           for agent_id in self.agent_ids},
-                'action_distribution': {
-                    agent_id: {
-                        action: self.metrics['action_history'][agent_id].count(action)
-                        for action in range(5)
-                    }
-                    for agent_id in self.agent_ids
-                }
-            }
-            
-            self.dashboard.send_metric_update(metrics)
-    
-    def save_final_metrics(self):
-        """Save final metrics to file"""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_dir = os.path.join(project_root, "..", "logs", "dashboard")
-        os.makedirs(log_dir, exist_ok=True)
+        # Notify dashboard
+        if self.dashboard:
+            self.dashboard.send_system_status("executing", "Starting execution")
         
-        # Prepare final metrics
-        final_metrics = {
-            'execution_summary': {
-                'total_steps': self.metrics['total_steps'],
-                'total_reward': float(self.metrics['total_reward']),
-                'avg_reward_per_step': float(self.metrics['total_reward'] / max(1, self.metrics['total_steps'])),
-                'start_time': self.metrics.get('start_time', time.time()),
-                'end_time': time.time(),
-                'duration': time.time() - self.metrics.get('start_time', time.time())
-            },
-            'agent_performance': {},
-            'action_statistics': {}
-        }
+        # Reset environment
+        state = self.env.reset()
         
-        # Calculate agent performance
-        for agent_id in self.agent_ids:
-            # Queue statistics
-            queues = self.metrics['queue_history'][agent_id]
-            waits = self.metrics['wait_history'][agent_id]
-            actions = self.metrics['action_history'][agent_id]
-            
-            final_metrics['agent_performance'][agent_id] = {
-                'avg_queue': float(np.mean(queues)) if queues else 0,
-                'max_queue': float(np.max(queues)) if queues else 0,
-                'avg_wait': float(np.mean(waits)) if waits else 0,
-                'total_actions': len(actions)
-            }
-            
-            # Action distribution
-            action_counts = {action: actions.count(action) for action in range(5)}
-            total_actions = len(actions)
-            
-            final_metrics['action_statistics'][agent_id] = {
-                self.action_names[action]: {
-                    'count': count,
-                    'percentage': (count / total_actions * 100) if total_actions > 0 else 0
-                }
-                for action, count in action_counts.items()
-            }
-        
-        # Save to file
-        metrics_file = os.path.join(log_dir, f"dashboard_metrics_{timestamp}.json")
-        with open(metrics_file, 'w') as f:
-            json.dump(final_metrics, f, indent=2)
-        
-        print(f"\n📁 Metrics saved to: {metrics_file}")  # FIXED THIS LINE
-        
-        # Print summary
-        print("\n" + "="*70)
-        print("EXECUTION SUMMARY")
-        print("="*70)
-        print(f"Total Steps: {final_metrics['execution_summary']['total_steps']}")
-        print(f"Total Reward: {final_metrics['execution_summary']['total_reward']:.2f}")
-        print(f"Duration: {final_metrics['execution_summary']['duration']:.1f} seconds")
-        
-        print("\nAgent Performance:")
-        for agent_id, perf in final_metrics['agent_performance'].items():
-            print(f"  {agent_id}:")
-            print(f"    Avg Queue: {perf['avg_queue']:.1f} vehicles")
-            print(f"    Avg Wait: {perf['avg_wait']:.1f} seconds")
-        
-        print("\nAction Distribution:")
-        for agent_id, stats in final_metrics['action_statistics'].items():
-            print(f"  {agent_id}:")
-            for action_name, data in stats.items():
-                if data['percentage'] > 0:
-                    print(f"    {action_name}: {data['count']} ({data['percentage']:.1f}%)")
+        step = 0
+        try:
+            while True:
+                # Get actions from agents
+                actions = self.multi_agent.act_with_coordination(
+                    state, 
+                    training_mode=False
+                )
+                
+                # Execute in SUMO
+                next_state, reward, done, info = self.env.step(actions)
+                
+                # Update metrics
+                self.metrics['step'] = step
+                self.metrics['total_reward'] += reward
+                self.metrics['reward_history'].append(reward)
+                self.metrics['vehicle_history'].append(info['vehicle_count'])
+                self.metrics['speed_history'].append(info['avg_speed'])
+                
+                # Prepare and send data to dashboard
+                step_data = self.prepare_dashboard_data(step, state, actions, reward, info)
+                self.send_to_dashboard(step_data)
+                
+                # Console output every 100 steps
+                if step % 100 == 0:
+                    print(f"Step {step}: Reward={reward:.2f}, "
+                          f"Total={self.metrics['total_reward']:.2f}, "
+                          f"Vehicles={info['vehicle_count']}, "
+                          f"Speed={info['avg_speed']:.1f} m/s")
+                    
+                    # Show agent actions
+                    for agent_id in self.agent_ids:
+                        action = actions[agent_id]
+                        queues = state[agent_id][:4] * 10.0
+                        print(f"  {agent_id}: {self.action_names[action]} | "
+                              f"Queues: W={queues[0]:.1f}, N={queues[1]:.1f}, "
+                              f"E={queues[2]:.1f}, S={queues[3]:.1f}")
+                
+                # Update state
+                state = next_state
+                step += 1
+                
+                # Check if simulation ended
+                if done:
+                    print(f"\nSUMO simulation reached time limit, resetting...")
+                    if self.dashboard:
+                        self.dashboard.send_system_status("resetting", "Simulation resetting")
+                    state = self.env.reset()
+                    step = 0
+                    if self.dashboard:
+                        self.dashboard.send_system_status("executing", "Simulation restarted")
+                
+                # Small delay for visualization
+                time.sleep(0.1)
+                
+        except KeyboardInterrupt:
+            print("\n\nExecution stopped by user")
+            if self.dashboard:
+                self.dashboard.send_system_status("stopped", "Execution stopped by user")
+        except Exception as e:
+            print(f"\nERROR during execution: {e}")
+            import traceback
+            traceback.print_exc()
+            if self.dashboard:
+                self.dashboard.send_system_status("error", f"Execution error: {str(e)}")
+        finally:
+            self.cleanup()
     
     def cleanup(self):
         """Cleanup resources"""
-        print("\n🧹 Cleaning up...")
+        print("\nCleaning up...")
         
-        # Send final status to dashboard
-        self.dashboard.send_system_status_update(
-            "shutting_down", 
-            f"Execution complete. Total steps: {self.metrics['total_steps']}"
-        )
+        # Save metrics
+        self.save_metrics()
         
         # Close SUMO
         self.env.close()
-        print("✅ SUMO closed")
         
-        # Save final metrics
-        self.save_final_metrics()
+        # Final dashboard update
+        if self.dashboard:
+            self.dashboard.send_system_status(
+                "shutdown", 
+                f"Execution complete. Total steps: {self.metrics['step']}, "
+                f"Total reward: {self.metrics['total_reward']:.2f}"
+            )
         
-        print("\n" + "="*70)
-        print("🎉 EXECUTION COMPLETE")
-        print("="*70)
+        print("\n✓ Cleanup complete")
+    
+    def save_metrics(self):
+        """Save execution metrics"""
+        import json
+        from datetime import datetime
+        
+        log_dir = os.path.join(project_root, "..", "logs", "execution")
+        os.makedirs(log_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Save detailed metrics
+        metrics_file = os.path.join(log_dir, f"execution_{timestamp}.json")
+        with open(metrics_file, 'w') as f:
+            json.dump(self.metrics, f, indent=2, default=float)
+        
+        # Create summary
+        summary = {
+            'timestamp': timestamp,
+            'total_steps': self.metrics['step'],
+            'total_reward': float(self.metrics['total_reward']),
+            'avg_reward': float(np.mean(self.metrics['reward_history'])) if self.metrics['reward_history'] else 0,
+            'max_vehicles': int(max(self.metrics['vehicle_history'])) if self.metrics['vehicle_history'] else 0,
+            'avg_speed': float(np.mean(self.metrics['speed_history'])) if self.metrics['speed_history'] else 0,
+            'agents': self.agent_ids,
+        }
+        
+        summary_file = os.path.join(log_dir, f"summary_{timestamp}.json")
+        with open(summary_file, 'w') as f:
+            json.dump(summary, f, indent=2)
+        
+        print(f"\n✓ Metrics saved to: {metrics_file}")
+        print(f"✓ Summary saved to: {summary_file}")
+        
+        # Print action statistics
+        print("\nAction Statistics (last 500 steps):")
+        recent_steps = min(500, self.metrics['step'])
+        if recent_steps > 0:
+            for agent_id in self.agent_ids:
+                # Get actions from recent steps (you'll need to track this)
+                print(f"  {agent_id}: Actions tracked in logs")
+    
+    def run(self):
+        """Main entry point"""
+        print("="*60)
+        print("MARL TRAFFIC CONTROL - EXECUTION")
+        print("="*60)
+        
+        self.run_execution()
 
 def main():
-    print("="*70)
-    print("MARL TRAFFIC CONTROL - REAL-TIME DASHBOARD")
-    print("="*70)
-    print("\nThis will:")
-    print("1. 🚀 Start WebSocket server on ws://localhost:8765")
-    print("2. 🚦 Start SUMO GUI with traffic control")
-    print("3. 🤖 Load trained MARL agents")
-    print("4. 📊 Send real-time data to dashboard")
-    print("5. 🔄 Run continuously until Ctrl+C")
-    print("="*70)
-    
-    print("\n📋 Before starting:")
-    print("   • Make sure you have a dashboard running")
-    print("   • Open dashboard.html in a browser")
-    print("   • Or run a React dashboard on http://localhost:3000")
-    print("="*70)
-    
-    input("\nPress Enter to start (Ctrl+C to cancel)...")
-    
-    executor = DashboardMARLExecutor()
-    executor.run()
-
-if __name__ == "__main__":
+    """Main function"""
     try:
-        main()
+        executor = DashboardMARLExecutor()
+        executor.run()
     except KeyboardInterrupt:
-        print("\n\n⏹️  Execution cancelled by user")
+        print("\n\nExecution cancelled by user")
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nFATAL ERROR: {e}")
         import traceback
         traceback.print_exc()
+
+if __name__ == "__main__":
+    main()

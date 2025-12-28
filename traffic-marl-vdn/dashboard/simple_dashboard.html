@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARL Traffic Control Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .connected { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        .disconnected { background: #e74c3c; }
+        .connecting { background: #f39c12; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .metrics-bar {
+            background: #ecf0f1;
+            padding: 15px 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .agent-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .agent-header {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .agent-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .agent-action {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .agent-body {
+            padding: 20px;
+        }
+        
+        .queue-section h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .queue-item {
+            margin-bottom: 15px;
+        }
+        
+        .queue-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .queue-bar {
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .queue-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .charts-container {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+        
+        .event-log {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .event-log h3 {
+            margin-bottom: 15px;
+            color: #ecf0f1;
+        }
+        
+        .event {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .event-time {
+            color: #3498db;
+            margin-right: 10px;
+        }
+        
+        .event-agent {
+            color: #2ecc71;
+            margin-right: 10px;
+        }
+        
+        .event-action {
+            color: #e74c3c;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        .action-colors {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .color-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+        
+        .color-box {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+        
+        /* Action colors */
+        .west { background: #FF6B6B; }
+        .north { background: #4ECDC4; }
+        .east { background: #FFD166; }
+        .south { background: #06D6A0; }
+        .extend { background: #118AB2; }
+        
+        /* Queue colors */
+        .queue-low { background: #2ecc71; }
+        .queue-medium { background: #f39c12; }
+        .queue-high { background: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                🚦 MARL Traffic Control Dashboard
+                <span id="connectionStatus" class="status-indicator disconnected"></span>
+                <span id="connectionText">Disconnected</span>
+            </h1>
+            <div id="timestamp">--:--:--</div>
+        </div>
+        
+        <!-- Metrics Bar -->
+        <div class="metrics-bar">
+            <div class="metric-card">
+                <div class="metric-label">Current Step</div>
+                <div class="metric-value" id="stepCount">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Reward</div>
+                <div class="metric-value" id="totalReward">0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Vehicles</div>
+                <div class="metric-value" id="vehicleCount">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Speed</div>
+                <div class="metric-value" id="avgSpeed">0.0 <small>m/s</small></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">System Status</div>
+                <div class="metric-value" id="systemStatus">Idle</div>
+            </div>
+        </div>
+        
+        <!-- Agents Grid -->
+        <div class="agent-grid" id="agentsContainer">
+            <!-- Agent cards will be inserted here by JavaScript -->
+            <div class="loading">Loading agents...</div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <div class="chart-title">📊 Queue Lengths Over Time</div>
+                <canvas id="queueChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">📈 Reward Over Time</div>
+                <canvas id="rewardChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Action Legend -->
+        <div class="agent-body" style="margin: 0 30px;">
+            <h4>🎨 Action Colors Legend</h4>
+            <div class="action-colors">
+                <div class="color-label"><div class="color-box west"></div> WEST</div>
+                <div class="color-label"><div class="color-box north"></div> NORTH</div>
+                <div class="color-label"><div class="color-box east"></div> EAST</div>
+                <div class="color-label"><div class="color-box south"></div> SOUTH</div>
+                <div class="color-label"><div class="color-box extend"></div> EXTEND</div>
+            </div>
+        </div>
+        
+        <!-- Event Log -->
+        <div class="event-log">
+            <h3>📝 Real-time Events</h3>
+            <div id="eventLog">
+                <!-- Events will be added here -->
+                <div class="event">Waiting for connection...</div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>MARL Traffic Control System • Decentralized Multi-Agent Reinforcement Learning • Real-time Dashboard</p>
+            <p>WebSocket: ws://localhost:8765 • SUMO Integration • VDN Architecture</p>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        let ws = null;
+        let isConnected = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
+        
+        // Agent data store
+        const agents = {};
+        const history = {
+            steps: [],
+            rewards: [],
+            queues: [],
+            vehicles: []
+        };
+        
+        // Chart instances
+        let queueChart = null;
+        let rewardChart = null;
+        
+        // Action names and colors
+        const ACTION_NAMES = {
+            0: "WEST",
+            1: "NORTH", 
+            2: "EAST",
+            3: "SOUTH",
+            4: "EXTEND"
+        };
+        
+        const ACTION_COLORS = {
+            0: "#FF6B6B",
+            1: "#4ECDC4",
+            2: "#FFD166",
+            3: "#06D6A0",
+            4: "#118AB2"
+        };
+        
+        // Connect to WebSocket
+        function connectWebSocket() {
+            console.log("Connecting to WebSocket...");
+            updateConnectionStatus("connecting", "Connecting...");
+            
+            ws = new WebSocket("ws://localhost:8765");
+            
+            ws.onopen = function() {
+                console.log("✅ Connected to MARL WebSocket server");
+                isConnected = true;
+                reconnectAttempts = 0;
+                updateConnectionStatus("connected", "Connected");
+                addEvent("System", "Connected to MARL server");
+            };
+            
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error("Error parsing WebSocket message:", error);
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log("❌ Disconnected from WebSocket server");
+                isConnected = false;
+                updateConnectionStatus("disconnected", "Disconnected");
+                
+                // Try to reconnect
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`Reconnecting in 3 seconds... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                    setTimeout(connectWebSocket, 3000);
+                    updateConnectionStatus("connecting", `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                } else {
+                    addEvent("System", "Max reconnection attempts reached");
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error("WebSocket error:", error);
+                addEvent("System", "WebSocket error");
+            };
+        }
+        
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'traffic_update':
+                    handleTrafficUpdate(data.data);
+                    break;
+                case 'agent_update':
+                    handleAgentUpdate(data.agent_id, data.data);
+                    break;
+                case 'system_status':
+                    handleSystemStatus(data.status, data.message);
+                    break;
+                case 'initial_state':
+                    handleInitialState(data);
+                    break;
+                case 'metrics_update':
+                    // We'll handle metrics directly from traffic updates
+                    break;
+                default:
+                    console.log("Unknown message type:", data.type);
+            }
+        }
+        
+        // Handle traffic update
+        function handleTrafficUpdate(stepData) {
+            // Update metrics
+            document.getElementById('stepCount').textContent = stepData.step;
+            document.getElementById('totalReward').textContent = stepData.total_reward.toFixed(2);
+            document.getElementById('vehicleCount').textContent = stepData.vehicle_count;
+            document.getElementById('avgSpeed').textContent = stepData.avg_speed.toFixed(1);
+            
+            // Update timestamp
+            updateTimestamp();
+            
+            // Add to history
+            history.steps.push(stepData.step);
+            history.rewards.push(stepData.reward);
+            history.vehicles.push(stepData.vehicle_count);
+            
+            // Keep history limited
+            if (history.steps.length > 100) {
+                history.steps.shift();
+                history.rewards.shift();
+                history.vehicles.shift();
+            }
+            
+            // Update charts
+            updateCharts();
+            
+            // Process agent data from traffic update
+            if (stepData.agents) {
+                Object.entries(stepData.agents).forEach(([agentId, agentData]) => {
+                    updateAgentDisplay(agentId, {
+                        action: agentData.action,
+                        actionName: agentData.action_name,
+                        queues: agentData.queues,
+                        waits: agentData.waits
+                    });
+                });
+            }
+            
+            // Add event
+            addEvent("Step", `Step ${stepData.step}: Reward ${stepData.reward.toFixed(2)}`);
+        }
+        
+        // Handle agent update
+        function handleAgentUpdate(agentId, agentData) {
+            agents[agentId] = agentData;
+            updateAgentDisplay(agentId, agentData);
+        }
+        
+        // Handle system status
+        function handleSystemStatus(status, message) {
+            document.getElementById('systemStatus').textContent = status;
+            addEvent("System", `${status}: ${message}`);
+        }
+        
+        // Handle initial state
+        function handleInitialState(data) {
+            console.log("Received initial state:", data);
+            if (data.agents) {
+                Object.entries(data.agents).forEach(([agentId, agentData]) => {
+                    agents[agentId] = agentData;
+                    createAgentCard(agentId, agentData);
+                });
+            }
+            if (data.system) {
+                document.getElementById('systemStatus').textContent = data.system.status;
+            }
+        }
+        
+        // Create agent card
+        function createAgentCard(agentId, agentData) {
+            const agentsContainer = document.getElementById('agentsContainer');
+            
+            // Remove loading message if present
+            const loading = agentsContainer.querySelector('.loading');
+            if (loading) loading.remove();
+            
+            // Check if card already exists
+            if (document.getElementById(`agent-${agentId}`)) {
+                return; // Card already exists
+            }
+            
+            const agentCard = document.createElement('div');
+            agentCard.className = 'agent-card';
+            agentCard.id = `agent-${agentId}`;
+            
+            const actionName = agentData.current_action?.name || 'UNKNOWN';
+            const actionColor = ACTION_COLORS[agentData.current_action?.id] || '#6c757d';
+            
+            agentCard.innerHTML = `
+                <div class="agent-header">
+                    <div class="agent-name">${agentId}</div>
+                    <div class="agent-action" style="background-color: ${actionColor}">
+                        ${actionName}
+                    </div>
+                </div>
+                <div class="agent-body">
+                    <div class="queue-section">
+                        <h4>🚗 Queue Lengths</h4>
+                        ${['west', 'north', 'east', 'south'].map(dir => `
+                            <div class="queue-item">
+                                <div class="queue-label">
+                                    <span>${dir.toUpperCase()}</span>
+                                    <span id="${agentId}-queue-${dir}">0.0</span>
+                                </div>
+                                <div class="queue-bar">
+                                    <div id="${agentId}-bar-${dir}" class="queue-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                            <span>Total Queue: <strong id="${agentId}-total-queue">0</strong></span>
+                            <span>Avg Wait: <strong id="${agentId}-avg-wait">0.0s</strong></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            agentsContainer.appendChild(agentCard);
+            updateAgentDisplay(agentId, agentData);
+        }
+        
+        // Update agent display
+        function updateAgentDisplay(agentId, agentData) {
+            // Create card if it doesn't exist
+            if (!document.getElementById(`agent-${agentId}`)) {
+                createAgentCard(agentId, agentData);
+                return;
+            }
+            
+            const actionName = agentData.current_action?.name || agentData.actionName || 'UNKNOWN';
+            const actionId = agentData.current_action?.id || agentData.action || 0;
+            const actionColor = ACTION_COLORS[actionId] || '#6c757d';
+            
+            // Update action
+            const actionElement = document.querySelector(`#agent-${agentId} .agent-action`);
+            if (actionElement) {
+                actionElement.textContent = actionName;
+                actionElement.style.backgroundColor = actionColor;
+            }
+            
+            // Update queues
+            const queues = agentData.queues || agentData.queue || {west: 0, north: 0, east: 0, south: 0};
+            
+            let totalQueue = 0;
+            ['west', 'north', 'east', 'south'].forEach(dir => {
+                const queueValue = queues[dir] || (Array.isArray(queues) ? queues[['west', 'north', 'east', 'south'].indexOf(dir)] : 0);
+                totalQueue += queueValue;
+                
+                // Update queue value
+                const queueElement = document.getElementById(`${agentId}-queue-${dir}`);
+                if (queueElement) {
+                    queueElement.textContent = queueValue.toFixed(1);
+                }
+                
+                // Update queue bar
+                const barElement = document.getElementById(`${agentId}-bar-${dir}`);
+                if (barElement) {
+                    const percentage = Math.min((queueValue / 20) * 100, 100);
+                    barElement.style.width = `${percentage}%`;
+                    
+                    // Set color based on queue length
+                    if (queueValue > 15) barElement.className = 'queue-fill queue-high';
+                    else if (queueValue > 10) barElement.className = 'queue-fill queue-medium';
+                    else barElement.className = 'queue-fill queue-low';
+                }
+            });
+            
+            // Update totals
+            const totalElement = document.getElementById(`${agentId}-total-queue`);
+            if (totalElement) {
+                totalElement.textContent = Math.round(totalQueue);
+            }
+            
+            // Update waiting time
+            const waits = agentData.waiting_times || agentData.waits || {average: 0};
+            const avgWaitElement = document.getElementById(`${agentId}-avg-wait`);
+            if (avgWaitElement) {
+                const avgWait = Array.isArray(waits) ? 
+                    (waits.reduce((a, b) => a + b, 0) / waits.length) : 
+                    (waits.average || 0);
+                avgWaitElement.textContent = `${avgWait.toFixed(1)}s`;
+            }
+        }
+        
+        // Update charts
+        function updateCharts() {
+            // Queue Chart
+            if (!queueChart) {
+                const ctx = document.getElementById('queueChart').getContext('2d');
+                queueChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.steps,
+                        datasets: [{
+                            label: 'Total Queue Length',
+                            data: history.vehicles.map(v => v / 3), // Approximate queue
+                            borderColor: '#FF6B6B',
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Queue Length'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Step'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                queueChart.data.labels = history.steps;
+                queueChart.data.datasets[0].data = history.vehicles.map(v => v / 3);
+                queueChart.update();
+            }
+            
+            // Reward Chart
+            if (!rewardChart) {
+                const ctx = document.getElementById('rewardChart').getContext('2d');
+                rewardChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.steps,
+                        datasets: [{
+                            label: 'Reward',
+                            data: history.rewards,
+                            borderColor: '#4ECDC4',
+                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Reward'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Step'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                rewardChart.data.labels = history.steps;
+                rewardChart.data.datasets[0].data = history.rewards;
+                rewardChart.update();
+            }
+        }
+        
+        // Update connection status
+        function updateConnectionStatus(status, text) {
+            const indicator = document.getElementById('connectionStatus');
+            const textElement = document.getElementById('connectionText');
+            
+            indicator.className = `status-indicator ${status}`;
+            textElement.textContent = text;
+        }
+        
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('timestamp').textContent = timeString;
+        }
+        
+        // Add event to log
+        function addEvent(source, message) {
+            const eventLog = document.getElementById('eventLog');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            const eventElement = document.createElement('div');
+            eventElement.className = 'event';
+            eventElement.innerHTML = `
+                <span class="event-time">${timeString}</span>
+                <span class="event-agent">${source}:</span>
+                <span class="event-action">${message}</span>
+            `;
+            
+            eventLog.insertBefore(eventElement, eventLog.firstChild);
+            
+            // Keep only last 20 events
+            while (eventLog.children.length > 20) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+        }
+        
+        // Initialize dashboard
+        function initDashboard() {
+            console.log("Initializing MARL Dashboard...");
+            
+            // Update timestamp every second
+            updateTimestamp();
+            setInterval(updateTimestamp, 1000);
+            
+            // Connect to WebSocket
+            connectWebSocket();
+            
+            // Add some initial agents (they'll be updated when data arrives)
+            addEvent("System", "Dashboard initialized");
+            addEvent("System", "Waiting for MARL executor data...");
+            
+            // Create initial charts with empty data
+            setTimeout(updateCharts, 100);
+        }
+        
+        // Start dashboard when page loads
+        window.addEventListener('load', initDashboard);
+        
+        // Export for debugging
+        window.marlDashboard = {
+            connectWebSocket,
+            agents,
+            history,
+            addEvent
+        };
+    </script>
+</body>
+</html>

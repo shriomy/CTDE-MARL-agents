@@ -152,10 +152,9 @@ Simply put; the whole workflow for this component begins in two main phases.
 21. Created the Main Decentralized Runner -> executor.py
 22. Start execution -> python marl_execution/executor.py
 23. Connected Sockets dashboard -> dashboard_server.py
-24. Created Frontend Dashboard using React.js and FastAPI backend. To run -> 
-    python marl_execution/dashboard_executor.py 
-    cd dashboard
-    python -m http.server 3000
+24. Created Frontend Dashboard using basic html. To run -> 
+    python executor_with_dashboard.py 
+    open the html file with a web browser.
 25. 
 26. 
 
