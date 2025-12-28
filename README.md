@@ -95,7 +95,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #16 - Doable results obtained
 
- Merge #17 - 
+ Merge #17 - Perfected SUMO 2 jucntions and obtained best training results so far
 
  Merge #18 - 
 
