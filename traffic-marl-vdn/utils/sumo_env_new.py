@@ -228,7 +228,7 @@ class SumoEnv:
         # Get new state and reward
         next_state = self.get_state()
         reward = self.get_reward()
-        done = self.episode_step >= 1800
+        done = self.episode_step >= 7200
         
         info = {
             'step': self.episode_step,
