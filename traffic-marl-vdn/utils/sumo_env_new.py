@@ -17,21 +17,47 @@ class SumoEnv:
         self.previous_phase = {tl_id: 0 for tl_id in self.tl_ids}
         
     def start(self):
-        """Start SUMO simulation"""
+        """Start SUMO simulation - FIXED for Windows"""
         if self.use_gui:
             sumo_binary = sumolib.checkBinary('sumo-gui')
         else:
             sumo_binary = sumolib.checkBinary('sumo')
         
         self.sumo_cmd = [sumo_binary, "-c", self.config_path]
+        
+        # Add these options for better compatibility
+        self.sumo_cmd.extend([
+            "--start",  # Start simulation immediately
+            "--quit-on-end",  # Quit when simulation ends
+            "--step-length", "1",
+            "--no-warnings",  # Reduce warning output
+        ])
+        
+        print(f"Starting SUMO with command: {' '.join(self.sumo_cmd)}")
+        
+        # Start TraCI
         traci.start(self.sumo_cmd)
+        
+        # Give it time to initialize
+        import time
+        time.sleep(2)
         
         print(f"SUMO started. Traffic lights: {self.tl_ids}")
         
     def close(self):
         """Close SUMO simulation"""
-        traci.close()
+        try:
+            traci.close()
+            print("TraCI connection closed")
+        except:
+            pass
         
+        # Also terminate the SUMO process if it exists
+        if hasattr(self, 'sumo_process') and self.sumo_process:
+            self.sumo_process.terminate()
+            self.sumo_process.wait()
+            print("SUMO process terminated")
+
     def reset(self):
         """Reset the simulation"""
         traci.load(self.sumo_cmd[1:])
@@ -84,17 +110,16 @@ class SumoEnv:
             phase_duration = traci.trafficlight.getPhaseDuration(tl_id)
             
             # CORRECTED: Determine which direction is currently green
-            # Based on actual network:
-            if current_phase == 2 or current_phase == 3:
-                current_dir = 0  # West
-            elif current_phase == 0 or current_phase == 1:
-                current_dir = 1  # North
-            elif current_phase == 6 or current_phase == 7:
-                current_dir = 2  # East
+            if current_phase == 0 or current_phase == 1:
+                current_dir = 0  # West (Phase 0 = green, Phase 1 = yellow)
+            elif current_phase == 2 or current_phase == 3:
+                current_dir = 1  # North (Phase 2 = green, Phase 3 = yellow)
             elif current_phase == 4 or current_phase == 5:
-                current_dir = 3  # South
+                current_dir = 2  # East (Phase 4 = green, Phase 5 = yellow)
+            elif current_phase == 6 or current_phase == 7:
+                current_dir = 3  # South (Phase 6 = green, Phase 7 = yellow)
             else:
-                current_dir = 1  # Default
+                current_dir = 1  # Default to North
             
             # Create state vector (13 features)
             state_vector = np.array([

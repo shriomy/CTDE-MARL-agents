@@ -95,7 +95,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #16 - Doable results obtained
 
- Merge #17 - 
+ Merge #17 - Perfected SUMO 2 jucntions and obtained best training results so far
 
  Merge #18 - 
 
@@ -147,12 +147,12 @@ Simply put; the whole workflow for this component begins in two main phases.
     sumo-gui -c sumo_configs/1x2.sumocfg
 15. next, created the Communication protocol
 16. Created the MARL system -? multi_agent_system.py
-17. RUN THE SYSTEM -> python main.py
-18. 
-19. 
-20. 
-21. 
-22. 
+17. Train MAS -> python main.py
+18. Next, Decentralized Execution is setup.
+21. Created the Main Decentralized Runner -> executor.py
+Start execution -> python marl_execution/executor.py
+22. Created Frontend Dashboard using React.js and FastAPI backend
+Start Socket -> python marl_execution/websocket_server.py
 23. 
 44. 
 

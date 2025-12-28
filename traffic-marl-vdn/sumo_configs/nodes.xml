@@ -1,24 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <nodes>
-    <!-- INTERSECTION 1 (Left) -->
-    <node id="J1_center" x="200" y="200" type="traffic_light"/>
-    <node id="J1_north" x="200" y="400" type="priority"/>
-    <node id="J1_east" x="300" y="200" type="priority"/>  <!-- Connects to J2 -->
-    <node id="J1_south" x="200" y="0" type="priority"/>
-    <node id="J1_west" x="0" y="200" type="priority"/>
+    <!-- Intersection 1 -->
+    <node id="J1" x="100" y="100" type="traffic_light"/>
     
-    <!-- INTERSECTION 2 (Right) -->
-    <node id="J2_center" x="500" y="200" type="traffic_light"/>
-    <node id="J2_north" x="500" y="400" type="priority"/>
-    <node id="J2_east" x="700" y="200" type="priority"/>
-    <node id="J2_south" x="500" y="0" type="priority"/>
-    <node id="J2_west" x="300" y="200" type="priority"/>  <!-- Connects to J1 -->
+    <!-- Intersection 2 -->
+    <node id="J2" x="400" y="100" type="traffic_light"/>
     
-    <!-- Edge nodes for longer roads -->
-    <node id="far_west" x="-200" y="200" type="priority"/>
-    <node id="far_east" x="900" y="200" type="priority"/>
-    <node id="far_north1" x="200" y="600" type="priority"/>
-    <node id="far_south1" x="200" y="-200" type="priority"/>
-    <node id="far_north2" x="500" y="600" type="priority"/>
-    <node id="far_south2" x="500" y="-200" type="priority"/>
+    <!-- Terminal nodes -->
+    <node id="west1" x="0" y="100" type="priority"/>
+    <node id="east1" x="200" y="100" type="priority"/>
+    <node id="north1" x="100" y="200" type="priority"/>
+    <node id="south1" x="100" y="0" type="priority"/>
+    
+    <node id="west2" x="300" y="100" type="priority"/>
+    <node id="east2" x="500" y="100" type="priority"/>
+    <node id="north2" x="400" y="200" type="priority"/>
+    <node id="south2" x="400" y="0" type="priority"/>
 </nodes>

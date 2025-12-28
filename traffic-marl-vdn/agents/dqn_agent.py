@@ -41,15 +41,14 @@ class DQNAgent:
         self.training_step = 0
         
     def _build_network(self) -> nn.Module:
-        """Build the Q-network architecture"""
+        """Build the Q-network architecture - DYNAMIC based on state_dim"""
         return nn.Sequential(
-            nn.Linear(self.state_dim, 64),
+            nn.Linear(self.state_dim, 128),  # Increased capacity
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, self.action_dim)
         )
-    
     def act(self, state: np.ndarray, explore: bool = True) -> int:
         """Select action using ε-greedy policy"""
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
