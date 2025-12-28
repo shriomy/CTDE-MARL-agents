@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import json
 
-from utils.sumo_env import SumoEnv
+from utils.sumo_env_new import SumoEnv
 from agents.multi_agent_system import MultiAgentSystem
 
 class Trainer:
@@ -41,7 +41,7 @@ class Trainer:
         self.multi_agent = MultiAgentSystem(
             agent_ids=self.agent_ids,
             state_dim=state_dim,
-            action_dim=4,
+            action_dim=5,
             config=self.config['agent_config']
         )
         

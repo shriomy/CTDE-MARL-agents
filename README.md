@@ -93,7 +93,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #15 - still training
 
- Merge #16 - 
+ Merge #16 - Doable results obtained
 
  Merge #17 - 
 

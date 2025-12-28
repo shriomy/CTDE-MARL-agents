@@ -364,28 +364,51 @@
     </edge>
 
     <tlLogic id="J1_center" type="static" programID="0" offset="0">
-        <phase duration="42" state="GGGgrrrrGGGgrrrr"/>
-        <phase duration="3"  state="yyyyrrrryyyyrrrr"/>
-        <phase duration="42" state="rrrrGGGgrrrrGGGg"/>
-        <phase duration="3"  state="rrrryyyyrrrryyyy"/>
+        <!-- Sri Lankan style: Only ONE direction green at a time -->
+        <!-- Each direction has 2 lanes that must be green together -->
+        
+        <!-- Phase 0: WEST green (lanes 0-1) -->
+        <phase duration="30" state="GGGGrrrrrrrrrrrr"/>
+        <phase duration="3"  state="yyyyyyrrrrrrrrrr"/>
+        
+        <!-- Phase 2: NORTH green (lanes 2-3) -->
+        <phase duration="30" state="rrrrGGGGrrrrrrrr"/>
+        <phase duration="3"  state="rrrryyyyrrrrrrrr"/>
+        
+        <!-- Phase 4: EAST green (lanes 4-5) -->
+        <phase duration="30" state="rrrrrrrrGGGGrrrr"/>
+        <phase duration="3"  state="rrrrrrrryyyyrrrr"/>
+        
+        <!-- Phase 6: SOUTH green (lanes 6-7) -->
+        <phase duration="30" state="rrrrrrrrrrrrGGGG"/>
+        <phase duration="3"  state="rrrrrrrrrrrryyyy"/>
     </tlLogic>
     <tlLogic id="J1_east" type="static" programID="0" offset="0">
-        <phase duration="42" state="GGGGGgrrG"/>
-        <phase duration="3"  state="GGyyyyrry"/>
-        <phase duration="42" state="GGrrrrGGg"/>
-        <phase duration="3"  state="GGrrrryyg"/>
+        <!-- Allow traffic from both directions to proceed -->
+        <phase duration="60" state="GGGGGgGGG"/>
     </tlLogic>
-    <tlLogic id="J2_center" type="static" programID="0" offset="0">
-        <phase duration="42" state="GGGgrrrrGGGgrrrr"/>
-        <phase duration="3"  state="yyyyrrrryyyyrrrr"/>
-        <phase duration="42" state="rrrrGGGgrrrrGGGg"/>
-        <phase duration="3"  state="rrrryyyyrrrryyyy"/>
+    <tlLogic id="J2_center" type="static" programID="0" offset="15">
+        <!-- Same pattern with 15-second offset -->
+        
+        <!-- Phase 0: WEST green -->
+        <phase duration="30" state="GGGGrrrrrrrrrrrr"/>
+        <phase duration="3"  state="yyyyyyrrrrrrrrrr"/>
+        
+        <!-- Phase 2: NORTH green -->
+        <phase duration="30" state="rrrrGGGGrrrrrrrr"/>
+        <phase duration="3"  state="rrrryyyyrrrrrrrr"/>
+        
+        <!-- Phase 4: EAST green -->
+        <phase duration="30" state="rrrrrrrrGGGGrrrr"/>
+        <phase duration="3"  state="rrrrrrrryyyyrrrr"/>
+        
+        <!-- Phase 6: SOUTH green -->
+        <phase duration="30" state="rrrrrrrrrrrrGGGG"/>
+        <phase duration="3"  state="rrrrrrrrrrrryyyy"/>
     </tlLogic>
     <tlLogic id="J2_west" type="static" programID="0" offset="0">
-        <phase duration="42" state="GGGGGgrrG"/>
-        <phase duration="3"  state="GGyyyyrry"/>
-        <phase duration="42" state="GGrrrrGGg"/>
-        <phase duration="3"  state="GGrrrryyg"/>
+        <!-- Allow traffic from both directions to proceed -->
+        <phase duration="60" state="GGGGGgGGG"/>
     </tlLogic>
 
     <junction id="J1_center" type="traffic_light" x="400.00" y="400.00" incLanes="J1_south_in_0 J1_south_in_1 J1_east_in_0 J1_east_in_1 J1_north_in_0 J1_north_in_1 J1_west_in_0 J1_west_in_1" intLanes=":J1_center_0_0 :J1_center_1_0 :J1_center_1_1 :J1_center_16_0 :J1_center_4_0 :J1_center_5_0 :J1_center_5_1 :J1_center_17_0 :J1_center_8_0 :J1_center_9_0 :J1_center_9_1 :J1_center_18_0 :J1_center_12_0 :J1_center_13_0 :J1_center_13_1 :J1_center_19_0" shape="393.60,389.60 406.40,389.60 406.84,391.82 407.40,392.60 408.18,393.16 409.18,393.49 410.40,393.60 410.40,406.40 408.18,406.84 407.40,407.40 406.84,408.18 406.51,409.18 406.40,410.40 393.60,410.40 393.16,408.18 392.60,407.40 391.82,406.84 390.82,406.51 389.60,406.40 389.60,393.60 391.82,393.16 392.60,392.60 393.16,391.82 393.49,390.82">

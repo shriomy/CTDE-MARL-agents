@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import numpy as np
@@ -236,9 +237,20 @@ class MultiAgentSystem:
             agent.save(f"{path}/{agent_id}_model.pth")
     
     def load_models(self, path: str):
-        """Load all agent models"""
-        for agent_id, agent in self.agents.items():
-            agent.load(f"{path}/{agent_id}_model.pth")
+        """Load all agent models - returns success flag"""
+        try:
+            for agent_id, agent in self.agents.items():
+                model_path = f"{path}/{agent_id}_model.pth"
+                if os.path.exists(model_path):
+                    agent.load(model_path)
+                    print(f"  Loaded model for {agent_id}")
+                else:
+                    print(f"  Warning: Model not found for {agent_id}: {model_path}")
+                    return False
+            return True
+        except Exception as e:
+            print(f"Error loading models: {e}")
+            return False
 
     def get_enhanced_state(self, base_state: np.ndarray, agent_id: str) -> np.ndarray:
         """Enhance state with neighbor information"""
