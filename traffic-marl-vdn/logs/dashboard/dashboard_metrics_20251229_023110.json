@@ -1,0 +1,70 @@
+{
+  "execution_summary": {
+    "total_steps": 3088,
+    "total_reward": -861.1295976795228,
+    "avg_reward_per_step": -0.2788632116837833,
+    "start_time": 1766955670.7259288,
+    "end_time": 1766955670.7259295,
+    "duration": -2.384185791015625e-07
+  },
+  "agent_performance": {
+    "J1_center": {
+      "avg_queue": 0.7357512953367875,
+      "max_queue": 2.5,
+      "avg_wait": 3.0283354922279795,
+      "total_actions": 3088
+    },
+    "J2_center": {
+      "avg_queue": 0.6139896373056994,
+      "max_queue": 2.5,
+      "avg_wait": 1.8142810880829014,
+      "total_actions": 3088
+    }
+  },
+  "action_statistics": {
+    "J1_center": {
+      "WEST": {
+        "count": 392,
+        "percentage": 12.694300518134716
+      },
+      "NORTH": {
+        "count": 344,
+        "percentage": 11.139896373056994
+      },
+      "EAST": {
+        "count": 605,
+        "percentage": 19.5919689119171
+      },
+      "SOUTH": {
+        "count": 1720,
+        "percentage": 55.69948186528497
+      },
+      "EXTEND": {
+        "count": 27,
+        "percentage": 0.8743523316062176
+      }
+    },
+    "J2_center": {
+      "WEST": {
+        "count": 653,
+        "percentage": 21.14637305699482
+      },
+      "NORTH": {
+        "count": 996,
+        "percentage": 32.25388601036269
+      },
+      "EAST": {
+        "count": 903,
+        "percentage": 29.24222797927461
+      },
+      "SOUTH": {
+        "count": 418,
+        "percentage": 13.536269430051814
+      },
+      "EXTEND": {
+        "count": 118,
+        "percentage": 3.821243523316062
+      }
+    }
+  }
+}

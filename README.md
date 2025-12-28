@@ -97,7 +97,7 @@ Simply put; the whole workflow for this component begins in two main phases.
 
  Merge #17 - Perfected SUMO 2 jucntions and obtained best training results so far
 
- Merge #18 - 
+ Merge #18 - Earlier agents were not trained with neighbor comms, now they do. starting sockets
 
  Merge #19 - 
 
@@ -150,11 +150,14 @@ Simply put; the whole workflow for this component begins in two main phases.
 17. Train MAS -> python main.py
 18. Next, Decentralized Execution is setup.
 21. Created the Main Decentralized Runner -> executor.py
-Start execution -> python marl_execution/executor.py
-22. Created Frontend Dashboard using React.js and FastAPI backend
-Start Socket -> python marl_execution/websocket_server.py
-23. 
-44. 
+22. Start execution -> python marl_execution/executor.py
+23. Connected Sockets dashboard -> dashboard_server.py
+24. Created Frontend Dashboard using React.js and FastAPI backend. To run -> 
+    python marl_execution/dashboard_executor.py 
+    cd dashboard
+    python -m http.server 3000
+25. 
+26. 
 
 
 
