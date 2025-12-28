@@ -17,6 +17,7 @@
         "batch_size": 32,            
         "target_update_freq": 50,    
         "enable_communication": false,
-        "grad_clip": 1.0
+        "grad_clip": 1.0,
+        "num_actions": 5
     }
 }
