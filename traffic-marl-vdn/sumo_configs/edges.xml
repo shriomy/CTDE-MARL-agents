@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <edges>
     <!-- Intersection 1 -->
-    <edge id="J1_west_in" from="west1" to="J1" numLanes="2" speed="50"/>
-    <edge id="J1_west_out" from="J1" to="west1" numLanes="2" speed="50"/>
+    <edge id="J1_west_in" from="west1" to="J1" numLanes="2" speed="30"/>
+    <edge id="J1_west_out" from="J1" to="west1" numLanes="2" speed="30"/>
     
-    <edge id="J1_east_in" from="east1" to="J1" numLanes="2" speed="50"/>
-    <edge id="J1_east_out" from="J1" to="east1" numLanes="2" speed="50"/>
+    <edge id="J1_east_in" from="east1" to="J1" numLanes="2" speed="30"/>
+    <edge id="J1_east_out" from="J1" to="east1" numLanes="2" speed="30"/>
     
-    <edge id="J1_north_in" from="north1" to="J1" numLanes="2" speed="50"/>
-    <edge id="J1_north_out" from="J1" to="north1" numLanes="2" speed="50"/>
+    <edge id="J1_north_in" from="north1" to="J1" numLanes="2" speed="30"/>
+    <edge id="J1_north_out" from="J1" to="north1" numLanes="2" speed="30"/>
     
-    <edge id="J1_south_in" from="south1" to="J1" numLanes="2" speed="50"/>
-    <edge id="J1_south_out" from="J1" to="south1" numLanes="2" speed="50"/>
+    <edge id="J1_south_in" from="south1" to="J1" numLanes="2" speed="30"/>
+    <edge id="J1_south_out" from="J1" to="south1" numLanes="2" speed="30"/>
     
     <!-- Intersection 2 -->
-    <edge id="J2_west_in" from="west2" to="J2" numLanes="2" speed="50"/>
-    <edge id="J2_west_out" from="J2" to="west2" numLanes="2" speed="50"/>
+    <edge id="J2_west_in" from="west2" to="J2" numLanes="2" speed="30"/>
+    <edge id="J2_west_out" from="J2" to="west2" numLanes="2" speed="30"/>
     
-    <edge id="J2_east_in" from="east2" to="J2" numLanes="2" speed="50"/>
-    <edge id="J2_east_out" from="J2" to="east2" numLanes="2" speed="50"/>
+    <edge id="J2_east_in" from="east2" to="J2" numLanes="2" speed="30"/>
+    <edge id="J2_east_out" from="J2" to="east2" numLanes="2" speed="30"/>
     
-    <edge id="J2_north_in" from="north2" to="J2" numLanes="2" speed="50"/>
-    <edge id="J2_north_out" from="J2" to="north2" numLanes="2" speed="50"/>
+    <edge id="J2_north_in" from="north2" to="J2" numLanes="2" speed="30"/>
+    <edge id="J2_north_out" from="J2" to="north2" numLanes="2" speed="30"/>
     
-    <edge id="J2_south_in" from="south2" to="J2" numLanes="2" speed="50"/>
-    <edge id="J2_south_out" from="J2" to="south2" numLanes="2" speed="50"/>
+    <edge id="J2_south_in" from="south2" to="J2" numLanes="2" speed="30"/>
+    <edge id="J2_south_out" from="J2" to="south2" numLanes="2" speed="30"/>
     
     <!-- Connecting road -->
-    <edge id="connector1" from="east1" to="west2" numLanes="2" speed="50"/>
-    <edge id="connector2" from="west2" to="east1" numLanes="2" speed="50"/>
+    <edge id="connector1" from="east1" to="west2" numLanes="2" speed="30"/>
+    <edge id="connector2" from="west2" to="east1" numLanes="2" speed="30"/>
 </edges>
