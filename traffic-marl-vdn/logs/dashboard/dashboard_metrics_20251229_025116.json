@@ -1,0 +1,70 @@
+{
+  "execution_summary": {
+    "total_steps": 90,
+    "total_reward": -7.410629795626521,
+    "avg_reward_per_step": -0.0823403310625169,
+    "start_time": 1766956876.5625682,
+    "end_time": 1766956876.5625687,
+    "duration": -2.384185791015625e-07
+  },
+  "agent_performance": {
+    "J1_center": {
+      "avg_queue": 0.26666666666666666,
+      "max_queue": 1.5,
+      "avg_wait": 0.75,
+      "total_actions": 90
+    },
+    "J2_center": {
+      "avg_queue": 0.14444444444444443,
+      "max_queue": 1.0,
+      "avg_wait": 0.2833333333333333,
+      "total_actions": 90
+    }
+  },
+  "action_statistics": {
+    "J1_center": {
+      "WEST": {
+        "count": 7,
+        "percentage": 7.777777777777778
+      },
+      "NORTH": {
+        "count": 4,
+        "percentage": 4.444444444444445
+      },
+      "EAST": {
+        "count": 13,
+        "percentage": 14.444444444444443
+      },
+      "SOUTH": {
+        "count": 66,
+        "percentage": 73.33333333333333
+      },
+      "EXTEND": {
+        "count": 0,
+        "percentage": 0.0
+      }
+    },
+    "J2_center": {
+      "WEST": {
+        "count": 15,
+        "percentage": 16.666666666666664
+      },
+      "NORTH": {
+        "count": 31,
+        "percentage": 34.44444444444444
+      },
+      "EAST": {
+        "count": 34,
+        "percentage": 37.77777777777778
+      },
+      "SOUTH": {
+        "count": 4,
+        "percentage": 4.444444444444445
+      },
+      "EXTEND": {
+        "count": 6,
+        "percentage": 6.666666666666667
+      }
+    }
+  }
+}

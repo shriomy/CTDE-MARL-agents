@@ -8,7 +8,7 @@
     
     <time>
         <begin value="0"/>
-        <end value="3600"/>
+        <end value="86400"/>   <!-- 24 hours = 86400 seconds from 3600 -->
         <step-length value="1"/>
     </time>
     

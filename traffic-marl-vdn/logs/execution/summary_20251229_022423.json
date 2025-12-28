@@ -1,0 +1,11 @@
+{
+  "timestamp": "20251229_022423",
+  "total_steps": 0,
+  "total_reward": 0.0,
+  "avg_reward": 0,
+  "agents": [
+    "J1_center",
+    "J2_center"
+  ],
+  "final_queues": {}
+}

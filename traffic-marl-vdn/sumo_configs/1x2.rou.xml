@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    
+    <!-- Change all 'end="86400"' to 'end="86400"' -->
     <!-- Vehicle types -->
     <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5.0" maxSpeed="50.0" color="1,0,0"/>
     <vType id="bus" accel="1.2" decel="4.0" sigma="0.5" length="12.0" maxSpeed="30.0" color="0,0,1"/>
@@ -35,27 +35,27 @@
     
     <!-- ===== TRAFFIC FLOWS ===== -->
     <!-- Main through traffic (West to East) -->
-    <flow id="flow_W_to_E" type="car" route="W_to_E" begin="0" end="3600" period="8"/>
+    <flow id="flow_W_to_E" type="car" route="W_to_E" begin="0" end="86400" period="8"/>
     
     <!-- Main through traffic (East to West) -->
-    <flow id="flow_E_to_W" type="car" route="E_to_W" begin="0" end="3600" period="10"/>
+    <flow id="flow_E_to_W" type="car" route="E_to_W" begin="0" end="86400" period="10"/>
     
     <!-- North-South traffic at Intersection 1 -->
-    <flow id="flow_N1_to_S1" type="car" route="N1_to_S1" begin="0" end="3600" period="12"/>
-    <flow id="flow_S1_to_N1" type="car" route="S1_to_N1" begin="0" end="3600" period="15"/>
+    <flow id="flow_N1_to_S1" type="car" route="N1_to_S1" begin="0" end="86400" period="12"/>
+    <flow id="flow_S1_to_N1" type="car" route="S1_to_N1" begin="0" end="86400" period="15"/>
     
     <!-- North-South traffic at Intersection 2 -->
-    <flow id="flow_N2_to_S2" type="car" route="N2_to_S2" begin="0" end="3600" period="12"/>
-    <flow id="flow_S2_to_N2" type="car" route="S2_to_N2" begin="0" end="3600" period="15"/>
+    <flow id="flow_N2_to_S2" type="car" route="N2_to_S2" begin="0" end="86400" period="12"/>
+    <flow id="flow_S2_to_N2" type="car" route="S2_to_N2" begin="0" end="86400" period="15"/>
     
     <!-- Turning traffic -->
-    <flow id="flow_W_to_N1" type="car" route="W_to_N1" begin="0" end="3600" period="20"/>
-    <flow id="flow_W_to_S1" type="car" route="W_to_S1" begin="0" end="3600" period="25"/>
-    <flow id="flow_E_to_N2" type="car" route="E_to_N2" begin="0" end="3600" period="20"/>
-    <flow id="flow_E_to_S2" type="car" route="E_to_S2" begin="0" end="3600" period="25"/>
+    <flow id="flow_W_to_N1" type="car" route="W_to_N1" begin="0" end="86400" period="20"/>
+    <flow id="flow_W_to_S1" type="car" route="W_to_S1" begin="0" end="86400" period="25"/>
+    <flow id="flow_E_to_N2" type="car" route="E_to_N2" begin="0" end="86400" period="20"/>
+    <flow id="flow_E_to_S2" type="car" route="E_to_S2" begin="0" end="86400" period="25"/>
     
     <!-- Heavy vehicles -->
-    <flow id="flow_truck_W_to_E" type="truck" route="W_to_E" begin="0" end="3600" period="60"/>
-    <flow id="flow_bus_N1_to_S1" type="bus" route="N1_to_S1" begin="0" end="3600" period="120"/>
+    <flow id="flow_truck_W_to_E" type="truck" route="W_to_E" begin="0" end="86400" period="60"/>
+    <flow id="flow_bus_N1_to_S1" type="bus" route="N1_to_S1" begin="0" end="86400" period="120"/>
     
 </routes>
