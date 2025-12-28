@@ -151,10 +151,11 @@ Simply put; the whole workflow for this component begins in two main phases.
 18. Next, Decentralized Execution is setup.
 created Create Execution Configuration -> execution_config.json
 19. Created WebSocket Server for Real-time Data -> websocket_server.py
-20. Created a lightweight communication protocol for neightboring agent message passing -> lightweight_comm.py
-21. Created the Main Decentralized Runner -> decentralized_runner.py
+20. 
+21. Created the Main Decentralized Runner -> execution_env.py
 22. Created Frontend Dashboard using React.js and FastAPI backend
-23. Start execution -> python marl_execution/decentralized_runner.py
+Start Socket -> python marl_execution/websocket_server.py
+23. Start execution -> python marl_execution/execution_env.py
 44. 
 
 

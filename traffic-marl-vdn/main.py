@@ -33,14 +33,16 @@ class Trainer:
         # Derive state dimension from environment's state vector
         initial_state = self.env.get_state()
         sample_agent = self.agent_ids[0]
-        state_dim = int(initial_state[sample_agent].shape[0])
+        base_state_dim = int(initial_state[sample_agent].shape[0])  # Should be 13
+        enhanced_state_dim = base_state_dim + 10  # 13 + 10 = 23
 
-        # Initialize multi-agent system
-        print("Initializing multi-agent system...")
-        # SumoEnv supports 4 actions (0: extend, 1: NS green, 2: EW green, 3: emergency)
+        print(f"DEBUG: Base state dim: {base_state_dim}")
+        print(f"DEBUG: Enhanced state dim: {enhanced_state_dim}")
+
+        # Initialize multi-agent system WITH ENHANCED DIMENSION
         self.multi_agent = MultiAgentSystem(
             agent_ids=self.agent_ids,
-            state_dim=state_dim,
+            state_dim=enhanced_state_dim,  # Use 23, not 13!
             action_dim=5,
             config=self.config['agent_config']
         )
@@ -94,25 +96,37 @@ class Trainer:
             json.dump(self.config, f, indent=2)
     
     def train_episode(self, episode: int) -> float:
-        """Train for one episode"""
         state = self.env.reset()
         total_reward = 0
         episode_loss = 0
         step_count = 0
         
         for step in range(self.config['max_steps_per_episode']):
-            # Get actions from all agents
-            actions = self.multi_agent.act(state, training_mode=True)
+            # Get actions with coordination (returns enhanced states internally)
+            actions = self.multi_agent.act_with_coordination(state, training_mode=True)
             
             # Execute actions in environment
             next_state, reward, done, info = self.env.step(actions)
             
-            # Store experience in centralized buffer
-            # Convert states to array format
-            state_array = np.array([state[agent_id] for agent_id in self.agent_ids])
-            action_array = np.array([actions[agent_id] for agent_id in self.agent_ids])
-            next_state_array = np.array([next_state[agent_id] for agent_id in self.agent_ids])
+            # IMPORTANT: Store ENHANCED states in buffer, not base states!
+            enhanced_states = []
+            enhanced_next_states = []
             
+            for agent_id in self.agent_ids:
+                # Get enhanced state for current timestep
+                enhanced_state = self.multi_agent.get_enhanced_state(state[agent_id], agent_id)
+                enhanced_states.append(enhanced_state)
+                
+                # Get enhanced state for next timestep  
+                enhanced_next_state = self.multi_agent.get_enhanced_state(next_state[agent_id], agent_id)
+                enhanced_next_states.append(enhanced_next_state)
+            
+            # Convert to arrays
+            state_array = np.array(enhanced_states)  # Shape: [num_agents, 23]
+            action_array = np.array([actions[agent_id] for agent_id in self.agent_ids])
+            next_state_array = np.array(enhanced_next_states)  # Shape: [num_agents, 23]
+            
+            # Store enhanced experience in buffer
             experience = (state_array, action_array, reward, next_state_array, done)
             self.multi_agent.remember(experience)
             
