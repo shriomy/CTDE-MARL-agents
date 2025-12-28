@@ -147,13 +147,14 @@ Simply put; the whole workflow for this component begins in two main phases.
     sumo-gui -c sumo_configs/1x2.sumocfg
 15. next, created the Communication protocol
 16. Created the MARL system -? multi_agent_system.py
-17. RUN THE SYSTEM -> python main.py
-18. 
-19. 
-20. 
-21. 
-22. 
-23. 
+17. Train MAS -> python main.py
+18. Next, Decentralized Execution is setup.
+created Create Execution Configuration -> execution_config.json
+19. Created WebSocket Server for Real-time Data -> websocket_server.py
+20. Created a lightweight communication protocol for neightboring agent message passing -> lightweight_comm.py
+21. Created the Main Decentralized Runner -> decentralized_runner.py
+22. Created Frontend Dashboard using React.js and FastAPI backend
+23. Start execution -> python marl_execution/decentralized_runner.py
 44. 
 
 
