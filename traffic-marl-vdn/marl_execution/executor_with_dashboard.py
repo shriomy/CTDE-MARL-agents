@@ -7,6 +7,7 @@ import time
 import json
 import numpy as np
 from datetime import datetime
+import traci
 
 # Add the project root to Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -162,12 +163,22 @@ class DashboardMARLExecutor:
     
     def prepare_dashboard_data(self, step: int, state: dict, actions: dict, reward: float, info: dict) -> dict:
         """Prepare data for dashboard"""
+
+        # Calculate average waiting time from SUMO
+        vehicle_ids = traci.vehicle.getIDList()
+        if vehicle_ids:
+            total_waiting = sum(traci.vehicle.getWaitingTime(v) for v in vehicle_ids)
+            avg_waiting = total_waiting / len(vehicle_ids)
+        else:
+            avg_waiting = 0.0
+
         step_data = {
             'step': step,
             'reward': float(reward),
             'total_reward': float(self.metrics['total_reward']),
             'vehicle_count': info['vehicle_count'],
             'avg_speed': float(info['avg_speed']),
+            'avg_waiting': float(avg_waiting),
             'timestamp': time.time(),
             'agents': {}
         }
