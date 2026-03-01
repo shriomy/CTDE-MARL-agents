@@ -7,8 +7,8 @@ import zmq
 import threading
 import time
 from collections import defaultdict
-from agents.communication import AgentCommunication
 
+from agents.communication import AgentCommunication
 from agents.dqn_agent import DQNAgent
 from agents.vdn_mixer import VDNMixer, CentralizedBuffer
 

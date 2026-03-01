@@ -16,6 +16,12 @@ class SumoEnv:
         self.episode_step = 0
         self.previous_phase = {tl_id: 0 for tl_id in self.tl_ids}
         
+         # Track timing for each traffic light
+        self.phase_start_time = {tl_id: 0 for tl_id in self.tl_ids}
+        self.current_phase = {tl_id: 0 for tl_id in self.tl_ids}
+        self.current_phase_duration = {tl_id: 0 for tl_id in self.tl_ids}
+        self.last_switch_time = {tl_id: 0 for tl_id in self.tl_ids}
+
     def start(self):
         """Start SUMO simulation - FIXED for Windows"""
         if self.use_gui:
@@ -62,12 +68,15 @@ class SumoEnv:
         """Reset the simulation"""
         traci.load(self.sumo_cmd[1:])
         self.episode_step = 0
-        self.previous_phase = {tl_id: 0 for tl_id in self.tl_ids}
+        self.phase_start_time = {tl_id: 0 for tl_id in self.tl_ids}
+        self.current_phase_duration = {tl_id: 0 for tl_id in self.tl_ids}
+        self.last_switch_time = {tl_id: 0 for tl_id in self.tl_ids}
         return self.get_state()
     
     def get_state(self) -> Dict[str, np.ndarray]:
         """Get state for each traffic light - FIXED for left-hand traffic"""
         state = {}
+        current_time = traci.simulation.getTime()
         
         for tl_id in self.tl_ids:
             # Get lanes controlled by this traffic light
@@ -121,7 +130,7 @@ class SumoEnv:
             else:
                 current_dir = 1  # Default to North
             
-            # Create state vector (13 features)
+            # Create state vector (15 features = 13 original + 2 timing)
             state_vector = np.array([
                 # Queue lengths (4) - IMPORTANT: Keep order consistent
                 queue_lengths[0] / 10.0,  # West (index 0)
@@ -141,9 +150,20 @@ class SumoEnv:
                 1.0 if current_dir == 2 else 0.0,  # East green
                 1.0 if current_dir == 3 else 0.0,  # South green
                 
-                # Phase duration (1)
-                min(phase_duration / 60.0, 1.0)
+                # Phase duration (1) - Normalized to 0-1 (assuming max 60 seconds)
+                min(phase_duration / 60.0, 1.0),
+                
             ])
+            
+            # Update timing tracking
+            if current_phase in [0, 2, 4, 6]:  # Green phase
+                # Check if this is a new green phase (just switched from yellow)
+                if self.current_phase.get(tl_id) in [1, 3, 5, 7]:
+                    self.phase_start_time[tl_id] = current_time
+                    self.last_switch_time[tl_id] = current_time
+            
+            self.current_phase[tl_id] = current_phase
+            self.current_phase_duration[tl_id] = phase_duration
             
             state[tl_id] = state_vector
         
@@ -208,18 +228,27 @@ class SumoEnv:
         return float(reward)
     
     def step(self, actions: Dict[str, int]) -> Tuple[Dict[str, np.ndarray], float, bool, Dict]:
-        """Execute one step - FIXED action space"""
-        # Simplified action space (5 actions):
-        # 0: Switch to West green
-        # 1: Switch to North green
-        # 2: Switch to East green
-        # 3: Switch to South green
-        # 4: Extend current green phase by 5 seconds
+        """Execute one step with timing constraints"""
+        current_time = traci.simulation.getTime()
         
         for tl_id, action in actions.items():
             current_phase = traci.trafficlight.getPhase(tl_id)
-            # Use TrafficActions to execute the action
-            TrafficActions.execute_action(tl_id, action, current_phase)
+            phase_duration = self.current_phase_duration[tl_id]
+            
+            # Use the updated TrafficActions with timing constraints
+            new_phase, switched = TrafficActions.execute_action(
+                tl_id, 
+                action, 
+                current_phase,
+                phase_duration,
+                self.last_switch_time
+            )
+            
+            if switched:
+                self.phase_start_time[tl_id] = current_time
+                self.last_switch_time[tl_id] = current_time
+            elif new_phase != current_phase:
+                self.phase_start_time[tl_id] = current_time
         
         # Advance simulation
         traci.simulationStep()
