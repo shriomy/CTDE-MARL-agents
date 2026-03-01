@@ -180,7 +180,7 @@ class FixedTimeExecutor:
         print(f"Open fixed_time_dashboard.html in browser")
         print("="*60)
     
-    def run(self, num_steps=1800):
+    def run(self, num_steps=180000):
         """Run fixed-time control"""
         print(f"\nRunning fixed-time control for {num_steps} steps...")
         print("Press Ctrl+C to stop\n")
@@ -280,7 +280,7 @@ def main():
     print("="*60)
     
     executor = FixedTimeExecutor()
-    executor.run(num_steps=1800)  # Run for 1800 steps (30 minutes simulation)
+    executor.run(num_steps=180000)  # Run for 1800 steps (30 minutes simulation)
 
 if __name__ == "__main__":
     try:

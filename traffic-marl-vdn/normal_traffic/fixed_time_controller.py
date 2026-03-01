@@ -21,10 +21,10 @@ class FixedTimeController:
         
         # Fixed timing schedule (in seconds)
         self.cycle = {
-            'west': 30,    # Green time for West
-            'north': 30,   # Green time for North
-            'east': 30,    # Green time for East
-            'south': 30,   # Green time for South
+            'west': 20,    # Green time for West
+            'north': 20,   # Green time for North
+            'east': 20,    # Green time for East
+            'south': 20,   # Green time for South
             'yellow': 3    # Yellow time between phases
         }
         

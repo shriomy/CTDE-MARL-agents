@@ -10,7 +10,7 @@ class TrafficActions:
     # Timing constraints (in seconds)
     MIN_GREEN_TIME = 10      # Minimum green time
     MAX_GREEN_TIME = 60      # Maximum green time
-    YELLOW_TIME = 3          # Yellow transition time
+    YELLOW_TIME = 3         # Yellow transition time
     ALL_RED_TIME = 1         # All-red clearance time
     
     # Action space - same as before

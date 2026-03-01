@@ -146,16 +146,16 @@ Simply put; the whole workflow for this component begins in two main phases.
     -> run SUMO
     sumo-gui -c sumo_configs/1x2.sumocfg
 15. next, created the Communication protocol
-16. Created the MARL system -? multi_agent_system.py
+16. Created the MARL system - multi_agent_system.py
 17. Train MAS -> python main.py
 18. Next, Decentralized Execution is setup.
 21. Created the Main Decentralized Runner -> executor.py
 22. Start execution -> python marl_execution/executor.py
 23. Connected Sockets dashboard -> dashboard_server.py
-24. Created Frontend Dashboard using basic html. To run -> 
-    python executor_with_dashboard.py 
+24. Created Frontend Dashboard using basic html. To run -> python marl_execution/executor_with_dashboard.py
     open the html file with a web browser.
-25. 
+25. Run the fixed timed traffic to compare -> python normal_traffic/fixed_time_executor.py 
+    Open fixed_time_dashboard.html
 26. 
 
 

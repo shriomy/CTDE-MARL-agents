@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<viewsettings>
+    <scheme name="real world"/>
+    <viewport zoom="100" x="350" y="200"/>
+    <delay value="50"/>
+    <show-route-ids value="true"/>
+    <show-vehicle-ids value="true"/>
+    <lane-show-borders value="true"/>
+    <show-link-rule value="true"/>
+    <show-link-tls value="true"/>
+</viewsettings>
