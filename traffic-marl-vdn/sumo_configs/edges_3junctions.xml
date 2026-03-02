@@ -1,41 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <edges>
-    <!-- =============================================================== -->
-    <!-- J1_2way (2-WAY JUNCTION) - Main road entry from west -->
-    <!-- =============================================================== -->
-    <edge id="J1_east_in" from="J1_west" to="J1_2way" numLanes="2" speed="0.87"/>
-    <edge id="J1_west_out" from="J1_2way" to="J1_west" numLanes="2" speed="0.87"/>
+    <!-- ===== J1 PEDESTRIAN CROSSING - MAIN ROAD ONLY ===== -->
+    <!-- West to East road (2 lanes) -->
+    <edge id="road_w_to_J1" from="J1_west" to="J1_crossing" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
     
-    <!-- =============================================================== -->
-    <!-- MAIN ROAD CONNECTORS (direct between main junctions, no checkpoints) -->
-    <!-- =============================================================== -->
-    <!-- J1_2way to J2_3way (east-west main road) -->
-    <edge id="connect_J1_J2" from="J1_2way" to="J2_3way" numLanes="2" speed="0.87"/>
-    <edge id="connect_J2_J1" from="J2_3way" to="J1_2way" numLanes="2" speed="0.87"/>
+    <!-- East to West road (2 lanes) - this is the return road -->
+    <edge id="road_east_to_J1" from="J2_3way" to="J1_crossing" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
     
-    <!-- J2_3way to J3_4way (east-west main road) -->
-    <edge id="connect_J2_J3" from="J2_3way" to="J3_4way" numLanes="2" speed="0.87"/>
-    <edge id="connect_J3_J2" from="J3_4way" to="J2_3way" numLanes="2" speed="0.87"/>
+    <!-- From J1_crossing to J2_3way (eastbound continuation) -->
+    <edge id="road_J1_to_east" from="J1_crossing" to="J2_3way" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
     
-    <!-- =============================================================== -->
-    <!-- J2_3way (3-WAY JUNCTION) - North branch -->
-    <!-- =============================================================== -->
-    <edge id="J2_north_in" from="J2_north" to="J2_3way" numLanes="2" speed="0.87"/>
-    <edge id="J2_north_out" from="J2_3way" to="J2_north" numLanes="2" speed="0.87"/>
+    <!-- From J1_crossing to J1_west (westbound continuation) -->
+    <edge id="road_J1_to_west" from="J1_crossing" to="J1_west" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
     
-    <!-- =============================================================== -->
-    <!-- J3_4way (4-WAY JUNCTION) - Boundary entries/exits -->
-    <!-- =============================================================== -->
-    <!-- East boundary -->
-    <edge id="J3_east_in" from="J3_east" to="J3_4way" numLanes="2" speed="0.87"/>
-    <edge id="J3_east_out" from="J3_4way" to="J3_east" numLanes="2" speed="0.87"/>
+    <!-- ===== J2 AND J3 (unchanged) ===== -->
+    <edge id="connect_J2_J3" from="J2_3way" to="J3_4way" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
+    <edge id="connect_J3_J2" from="J3_4way" to="J2_3way" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
     
-    <!-- North boundary -->
-    <edge id="J3_north_in" from="J3_north" to="J3_4way" numLanes="2" speed="0.87"/>
-    <edge id="J3_north_out" from="J3_4way" to="J3_north" numLanes="2" speed="0.87"/>
+    <edge id="J2_north_in" from="J2_north" to="J2_3way" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
+    <edge id="J2_north_out" from="J2_3way" to="J2_north" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
     
-    <!-- South boundary -->
-    <edge id="J3_south_in" from="J3_south" to="J3_4way" numLanes="2" speed="0.87"/>
-    <edge id="J3_south_out" from="J3_4way" to="J3_south" numLanes="2" speed="0.87"/>
+    <edge id="J3_east_in" from="J3_east" to="J3_4way" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
+    <edge id="J3_east_out" from="J3_4way" to="J3_east" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
     
+    <edge id="J3_north_in" from="J3_north" to="J3_4way" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
+    <edge id="J3_north_out" from="J3_4way" to="J3_north" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
+    
+    <edge id="J3_south_in" from="J3_south" to="J3_4way" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
+    <edge id="J3_south_out" from="J3_4way" to="J3_south" numLanes="2" speed="13.89">
+        <lane index="0" speed="13.89"/>
+        <lane index="1" speed="13.89"/>
+    </edge>
 </edges>

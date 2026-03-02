@@ -305,4 +305,12 @@
     <connection from=":J3_4way_13" to="J3_east_out" fromLane="1" toLane="1" dir="s" state="M"/>
     <connection from=":J3_4way_15" to="J3_south_out" fromLane="0" toLane="1" dir="r" state="M"/>
 
+    <!-- Add pedestrian infrastructure -->
+    <walkingArea id="wa_south" shape="195.00,395.00 205.00,395.00 205.00,385.00 195.00,385.00"/>
+    <walkingArea id="wa_north" shape="195.00,405.00 205.00,405.00 205.00,415.00 195.00,415.00"/>
+
+    <crossing id="crossing_J1" node="J1_crossing" edges="road_w_to_J1 road_east_to_J1" 
+          priority="true" width="4.0" 
+          walkingAreas="wa_south wa_north"/>
+
 </net>

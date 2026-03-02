@@ -1,24 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <nodes>
-    <!-- ============================================ -->
-    <!-- MAIN SIGNALIZED JUNCTIONS (only 3) -->
-    <!-- ============================================ -->
-    <node id="J1_2way" x="200" y="400" type="traffic_light"/>
+    <!-- MAIN SIGNALIZED JUNCTIONS -->
+    <node id="J1_crossing" x="200" y="400" type="traffic_light"/>
     <node id="J2_3way" x="600" y="400" type="traffic_light"/>
     <node id="J3_4way" x="1000" y="400" type="traffic_light"/>
     
-    <!-- ============================================ -->
-    <!-- BOUNDARY ENTRY/EXIT NODES -->
-    <!-- ============================================ -->
-    <!-- J1 west boundary -->
+    <!-- BOUNDARY NODES -->
     <node id="J1_west" x="100" y="400" type="priority"/>
-    
-    <!-- J2 north boundary (branch) -->
     <node id="J2_north" x="600" y="500" type="priority"/>
-    
-    <!-- J3 boundary entries/exits -->
     <node id="J3_north" x="1000" y="500" type="priority"/>
     <node id="J3_east" x="1100" y="400" type="priority"/>
     <node id="J3_south" x="1000" y="300" type="priority"/>
-    
 </nodes>
