@@ -8,6 +8,9 @@
     <vType id="car" guiShape="passenger" accel="0.325" decel="0.5625" sigma="0.5" length="5" maxSpeed="2.5" color="1,0,0"/>
     <vType id="truck" guiShape="truck" accel="0.1625" decel="0.5" sigma="0.5" length="7.5" maxSpeed="1.875" color="0.5,0.5,0.5"/>
     
+    <!-- Pedestrian type -->
+    <vType id="pedestrian" maxSpeed="1.34" color="1,0.2,0"/>
+    
     <!-- =============================================================== -->
     <!-- ROUTES FOR 2-WAY JUNCTION (J1_2way) -->
     <!-- =============================================================== -->
@@ -83,5 +86,22 @@
     <flow id="J3_east_north" type="car" route="J3_east_to_north" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
     <flow id="J3_east_south" type="car" route="J3_east_to_south" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
     <flow id="J3_east_west" type="car" route="J3_east_to_west" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
+    
+    <!-- pedestrian flows for J1 crossing -->
+    <personFlow id="pedestrian_s2n_direct" type="pedestrian" begin="0" end="86400" period="15">
+        <walk edges="J1_crossing_edge" departPos="0"/>
+    </personFlow>
+    
+    <personFlow id="pedestrian_n2s_direct" type="pedestrian" begin="10" end="86400" period="15">
+        <walk edges="J1_crossing_edge" departPos="0"/>
+    </personFlow>
+    
+    <personFlow id="pedestrian_loiter_south" type="pedestrian" begin="0" end="86400" period="20">
+        <walk edges="J1_walk_south J1_walk_south" departPos="0"/>
+    </personFlow>
+    
+    <personFlow id="pedestrian_loiter_north" type="pedestrian" begin="5" end="86400" period="20">
+        <walk edges="J1_walk_north J1_walk_north" departPos="0"/>
+    </personFlow>
     
 </routes>
