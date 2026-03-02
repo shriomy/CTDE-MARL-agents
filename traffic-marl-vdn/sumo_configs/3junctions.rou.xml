@@ -5,84 +5,114 @@
     <vType id="truck" accel="1.2" decel="4.0" sigma="0.5" length="7.5" maxSpeed="40.0" color="0.5,0.5,0.5"/>
     <vType id="pedestrian" vClass="pedestrian" maxSpeed="1.34" color="0,1,0"/>
     
-    <!-- ===== J1 (PEDESTRIAN CROSSING) ===== -->
-    <!-- At J1, vehicles only go straight (east-west or west-east) -->
-    <route id="west_to_east" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_east_out"/>
-    <route id="east_to_west" edges="J3_east_in connect_J3_J2 connect_J2_J1 J1_west_out"/>
+    <!-- ===== BOUNDARY ENTRY POINTS (where vehicles are generated) ===== -->
+    <!-- J1: West boundary (J1_west) - vehicles enter via J1_east_in -->
+    <!-- J2: North boundary (J2_north) - vehicles enter via J2_north_in -->
+    <!-- J3: North boundary (J3_north) - vehicles enter via J3_north_in -->
+    <!-- J3: East boundary (J3_east) - vehicles enter via J3_east_in -->
+    <!-- J3: South boundary (J3_south) - vehicles enter via J3_south_in -->
     
-    <!-- ===== J2 (3-WAY JUNCTION) ===== -->
-    <!-- Vehicles from West (coming from J1) -->
-    <route id="west_to_north_at_J2" edges="connect_J1_J2 J2_north_out"/>  <!-- West to North -->
-    <route id="west_to_east_at_J2" edges="connect_J1_J2 connect_J2_J3 J3_east_out"/>  <!-- West to East (through J3) -->
+    <!-- ===== J1 - PEDESTRIAN CROSSING (just a through point) ===== -->
+    <!-- No turns at J1, just straight through -->
     
-    <!-- Vehicles from North -->
-    <route id="north_to_west_at_J2" edges="J2_north_in connect_J2_J1 J1_west_out"/>  <!-- North to West -->
-    <route id="north_to_east_at_J2" edges="J2_north_in connect_J2_J3 J3_east_out"/>  <!-- North to East (through J3) -->
+    <!-- ===== ROUTES STARTING FROM WEST BOUNDARY (J1_west) ===== -->
+    <!-- From West, going all the way to East boundary -->
+    <route id="west_to_east_full" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_east_out"/>
     
-    <!-- Vehicles from East (coming from J3) -->
-    <route id="east_to_west_at_J2" edges="connect_J3_J2 connect_J2_J1 J1_west_out"/>  <!-- East to West -->
-    <route id="east_to_north_at_J2" edges="connect_J3_J2 J2_north_out"/>  <!-- East to North -->
+    <!-- From West, going to J2 North boundary -->
+    <route id="west_to_J2_north" edges="J1_east_in connect_J1_J2 J2_north_out"/>
     
-    <!-- ===== J3 (4-WAY JUNCTION) ===== -->
-    <!-- Vehicles from West (coming from J2) -->
-    <route id="west_to_north_at_J3" edges="connect_J2_J3 J3_north_out"/>  <!-- West to North -->
-    <route id="west_to_south_at_J3" edges="connect_J2_J3 J3_south_out"/>  <!-- West to South -->
-    <route id="west_to_east_at_J3" edges="connect_J2_J3 J3_east_out"/>  <!-- West to East (through) -->
+    <!-- From West, going to J3 North boundary -->
+    <route id="west_to_J3_north" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_north_out"/>
     
-    <!-- Vehicles from North -->
-    <route id="north_to_west_at_J3" edges="J3_north_in connect_J3_J2 connect_J2_J1 J1_west_out"/>  <!-- North to West -->
-    <route id="north_to_south_at_J3" edges="J3_north_in J3_south_out"/>  <!-- North to South -->
-    <route id="north_to_east_at_J3" edges="J3_north_in J3_east_out"/>  <!-- North to East -->
+    <!-- From West, going to J3 South boundary -->
+    <route id="west_to_J3_south" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_south_out"/>
     
-    <!-- Vehicles from East -->
-    <route id="east_to_west_at_J3" edges="J3_east_in connect_J3_J2 connect_J2_J1 J1_west_out"/>  <!-- East to West -->
-    <route id="east_to_north_at_J3" edges="J3_east_in J3_north_out"/>  <!-- East to North -->
-    <route id="east_to_south_at_J3" edges="J3_east_in J3_south_out"/>  <!-- East to South -->
+    <!-- ===== ROUTES STARTING FROM J2 NORTH BOUNDARY (J2_north) ===== -->
+    <!-- From J2 North, going to West boundary -->
+    <route id="J2_north_to_west" edges="J2_north_in connect_J2_J1 J1_west_out"/>
     
-    <!-- Vehicles from South -->
-    <route id="south_to_west_at_J3" edges="J3_south_in connect_J3_J2 connect_J2_J1 J1_west_out"/>  <!-- South to West -->
-    <route id="south_to_north_at_J3" edges="J3_south_in J3_north_out"/>  <!-- South to North -->
-    <route id="south_to_east_at_J3" edges="J3_south_in J3_east_out"/>  <!-- South to East -->
+    <!-- From J2 North, going to East boundary (via J3) -->
+    <route id="J2_north_to_east" edges="J2_north_in connect_J2_J3 J3_east_out"/>
     
-    <!-- ===== VEHICLE FLOWS ===== -->
-    <!-- Through traffic on main corridor -->
-    <flow id="flow_west_east_main" type="car" route="west_to_east" begin="0" end="3600" period="10"/>
-    <flow id="flow_east_west_main" type="car" route="east_to_west" begin="0" end="3600" period="10"/>
+    <!-- From J2 North, going to J3 North boundary -->
+    <route id="J2_north_to_J3_north" edges="J2_north_in connect_J2_J3 J3_north_out"/>
     
-    <!-- J2 flows - West incoming -->
-    <flow id="flow_west_north_J2" type="car" route="west_to_north_at_J2" begin="0" end="3600" period="15"/>
-    <flow id="flow_west_east_J2" type="car" route="west_to_east_at_J2" begin="0" end="3600" period="12"/>
+    <!-- From J2 North, going to J3 South boundary -->
+    <route id="J2_north_to_J3_south" edges="J2_north_in connect_J2_J3 J3_south_out"/>
     
-    <!-- J2 flows - North incoming -->
-    <flow id="flow_north_west_J2" type="car" route="north_to_west_at_J2" begin="0" end="3600" period="15"/>
-    <flow id="flow_north_east_J2" type="car" route="north_to_east_at_J2" begin="0" end="3600" period="12"/>
+    <!-- ===== ROUTES STARTING FROM J3 NORTH BOUNDARY (J3_north) ===== -->
+    <!-- From J3 North, going to South boundary -->
+    <route id="J3_north_to_south" edges="J3_north_in J3_south_out"/>
     
-    <!-- J2 flows - East incoming -->
-    <flow id="flow_east_west_J2" type="car" route="east_to_west_at_J2" begin="0" end="3600" period="12"/>
-    <flow id="flow_east_north_J2" type="car" route="east_to_north_at_J2" begin="0" end="3600" period="15"/>
+    <!-- From J3 North, going to East boundary -->
+    <route id="J3_north_to_east" edges="J3_north_in J3_east_out"/>
     
-    <!-- J3 flows - West incoming -->
-    <flow id="flow_west_north_J3" type="car" route="west_to_north_at_J3" begin="0" end="3600" period="18"/>
-    <flow id="flow_west_south_J3" type="car" route="west_to_south_at_J3" begin="0" end="3600" period="18"/>
-    <flow id="flow_west_east_J3" type="car" route="west_to_east_at_J3" begin="0" end="3600" period="15"/>
+    <!-- From J3 North, going to West boundary (via J2 and J1) -->
+    <route id="J3_north_to_west" edges="J3_north_in connect_J3_J2 connect_J2_J1 J1_west_out"/>
     
-    <!-- J3 flows - North incoming -->
-    <flow id="flow_north_west_J3" type="car" route="north_to_west_at_J3" begin="0" end="3600" period="18"/>
-    <flow id="flow_north_south_J3" type="car" route="north_to_south_at_J3" begin="0" end="3600" period="15"/>
-    <flow id="flow_north_east_J3" type="car" route="north_to_east_at_J3" begin="0" end="3600" period="18"/>
+    <!-- From J3 North, going to J2 North boundary -->
+    <route id="J3_north_to_J2_north" edges="J3_north_in connect_J3_J2 J2_north_out"/>
     
-    <!-- J3 flows - East incoming -->
-    <flow id="flow_east_west_J3" type="car" route="east_to_west_at_J3" begin="0" end="3600" period="15"/>
-    <flow id="flow_east_north_J3" type="car" route="east_to_north_at_J3" begin="0" end="3600" period="18"/>
-    <flow id="flow_east_south_J3" type="car" route="east_to_south_at_J3" begin="0" end="3600" period="18"/>
+    <!-- ===== ROUTES STARTING FROM J3 EAST BOUNDARY (J3_east) ===== -->
+    <!-- From East, going to West boundary (full route) -->
+    <route id="east_to_west_full" edges="J3_east_in connect_J3_J2 connect_J2_J1 J1_west_out"/>
     
-    <!-- J3 flows - South incoming -->
-    <flow id="flow_south_west_J3" type="car" route="south_to_west_at_J3" begin="0" end="3600" period="18"/>
-    <flow id="flow_south_north_J3" type="car" route="south_to_north_at_J3" begin="0" end="3600" period="15"/>
-    <flow id="flow_south_east_J3" type="car" route="south_to_east_at_J3" begin="0" end="3600" period="18"/>
+    <!-- From East, going to J2 North boundary -->
+    <route id="east_to_J2_north" edges="J3_east_in connect_J3_J2 J2_north_out"/>
+    
+    <!-- From East, going to J3 North boundary -->
+    <route id="east_to_J3_north" edges="J3_east_in J3_north_out"/>
+    
+    <!-- From East, going to J3 South boundary -->
+    <route id="east_to_J3_south" edges="J3_east_in J3_south_out"/>
+    
+    <!-- ===== ROUTES STARTING FROM J3 SOUTH BOUNDARY (J3_south) ===== -->
+    <!-- From South, going to North boundary -->
+    <route id="south_to_north" edges="J3_south_in J3_north_out"/>
+    
+    <!-- From South, going to East boundary -->
+    <route id="south_to_east" edges="J3_south_in J3_east_out"/>
+    
+    <!-- From South, going to West boundary (via J2 and J1) -->
+    <route id="south_to_west" edges="J3_south_in connect_J3_J2 connect_J2_J1 J1_west_out"/>
+    
+    <!-- From South, going to J2 North boundary -->
+    <route id="south_to_J2_north" edges="J3_south_in connect_J3_J2 J2_north_out"/>
+    
+    <!-- ===== VEHICLE FLOWS - EACH FLOW STARTS AT A BOUNDARY ===== -->
+    
+    <!-- Flows from WEST boundary (J1_west) -->
+    <flow id="flow_west_to_east" type="car" route="west_to_east_full" begin="0" end="3600" period="8"/>
+    <flow id="flow_west_to_J2_north" type="car" route="west_to_J2_north" begin="0" end="3600" period="15"/>
+    <flow id="flow_west_to_J3_north" type="car" route="west_to_J3_north" begin="0" end="3600" period="20"/>
+    <flow id="flow_west_to_J3_south" type="car" route="west_to_J3_south" begin="0" end="3600" period="20"/>
+    
+    <!-- Flows from J2 NORTH boundary -->
+    <flow id="flow_J2_north_to_west" type="car" route="J2_north_to_west" begin="0" end="3600" period="10"/>
+    <flow id="flow_J2_north_to_east" type="car" route="J2_north_to_east" begin="0" end="3600" period="10"/>
+    <flow id="flow_J2_north_to_J3_north" type="car" route="J2_north_to_J3_north" begin="0" end="3600" period="15"/>
+    <flow id="flow_J2_north_to_J3_south" type="car" route="J2_north_to_J3_south" begin="0" end="3600" period="15"/>
+    
+    <!-- Flows from J3 NORTH boundary -->
+    <flow id="flow_J3_north_to_south" type="car" route="J3_north_to_south" begin="0" end="3600" period="8"/>
+    <flow id="flow_J3_north_to_east" type="car" route="J3_north_to_east" begin="0" end="3600" period="12"/>
+    <flow id="flow_J3_north_to_west" type="car" route="J3_north_to_west" begin="0" end="3600" period="15"/>
+    <flow id="flow_J3_north_to_J2_north" type="car" route="J3_north_to_J2_north" begin="0" end="3600" period="15"/>
+    
+    <!-- Flows from J3 EAST boundary -->
+    <flow id="flow_east_to_west" type="car" route="east_to_west_full" begin="0" end="3600" period="8"/>
+    <flow id="flow_east_to_J2_north" type="car" route="east_to_J2_north" begin="0" end="3600" period="12"/>
+    <flow id="flow_east_to_J3_north" type="car" route="east_to_J3_north" begin="0" end="3600" period="15"/>
+    <flow id="flow_east_to_J3_south" type="car" route="east_to_J3_south" begin="0" end="3600" period="15"/>
+    
+    <!-- Flows from J3 SOUTH boundary -->
+    <flow id="flow_south_to_north" type="car" route="south_to_north" begin="0" end="3600" period="8"/>
+    <flow id="flow_south_to_east" type="car" route="south_to_east" begin="0" end="3600" period="12"/>
+    <flow id="flow_south_to_west" type="car" route="south_to_west" begin="0" end="3600" period="15"/>
+    <flow id="flow_south_to_J2_north" type="car" route="south_to_J2_north" begin="0" end="3600" period="15"/>
     
     <!-- ===== PEDESTRIAN FLOWS (unchanged) ===== -->
-    <!-- Pedestrians using the walking areas and crossing -->
     <person id="ped_south_1" type="pedestrian" depart="5">
         <walk edges="J1_walk_south"/>
         <stop lane="J1_walk_south_0" duration="8"/>
@@ -105,15 +135,5 @@
         <walk edges="J1_walk_north"/>
         <stop lane="J1_walk_north_0" duration="10"/>
         <walk edges="J1_crossing_edge J1_walk_south"/>
-    </person>
-    
-    <person id="ped_wait_south" type="pedestrian" depart="8">
-        <walk edges="J1_walk_south"/>
-        <stop lane="J1_walk_south_0" duration="30"/>
-    </person>
-    
-    <person id="ped_wait_north" type="pedestrian" depart="18">
-        <walk edges="J1_walk_north"/>
-        <stop lane="J1_walk_north_0" duration="30"/>
     </person>
 </routes>
