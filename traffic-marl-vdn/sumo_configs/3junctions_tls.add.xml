@@ -1,0 +1,42 @@
+<additional>
+    <!-- traffic light logic for three junctions -->
+    <!-- junction 1: east-west two-way with pedestrian crossing -->
+    <tlLogic id="J1_2way" type="static" programID="0" offset="0">
+        <!-- west approach green -->
+        <phase duration="30" state="GGrr"/>
+        <phase duration="1" state="yyrr"/>
+        <!-- east approach green (greens last ≥5s) -->
+        <phase duration="30" state="rrGG"/>
+        <phase duration="5" state="rryy"/>
+    </tlLogic>
+
+    <!-- junction 2: 3-way with 9 traffic links (west=0..2, north=3..5, east=6..8) -->
+    <tlLogic id="J2_3way" type="static" programID="0" offset="0">
+        <!-- east approach green (links 6..8) -->
+        <phase duration="30" state="rrrrrrGGG"/>
+        <phase duration="1" state="rrrrrryyy"/>
+        <!-- north approach green (greens last ≥5s)" (links 3..5) -->
+        <phase duration="30" state="rrrGGGrrr"/>
+        <phase duration="1" state="rrryyyrrr"/>
+        <!-- west approach green (links 0..2) -->
+        <phase duration="30" state="GGGrrrrrr"/>
+        <phase duration="1" state="yyyrrrrrr"/>
+    </tlLogic>
+
+    <!-- junction 3: full 4-way with 16 traffic links
+         (south=0..3, east=4..7, north=8..11, west=12..15) -->
+    <tlLogic id="J3_4way" type="static" programID="0" offset="0">
+        <!-- south approach green (links 0..3) -->
+        <phase duration="30" state="GGGGrrrrrrrrrrrr"/>
+        <phase duration="1" state="yyyyrrrrrrrrrrrr"/>
+        <!-- east approach green (greens ≥5s) (links 4..7) -->
+        <phase duration="30" state="rrrrGGGGrrrrrrrr"/>
+        <phase duration="1" state="rrrryyyyrrrrrrrr"/>
+        <!-- north approach green (links 8..11) -->
+        <phase duration="30" state="rrrrrrrrGGGGrrrr"/>
+        <phase duration="1" state="rrrrrrrryyyyrrrr"/>
+        <!-- west approach green (links 12..15) -->
+        <phase duration="30" state="rrrrrrrrrrrrGGGG"/>
+        <phase duration="1" state="rrrrrrrrrrrryyyy"/>
+    </tlLogic>
+</additional>

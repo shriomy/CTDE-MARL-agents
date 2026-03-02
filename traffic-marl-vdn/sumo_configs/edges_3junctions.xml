@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edges>
+    <!-- =============================================================== -->
+    <!-- J1_2way (2-WAY JUNCTION) - Main road entry from west -->
+    <!-- =============================================================== -->
+    <edge id="J1_east_in" from="J1_west" to="J1_2way" numLanes="2" speed="0.87"/>
+    <edge id="J1_west_out" from="J1_2way" to="J1_west" numLanes="2" speed="0.87"/>
+    
+    <!-- =============================================================== -->
+    <!-- MAIN ROAD CONNECTORS (direct between main junctions, no checkpoints) -->
+    <!-- =============================================================== -->
+    <!-- J1_2way to J2_3way (east-west main road) -->
+    <edge id="connect_J1_J2" from="J1_2way" to="J2_3way" numLanes="2" speed="0.87"/>
+    <edge id="connect_J2_J1" from="J2_3way" to="J1_2way" numLanes="2" speed="0.87"/>
+    
+    <!-- J2_3way to J3_4way (east-west main road) -->
+    <edge id="connect_J2_J3" from="J2_3way" to="J3_4way" numLanes="2" speed="0.87"/>
+    <edge id="connect_J3_J2" from="J3_4way" to="J2_3way" numLanes="2" speed="0.87"/>
+    
+    <!-- =============================================================== -->
+    <!-- J2_3way (3-WAY JUNCTION) - North branch -->
+    <!-- =============================================================== -->
+    <edge id="J2_north_in" from="J2_north" to="J2_3way" numLanes="2" speed="0.87"/>
+    <edge id="J2_north_out" from="J2_3way" to="J2_north" numLanes="2" speed="0.87"/>
+    
+    <!-- =============================================================== -->
+    <!-- J3_4way (4-WAY JUNCTION) - Boundary entries/exits -->
+    <!-- =============================================================== -->
+    <!-- East boundary -->
+    <edge id="J3_east_in" from="J3_east" to="J3_4way" numLanes="2" speed="0.87"/>
+    <edge id="J3_east_out" from="J3_4way" to="J3_east" numLanes="2" speed="0.87"/>
+    
+    <!-- North boundary -->
+    <edge id="J3_north_in" from="J3_north" to="J3_4way" numLanes="2" speed="0.87"/>
+    <edge id="J3_north_out" from="J3_4way" to="J3_north" numLanes="2" speed="0.87"/>
+    
+    <!-- South boundary -->
+    <edge id="J3_south_in" from="J3_south" to="J3_4way" numLanes="2" speed="0.87"/>
+    <edge id="J3_south_out" from="J3_4way" to="J3_south" numLanes="2" speed="0.87"/>
+    
+</edges>
