@@ -68,8 +68,6 @@
     <!-- J2 flows (north boundary plus an east‑to‑west corridor) -->
     <flow id="flow_J2_n2w" type="car" route="J2_north_to_west" begin="0" end="86400" period="12" departLane="best" departPos="base"/>
     <flow id="flow_J2_n2e" type="car" route="J2_north_to_east" begin="0" end="86400" period="12" departLane="best" departPos="base"/>
-    <!-- east‑to‑west through‑corridor (cars from J3 side passing J2 and J1) -->
-    <flow id="flow_J2_e2w" type="car" route="J2_east_to_west" begin="0" end="86400" period="15" departLane="best" departPos="base"/>
     <!-- alternative north-to-east flow that turns south inside J3 -->
     <flow id="flow_J2_n2e_alt" type="car" route="J2_north_to_east" begin="0" end="86400" period="30" departLane="best" departPos="base"/>
     
@@ -86,8 +84,4 @@
     <flow id="J3_east_south" type="car" route="J3_east_to_south" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
     <flow id="J3_east_west" type="car" route="J3_east_to_west" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
     
-    <!-- West‑incoming flows at J3 (originating from J2) -->
-    <flow id="J3_west_east" type="car" route="J3_west_to_east" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    <flow id="J3_west_south" type="car" route="J3_west_to_south" begin="0" end="86400" period="30" departLane="best" departPos="base"/>
-    <flow id="J3_west_north" type="car" route="J3_west_to_north" begin="0" end="86400" period="30" departLane="best" departPos="base"/>
 </routes>
