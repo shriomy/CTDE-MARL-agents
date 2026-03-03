@@ -172,17 +172,21 @@
     </edge>
 
     <!-- Pedestrian infrastructure at J1 -->
-    <walkingArea id="J1_walk_south" shape="94.00,85.00 106.00,85.00 106.00,92.00 94.00,92.00"/>
-    <walkingArea id="J1_walk_north" shape="94.00,108.00 106.00,108.00 106.00,115.00 94.00,115.00"/>
-    <crossing id="J1_crossing" edges="J1_east_in" walkingAreas="J1_walk_south J1_walk_north" discard="0" shape="94.00,92.00 106.00,92.00 106.00,108.00 94.00,108.00" tl="J1_2way" tlLinkIndex="4"/>
+    <!-- Replace the walking areas with properly positioned ones -->
+    <walkingArea id="J1_walk_south" shape="94.00,80.00 106.00,80.00 106.00,92.00 94.00,92.00"/>
+    <walkingArea id="J1_walk_north" shape="94.00,108.00 106.00,108.00 106.00,120.00 94.00,120.00"/>
 
     <tlLogic id="J1_2way" type="static" programID="0" offset="0">
-        <!-- vehicle phase: all vehicle links green, pedestrian red -->
+        <!-- Phase 0: Vehicles green (both directions), pedestrians red -->
+        <!-- GGGG = 4 vehicle signals green, r = pedestrian signal red -->
         <phase duration="30" state="GGGGr"/>
-        <phase duration="1" state="yyyyr"/>
-        <!-- pedestrian phase: vehicles red, crossing green -->
+        <!-- Yellow transition for vehicles, pedestrian still red -->
+        <phase duration="3"  state="yyyyr"/>
+        <!-- Phase 2: Vehicles red, pedestrians green -->
+        <!-- rrrr = 4 vehicle signals red, G = pedestrian signal green -->
         <phase duration="20" state="rrrrG"/>
-        <phase duration="3" state="rrrry"/>
+        <!-- Yellow transition for pedestrians (flashing don't walk) -->
+        <phase duration="3"  state="rrrry"/>
     </tlLogic>
     <tlLogic id="J2_3way" type="static" programID="0" offset="0">
         <phase duration="30" state="rrrrrrGGG"/>
@@ -208,7 +212,14 @@
         <request index="1" response="0000" foes="0000" cont="0"/>
         <request index="2" response="0000" foes="0000" cont="0"/>
         <request index="3" response="0000" foes="0000" cont="0"/>
-        <crossing id="J1_crossing" priority="1" width="12.00" tl="J1_2way" tlLinkIndex="4"/>
+        <crossing id="J1_crossing" 
+            node="J1_2way" 
+            edges="J1_east_in"   
+            walkingAreas="J1_walk_south J1_walk_north" 
+            priority="1" 
+            width="4.00"         
+            tl="J1_2way" 
+            tlLinkIndex="4"/>
     </junction>
     <junction id="J1_west" type="dead_end" x="0.00" y="100.00" incLanes="J1_west_out_0 J1_west_out_1" intLanes="" shape="0.00,100.00 0.00,93.60 0.00,100.00"/>
     <junction id="J2_3way" type="traffic_light" x="500.00" y="100.00" incLanes="connect_J3_J2_0 connect_J3_J2_1 J2_north_in_0 J2_north_in_1 connect_J1_J2_0 connect_J1_J2_1" intLanes=":J2_3way_0_0 :J2_3way_0_1 :J2_3way_2_0 :J2_3way_3_0 :J2_3way_3_1 :J2_3way_5_0 :J2_3way_6_0 :J2_3way_7_0 :J2_3way_7_1" shape="510.40,93.60 510.40,106.40 508.18,106.84 507.40,107.40 506.84,108.18 506.51,109.18 506.40,110.40 493.60,110.40 493.16,108.18 492.60,107.40 491.82,106.84 490.82,106.51 489.60,106.40 489.60,93.60">
@@ -304,13 +315,5 @@
     <connection from=":J3_4way_13" to="J3_east_out" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":J3_4way_13" to="J3_east_out" fromLane="1" toLane="1" dir="s" state="M"/>
     <connection from=":J3_4way_15" to="J3_south_out" fromLane="0" toLane="1" dir="r" state="M"/>
-
-    <!-- Add pedestrian infrastructure -->
-    <walkingArea id="wa_south" shape="195.00,395.00 205.00,395.00 205.00,385.00 195.00,385.00"/>
-    <walkingArea id="wa_north" shape="195.00,405.00 205.00,405.00 205.00,415.00 195.00,415.00"/>
-
-    <crossing id="crossing_J1" node="J1_crossing" edges="road_w_to_J1 road_east_to_J1" 
-          priority="true" width="4.0" 
-          walkingAreas="wa_south wa_north"/>
 
 </net>

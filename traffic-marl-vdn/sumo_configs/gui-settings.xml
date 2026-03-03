@@ -8,4 +8,9 @@
     <lane-show-borders value="true"/>
     <show-link-rule value="true"/>
     <show-link-tls value="true"/>
+    <pedestrian>
+        <show value="true"/>
+        <show-crossings value="true"/>
+        <show-walkingareas value="true"/>
+    </pedestrian>
 </viewsettings>

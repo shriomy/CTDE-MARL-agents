@@ -13,6 +13,7 @@
 
     <processing>
         <lateral-resolution value="0.8"/>
+         <pedestrian.model value="striping"/>
     </processing>
 
     <report>
