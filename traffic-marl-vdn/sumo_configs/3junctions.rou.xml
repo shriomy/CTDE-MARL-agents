@@ -1,137 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<routes>
-    <!-- Vehicle types -->
-    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5.0" maxSpeed="50.0" color="1,0,0"/>
-    <vType id="truck" accel="1.2" decel="4.0" sigma="0.5" length="7.5" maxSpeed="40.0" color="0.5,0.5,0.5"/>
-    
-    <!-- Pedestrian types -->
-    <vType id="pedestrian_normal" vClass="pedestrian" maxSpeed="1.34" color="0,1,0"/>
-    <vType id="pedestrian_elderly" vClass="pedestrian" maxSpeed="0.8" color="0,0,1"/>
-    <vType id="pedestrian_child" vClass="pedestrian" maxSpeed="1.0" color="1,1,0"/>
-    <vType id="pedestrian_fast" vClass="pedestrian" maxSpeed="1.8" color="1,0.5,0"/>
-    
-    <!-- ===== BOUNDARY ENTRY POINTS (where vehicles are generated) ===== -->
-    <!-- J1: West boundary (J1_west) - vehicles enter via J1_east_in -->
-    <!-- J2: North boundary (J2_north) - vehicles enter via J2_north_in -->
-    <!-- J3: North boundary (J3_north) - vehicles enter via J3_north_in -->
-    <!-- J3: East boundary (J3_east) - vehicles enter via J3_east_in -->
-    <!-- J3: South boundary (J3_south) - vehicles enter via J3_south_in -->
-    
-    <!-- ===== J1 - PEDESTRIAN CROSSING ===== -->
-    <!-- No turns at J1, just straight through for vehicles -->
-    
-    <!-- ===== ROUTES STARTING FROM WEST BOUNDARY (J1_west) ===== -->
-    <route id="west_to_east_full" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_east_out"/>
-    <route id="west_to_J2_north" edges="J1_east_in connect_J1_J2 J2_north_out"/>
-    <route id="west_to_J3_north" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_north_out"/>
-    <route id="west_to_J3_south" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_south_out"/>
-    
-    <!-- ===== ROUTES STARTING FROM J2 NORTH BOUNDARY (J2_north) ===== -->
-    <route id="J2_north_to_west" edges="J2_north_in connect_J2_J1 J1_west_out"/>
-    <route id="J2_north_to_east" edges="J2_north_in connect_J2_J3 J3_east_out"/>
-    <route id="J2_north_to_J3_north" edges="J2_north_in connect_J2_J3 J3_north_out"/>
-    <route id="J2_north_to_J3_south" edges="J2_north_in connect_J2_J3 J3_south_out"/>
-    
-    <!-- ===== ROUTES STARTING FROM J3 NORTH BOUNDARY (J3_north) ===== -->
-    <route id="J3_north_to_south" edges="J3_north_in J3_south_out"/>
-    <route id="J3_north_to_east" edges="J3_north_in J3_east_out"/>
-    <route id="J3_north_to_west" edges="J3_north_in connect_J3_J2 connect_J2_J1 J1_west_out"/>
-    <route id="J3_north_to_J2_north" edges="J3_north_in connect_J3_J2 J2_north_out"/>
-    
-    <!-- ===== ROUTES STARTING FROM J3 EAST BOUNDARY (J3_east) ===== -->
-    <route id="east_to_west_full" edges="J3_east_in connect_J3_J2 connect_J2_J1 J1_west_out"/>
-    <route id="east_to_J2_north" edges="J3_east_in connect_J3_J2 J2_north_out"/>
-    <route id="east_to_J3_north" edges="J3_east_in J3_north_out"/>
-    <route id="east_to_J3_south" edges="J3_east_in J3_south_out"/>
-    
-    <!-- ===== ROUTES STARTING FROM J3 SOUTH BOUNDARY (J3_south) ===== -->
-    <route id="south_to_north" edges="J3_south_in J3_north_out"/>
-    <route id="south_to_east" edges="J3_south_in J3_east_out"/>
-    <route id="south_to_west" edges="J3_south_in connect_J3_J2 connect_J2_J1 J1_west_out"/>
-    <route id="south_to_J2_north" edges="J3_south_in connect_J3_J2 J2_north_out"/>
-    
-    <!-- ===== VEHICLE FLOWS ===== -->
-    <!-- Flows from WEST boundary -->
-    <flow id="flow_west_to_east" type="car" route="west_to_east_full" begin="0" end="3600" period="8"/>
-    <flow id="flow_west_to_J2_north" type="car" route="west_to_J2_north" begin="0" end="3600" period="15"/>
-    <flow id="flow_west_to_J3_north" type="car" route="west_to_J3_north" begin="0" end="3600" period="20"/>
-    <flow id="flow_west_to_J3_south" type="car" route="west_to_J3_south" begin="0" end="3600" period="20"/>
-    
-    <!-- Flows from J2 NORTH boundary -->
-    <flow id="flow_J2_north_to_west" type="car" route="J2_north_to_west" begin="0" end="3600" period="10"/>
-    <flow id="flow_J2_north_to_east" type="car" route="J2_north_to_east" begin="0" end="3600" period="10"/>
-    <flow id="flow_J2_north_to_J3_north" type="car" route="J2_north_to_J3_north" begin="0" end="3600" period="15"/>
-    <flow id="flow_J2_north_to_J3_south" type="car" route="J2_north_to_J3_south" begin="0" end="3600" period="15"/>
-    
-    <!-- Flows from J3 NORTH boundary -->
-    <flow id="flow_J3_north_to_south" type="car" route="J3_north_to_south" begin="0" end="3600" period="8"/>
-    <flow id="flow_J3_north_to_east" type="car" route="J3_north_to_east" begin="0" end="3600" period="12"/>
-    <flow id="flow_J3_north_to_west" type="car" route="J3_north_to_west" begin="0" end="3600" period="15"/>
-    <flow id="flow_J3_north_to_J2_north" type="car" route="J3_north_to_J2_north" begin="0" end="3600" period="15"/>
-    
-    <!-- Flows from J3 EAST boundary -->
-    <flow id="flow_east_to_west" type="car" route="east_to_west_full" begin="0" end="3600" period="8"/>
-    <flow id="flow_east_to_J2_north" type="car" route="east_to_J2_north" begin="0" end="3600" period="12"/>
-    <flow id="flow_east_to_J3_north" type="car" route="east_to_J3_north" begin="0" end="3600" period="15"/>
-    <flow id="flow_east_to_J3_south" type="car" route="east_to_J3_south" begin="0" end="3600" period="15"/>
-    
-    <!-- Flows from J3 SOUTH boundary -->
-    <flow id="flow_south_to_north" type="car" route="south_to_north" begin="0" end="3600" period="8"/>
-    <flow id="flow_south_to_east" type="car" route="south_to_east" begin="0" end="3600" period="12"/>
-    <flow id="flow_south_to_west" type="car" route="south_to_west" begin="0" end="3600" period="15"/>
-    <flow id="flow_south_to_J2_north" type="car" route="south_to_J2_north" begin="0" end="3600" period="15"/>
-    
-    <!-- ===== PEDESTRIAN FLOWS - USING EDGES (PROVEN TO WORK) ===== -->
-    <!-- These pedestrians will follow the specific edges and respect traffic lights -->
 
-    <!-- Continuous pedestrian flow from south to north (every 4 seconds) -->
-    <personFlow id="ped_south_to_north" type="pedestrian_normal" begin="0" end="3600" period="6">
-        <walk edges="J1_walk_south J1_crossing_edge J1_walk_north"/>
+<!-- generated on 2026-03-05 01:09:37 by Eclipse SUMO netedit Version 1.24.0
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <flow id="f_0" begin="0.00" from="E0" to="E2" via="E00" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_1" begin="0.00" from="E0" to="E4" via="E00 E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_10" begin="0.00" from="-E4" to="E5" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_11" begin="0.00" from="-E4" to="E8" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_12" begin="0.00" from="-E5" to="E4" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_13" begin="0.00" from="-E5" to="E8" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_14" begin="0.00" from="-E5" to="E2" via="-E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_15" begin="0.00" from="-E5" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_2" begin="0.00" from="E0" to="E5" via="E00 E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_3" begin="0.00" from="E0" to="E8" via="E00 E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_4" begin="0.00" from="-E2" to="-E0.80" via="-E0" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_5" begin="0.00" from="-E2" to="E4" via="E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_6" begin="0.00" from="-E2" to="E5" via="E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_7" begin="0.00" from="-E2" to="E8" via="E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_8" begin="0.00" from="-E4" to="E2" via="-E3" end="3600.00" vehsPerHour="500"/>
+    <flow id="f_9" begin="0.00" from="-E4" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500"/>
+    <personFlow id="pf_10" begin="0.00" end="3600.00" personsPerHour="500">
+        <personTrip from="E00" to="-E0.80"/>
     </personFlow>
-
-    <!-- Pedestrians start at north, cross to south -->
-    <personFlow id="ped_north_to_south" type="pedestrian_normal" begin="3" end="3600" period="6">
-        <walk edges="J1_walk_north J1_crossing_edge J1_walk_south"/>
+    <personFlow id="pf_13" begin="0.00" end="3600.00" personsPerHour="500">
+        <personTrip from="E00" to="-E0"/>
     </personFlow>
-
-    <!-- Elderly pedestrians (slower) -->
-    <personFlow id="ped_elderly_south" type="pedestrian_elderly" begin="5" end="3600" period="12">
-        <walk edges="J1_walk_south J1_crossing_edge J1_walk_north"/>
+    <personFlow id="pf_4" begin="0.00" end="3600.00" personsPerHour="500">
+        <personTrip from="-E0.80" to="E00"/>
     </personFlow>
-
-    <personFlow id="ped_elderly_north" type="pedestrian_elderly" begin="11" end="3600" period="12">
-        <walk edges="J1_walk_north J1_crossing_edge J1_walk_south"/>
-    </personFlow>
-
-    <!-- Children -->
-    <personFlow id="ped_child_south" type="pedestrian_child" begin="7" end="3600" period="15">
-        <walk edges="J1_walk_south J1_crossing_edge J1_walk_north"/>
-    </personFlow>
-
-    <personFlow id="ped_child_north" type="pedestrian_child" begin="14" end="3600" period="15">
-        <walk edges="J1_walk_north J1_crossing_edge J1_walk_south"/>
-    </personFlow>
-
-    <!-- Fast pedestrians (joggers) -->
-    <personFlow id="ped_fast_south" type="pedestrian_fast" begin="3" end="3600" period="20">
-        <walk edges="J1_walk_south J1_crossing_edge J1_walk_north"/>
-    </personFlow>
-
-    <personFlow id="ped_fast_north" type="pedestrian_fast" begin="13" end="3600" period="20">
-        <walk edges="J1_walk_north J1_crossing_edge J1_walk_south"/>
-    </personFlow>
-
-    <!-- High-density pedestrian flow (for testing) -->
-    <personFlow id="ped_high_density" type="pedestrian_normal" begin="100" end="200" period="1">
-        <walk edges="J1_walk_south J1_crossing_edge J1_walk_north"/>
-    </personFlow>
-
-    <!-- Additional flows to ensure continuous pedestrians -->
-    <personFlow id="ped_continuous_1" type="pedestrian_normal" begin="1" end="3600" period="4">
-        <walk edges="J1_walk_south J1_crossing_edge J1_walk_north"/>
-    </personFlow>
-
-    <personFlow id="ped_continuous_2" type="pedestrian_normal" begin="2" end="3600" period="4">
-        <walk edges="J1_walk_north J1_crossing_edge J1_walk_south"/>
+    <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="500">
+        <personTrip from="-E0.80" to="E0"/>
     </personFlow>
 </routes>
