@@ -4,6 +4,7 @@
     <input>
         <net-file value="3junctions.net.xml"/>
         <route-files value="3junctions.rou.xml"/>
+        <additional-files value="buildings.poly.xml"/>
     </input>
 
     <time>

@@ -1,35 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<!-- generated on 2026-03-05 01:09:37 by Eclipse SUMO netedit Version 1.24.0
--->
-
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <flow id="f_0" begin="0.00" from="E0" to="E2" via="E00" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_1" begin="0.00" from="E0" to="E4" via="E00 E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_10" begin="0.00" from="-E4" to="E5" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_11" begin="0.00" from="-E4" to="E8" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_12" begin="0.00" from="-E5" to="E4" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_13" begin="0.00" from="-E5" to="E8" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_14" begin="0.00" from="-E5" to="E2" via="-E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_15" begin="0.00" from="-E5" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_2" begin="0.00" from="E0" to="E5" via="E00 E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_3" begin="0.00" from="E0" to="E8" via="E00 E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_4" begin="0.00" from="-E2" to="-E0.80" via="-E0" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_5" begin="0.00" from="-E2" to="E4" via="E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_6" begin="0.00" from="-E2" to="E5" via="E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_7" begin="0.00" from="-E2" to="E8" via="E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_8" begin="0.00" from="-E4" to="E2" via="-E3" end="3600.00" vehsPerHour="500"/>
-    <flow id="f_9" begin="0.00" from="-E4" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500"/>
-    <personFlow id="pf_10" begin="0.00" end="3600.00" personsPerHour="500">
+    <!-- Add vehicle type definitions with lower speeds -->
+    <vType id="car" accel="1.6" decel="1.5" sigma="0.5" length="5.0" maxSpeed="1.89" color="1,0,0"/>
+    <vType id="real_car" accel="1.5" decel="3.0" sigma="0.5" length="5.0" maxSpeed="8.33" color="green"/> <!-- 30 km/h -->
+    <vType id="pedestrian" vClass="pedestrian" maxSpeed="1.0" color="blue"/>
+
+    <!-- Emergency Vehicles (higher priority, faster, special colors) -->
+    <vType id="police" accel="2.0" decel="2.0" sigma="0.3" length="6.0" maxSpeed="2.22" guiShape="police" probability="0.1"/>
+    <!-- Police: Blue, 80 km/h -->
+    
+    <vType id="ambulance" accel="2.5" decel="2.5" sigma="0.3" length="8.0" maxSpeed="3.44" guiShape="emergency" probability="0.1"/>
+    <!-- Ambulance: White, 70 km/h -->
+    
+    <vType id="firetruck" accel="2.0" decel="2.0" sigma="0.3" length="10.0" maxSpeed="3.67" guiShape="firebrigade" probability="0.05"/>
+    <!-- Fire Truck: Red, 60 km/h -->
+
+    
+    <!-- Update flows to use car type -->
+    <flow id="f_0" begin="0.00" from="E0" to="E2" via="E00" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_1" begin="0.00" from="E0" to="E4" via="E00 E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_2" begin="0.00" from="E0" to="E5" via="E00 E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_3" begin="0.00" from="E0" to="E8" via="E00 E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_4" begin="0.00" from="-E2" to="-E0.80" via="-E0" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_5" begin="0.00" from="-E2" to="E4" via="E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_6" begin="0.00" from="-E2" to="E5" via="E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_7" begin="0.00" from="-E2" to="E8" via="E3" end="3600.00" vehsPerHour="500" type="real_car"/>
+    <flow id="f_8" begin="0.00" from="-E4" to="E2" via="-E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_9" begin="0.00" from="-E4" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_10" begin="0.00" from="-E4" to="E5" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_11" begin="0.00" from="-E4" to="E8" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_12" begin="0.00" from="-E5" to="E4" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_13" begin="0.00" from="-E5" to="E8" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_14" begin="0.00" from="-E5" to="E2" via="-E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_15" begin="0.00" from="-E5" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500" type="car"/>
+
+    <flow id="f_16" begin="0.00" from="-E2" to="E4" via="E3" end="3600.00" vehsPerHour="50" type="police"/>
+    <flow id="f_17" begin="0.00" from="-E4" to="E5" end="3600.00" vehsPerHour="50" type="ambulance"/>
+    <flow id="f_18" begin="0.00" from="-E5" to="E4" end="3600.00" vehsPerHour="50" type="firetruck"/>
+    <flow id="f_19" begin="0.00" from="E0" to="E8" via="E00 E3" end="3600.00" vehsPerHour="50" type="ambulance"/>
+    
+    <!-- Person flows with proper pedestrian type -->
+    <personFlow id="pf_10" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
         <personTrip from="E00" to="-E0.80"/>
     </personFlow>
-    <personFlow id="pf_13" begin="0.00" end="3600.00" personsPerHour="500">
+    <personFlow id="pf_13" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
         <personTrip from="E00" to="-E0"/>
     </personFlow>
-    <personFlow id="pf_4" begin="0.00" end="3600.00" personsPerHour="500">
+    <personFlow id="pf_4" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
         <personTrip from="-E0.80" to="E00"/>
     </personFlow>
-    <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="500">
+    <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
         <personTrip from="-E0.80" to="E0"/>
     </personFlow>
 </routes>
