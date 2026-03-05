@@ -7,3 +7,5 @@ traffic-marl-vdn/marl_execution/__pycache__/
 traffic-marl-vdn/models/*
 traffic-marl-vdn/utils/__pycache__/
 traffic-marl-vdn/venv/
+sumo_configs/
+sumo_config.zip
