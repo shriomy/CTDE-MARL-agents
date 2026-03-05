@@ -22,7 +22,7 @@
         <!-- disable teleporting altogether to keep vehicles visible -->
         <time-to-teleport value="0"/>
     </report>
-
+  
     <gui_only>
         <gui-settings-file value="gui-settings.xml"/>
         <delay value="50"/>

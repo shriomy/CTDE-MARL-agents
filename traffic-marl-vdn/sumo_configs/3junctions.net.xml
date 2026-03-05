@@ -226,7 +226,7 @@
         <phase duration="140" state="GGGGrrrrrrrrrrrr"/>
         <phase duration="30"  state="yyyyyyyyrrrrrrrr"/>
         <phase duration="140" state="rrrrGGGGrrrrrrrr"/>
-        <phase duration="300"  state="rrrryyyyyyyyrrrr"/>
+        <phase duration="30"  state="rrrryyyyyyyyrrrr"/>
         <phase duration="140" state="rrrrrrrrGGGGrrrr"/>
         <phase duration="30"  state="rrrrrrrryyyyyyyy"/>
         <phase duration="140" state="rrrrrrrrrrrrGGGG"/>
