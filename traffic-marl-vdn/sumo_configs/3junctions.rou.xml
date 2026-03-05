@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <!-- Add vehicle type definitions with lower speeds -->
-    <vType id="car" accel="1.6" decel="1.5" sigma="0.5" length="5.0" maxSpeed="1.89" color="1,0,0"/>
-    <vType id="real_car" accel="1.5" decel="3.0" sigma="0.5" length="5.0" maxSpeed="8.33" color="green"/> <!-- 30 km/h -->
+    <vType id="car" accel="1.89" decel="1.89" sigma="0.5" length="5.0" maxSpeed="1.89" color="1,0,0"/>
+    <vType id="real_car" accel="1.89" decel="1.89" sigma="0.5" length="5.0" maxSpeed="1.89" color="green"/> 
     <vType id="pedestrian" vClass="pedestrian" maxSpeed="1.0" color="blue"/>
 
     <!-- Emergency Vehicles (higher priority, faster, special colors) -->
-    <vType id="police" accel="2.0" decel="2.0" sigma="0.3" length="6.0" maxSpeed="2.22" guiShape="police" probability="0.1"/>
+    <vType id="police" accel="1.89" decel="1.89" sigma="0.3" length="6.0" maxSpeed="1.89" guiShape="police" probability="0.1"/>
     <!-- Police: Blue, 80 km/h -->
     
-    <vType id="ambulance" accel="2.5" decel="2.5" sigma="0.3" length="8.0" maxSpeed="3.44" guiShape="emergency" probability="0.1"/>
+    <vType id="ambulance" accel="1.89" decel="1.89" sigma="0.3" length="8.0" maxSpeed="1.89" guiShape="emergency" probability="0.1"/>
     <!-- Ambulance: White, 70 km/h -->
     
-    <vType id="firetruck" accel="2.0" decel="2.0" sigma="0.3" length="10.0" maxSpeed="3.67" guiShape="firebrigade" probability="0.05"/>
+    <vType id="firetruck" accel="1.89" decel="1.89" sigma="0.3" length="10.0" maxSpeed="1.89" guiShape="firebrigade" probability="0.05"/>
     <!-- Fire Truck: Red, 60 km/h -->
 
     
