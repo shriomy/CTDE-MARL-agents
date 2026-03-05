@@ -407,6 +407,7 @@ class SUMOVehicleFactory:
         Returns list of created pedestrian IDs.
         """
         created_peds = []
+        failed_peds = 0
         
         try:
             # Try to register types
@@ -415,7 +416,12 @@ class SUMOVehicleFactory:
             data = record.get('data', {})
             pedestrians = data.get('pedestrians', [])
             timestamp = record.get('timestamp', '')
-            logger.debug(f"Creating pedestrians with data: {pedestrians}")
+            logger.info(
+                "Pedestrian injection request: timestamp=%s, groups=%d, payload=%s",
+                timestamp,
+                len(pedestrians),
+                pedestrians,
+            )
             
             ts_int = self._timestamp_to_int(timestamp)
             
@@ -425,6 +431,8 @@ class SUMOVehicleFactory:
             except:
                 logger.error("SUMO not connected!")
                 return []
+
+            logger.info("SUMO pedestrian injection start at sim_time=%.2f", current_time)
             
             for ped_info in pedestrians:
                 ped_type = ped_info.get('type', '').lower()
@@ -442,42 +450,98 @@ class SUMOVehicleFactory:
                 mapped_type = type_map.get(ped_type, 'adult')
                 props = self.PEDESTRIAN_TYPES[mapped_type]
                 type_id = props['vType']
-                logger.debug(f"Creating pedestrians of type '{mapped_type}' at position '{position}' with count {count}")
-                # Determine start and end edges based on position
-                north_edges = ['-E0.80', '-E0']
-                south_edges = ['E00', 'E0']
+                logger.info(
+                    "Pedestrian group: source_type=%s mapped_type=%s position=%s count=%s vType=%s",
+                    ped_type,
+                    mapped_type,
+                    position,
+                    count,
+                    type_id,
+                )
 
+                # Crossing rules (as in your personFlow examples):
+                # - Start E00 -> finish at -E0.80 or -E0
+                # - Start -E0.80 -> finish at E00 or E0
                 if 'south' in position:
-                    # south_side means pedestrian starts south and crosses north.
-                    from_edge = random.choice(south_edges)
-                    to_edge = random.choice(north_edges)
+                    from_edge = 'E00'
+                    to_edge = random.choice(['-E0.80', '-E0'])
                 else:
-                    # north_side means pedestrian starts north and crosses south.
-                    from_edge = random.choice(north_edges)
-                    to_edge = random.choice(south_edges)
+                    from_edge = '-E0.80'
+                    to_edge = random.choice(['E00', 'E0'])
+
+                logger.info(
+                    "Pedestrian crossing plan: position=%s from_edge=%s to_edge=%s",
+                    position,
+                    from_edge,
+                    to_edge,
+                )
+
+                try:
+                    count_int = int(count)
+                except (TypeError, ValueError):
+                    logger.warning("Invalid pedestrian count '%s' for group %s; skipping group", count, ped_info)
+                    continue
                 
                 # Create pedestrians
-                for i in range(min(count, 5)):  # Limit to 5 at once
+                for i in range(min(count_int, 5)):  # Limit to 5 at once
                     ped_id = f"ped_{mapped_type}_{ts_int}_{i}"
-                    
-                    # Add person to SUMO
-                    traci.person.add(
-                        personID=ped_id,
-                        edgeID=from_edge,
-                        pos=random.uniform(0, 10),  # Random position along edge
-                        depart=current_time + random.uniform(0, 2),
-                        typeID=type_id
-                    )
-                    
-                    # Set walking route (cross the junction)
-                    traci.person.appendWalkingStage(
-                        personID=ped_id,
-                        edges=[to_edge],
-                        arrivalPos=random.uniform(0, 10)
-                    )
-                    
-                    created_peds.append(ped_id)
+
+                    depart_time = current_time + random.uniform(0, 2)
+                    # Use stable positions near sidewalk starts to make crossings reproducible in GUI.
+                    spawn_pos = 1.0
+                    arrival_pos = 1.0
+                    walk_edges = [from_edge, to_edge]
+
+                    try:
+                        # Add person to SUMO
+                        traci.person.add(
+                            personID=ped_id,
+                            edgeID=from_edge,
+                            pos=spawn_pos,
+                            depart=depart_time,
+                            typeID=type_id
+                        )
+
+                        logger.info(
+                            "Ped added: id=%s vType=%s from_edge=%s depart=%.2f pos=%.2f",
+                            ped_id,
+                            type_id,
+                            from_edge,
+                            depart_time,
+                            spawn_pos,
+                        )
+
+                        # Explicitly provide from->to edges so SUMO computes an actual crossing path.
+                        traci.person.appendWalkingStage(
+                            personID=ped_id,
+                            edges=walk_edges,
+                            arrivalPos=arrival_pos
+                        )
+
+                        logger.info(
+                            "Ped stage appended: id=%s walk_edges=%s arrivalPos=%.2f",
+                            ped_id,
+                            walk_edges,
+                            arrival_pos,
+                        )
+
+                        created_peds.append(ped_id)
+                    except Exception as ped_error:
+                        failed_peds += 1
+                        logger.error(
+                            "Ped creation failed: id=%s from=%s to=%s error=%s",
+                            ped_id,
+                            from_edge,
+                            to_edge,
+                            ped_error,
+                        )
             
+            logger.info(
+                "Pedestrian injection summary: created=%d failed=%d total_requested=%d",
+                len(created_peds),
+                failed_peds,
+                sum(min(int(p.get('count', 0)), 5) if str(p.get('count', '')).isdigit() else 0 for p in pedestrians),
+            )
             logger.info(f"Injected {len(created_peds)} pedestrians at J1")
             return created_peds
             

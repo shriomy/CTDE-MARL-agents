@@ -72,4 +72,16 @@
     <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="5" type="mobility_aid">
         <personTrip from="-E0.80" to="E0"/>
     </personFlow>
+    <!-- <personFlow id="pf_10" begin="0.00" end="3600.00" personsPerHour="40" type="adult">
+        <personTrip from="E0" to="-E0.80"/>
+    </personFlow>
+    <personFlow id="pf_13" begin="0.00" end="3600.00" personsPerHour="40" type="elder">
+        <personTrip from="E0" to="-E0"/>
+    </personFlow>
+    <personFlow id="pf_4" begin="0.00" end="3600.00" personsPerHour="40" type="student">
+        <personTrip from="-E0" to="E00"/>
+    </personFlow>
+    <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="40" type="mobility_aid">
+        <personTrip from="-E0" to="E0"/>
+    </personFlow> -->
 </routes>

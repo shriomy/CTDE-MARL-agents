@@ -59,12 +59,12 @@ normal_record = {
     "data": {
         "entryPoint": "-E0",  # Coming from west
         "vehicles": [
-            # {"type": "truck", "count": 1},
-            # {"type": "car", "count": 2},
-            # {"type": "lorry", "count": 5},
-            # {"type": "bus", "count": 1},
-            # {"type": "auto", "count": 3},
-            # {"type": "bike", "count": 4},
+            {"type": "truck", "count": 1},
+            {"type": "car", "count": 2},
+            {"type": "lorry", "count": 5},
+            {"type": "bus", "count": 1},
+            {"type": "auto", "count": 3},
+            {"type": "bike", "count": 4},
         ]
     }
 }
