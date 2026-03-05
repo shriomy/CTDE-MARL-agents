@@ -1,87 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <!-- Add vehicle type definitions with lower speeds -->
+    <vType id="car" accel="1.6" decel="1.5" sigma="0.5" length="5.0" maxSpeed="1.89" color="1,0,0"/>
+    <vType id="real_car" accel="1.5" decel="3.0" sigma="0.5" length="5.0" maxSpeed="8.33" color="green"/> <!-- 30 km/h -->
+    <vType id="pedestrian" vClass="pedestrian" maxSpeed="1.0" color="blue"/>
 
-    <!-- =============================================================== -->
-    <!-- VEHICLE TYPES -->
-    <!-- =============================================================== -->
+    <!-- Emergency Vehicles (higher priority, faster, special colors) -->
+    <vType id="police" accel="2.0" decel="2.0" sigma="0.3" length="6.0" maxSpeed="2.22" guiShape="police" probability="0.1"/>
+    <!-- Police: Blue, 80 km/h -->
     
-    <vType id="car" guiShape="passenger" accel="0.325" decel="0.5625" sigma="0.5" length="5" maxSpeed="2.5" color="1,0,0"/>
-    <vType id="truck" guiShape="truck" accel="0.1625" decel="0.5" sigma="0.5" length="7.5" maxSpeed="1.875" color="0.5,0.5,0.5"/>
+    <vType id="ambulance" accel="2.5" decel="2.5" sigma="0.3" length="8.0" maxSpeed="3.44" guiShape="emergency" probability="0.1"/>
+    <!-- Ambulance: White, 70 km/h -->
     
-    <!-- =============================================================== -->
-    <!-- ROUTES FOR 2-WAY JUNCTION (J1_2way) -->
-    <!-- =============================================================== -->
+    <vType id="firetruck" accel="2.0" decel="2.0" sigma="0.3" length="10.0" maxSpeed="3.67" guiShape="firebrigade" probability="0.05"/>
+    <!-- Fire Truck: Red, 60 km/h -->
+
     
-    <!-- J1: west-east crossing with direct connector; through traffic continues to J3 east exit -->
-    <route id="J1_west_to_east" edges="J1_east_in connect_J1_J2 connect_J2_J3 J3_east_out" color="blue"/>
-    <!-- east-to-west local movement only across J1 -->
-    <route id="J1_east_to_west" edges="J1_east_in J1_west_out" color="green"/>
+    <!-- Update flows to use car type -->
+    <flow id="f_0" begin="0.00" from="E0" to="E2" via="E00" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_1" begin="0.00" from="E0" to="E4" via="E00 E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_2" begin="0.00" from="E0" to="E5" via="E00 E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_3" begin="0.00" from="E0" to="E8" via="E00 E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_4" begin="0.00" from="-E2" to="-E0.80" via="-E0" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_5" begin="0.00" from="-E2" to="E4" via="E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_6" begin="0.00" from="-E2" to="E5" via="E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_7" begin="0.00" from="-E2" to="E8" via="E3" end="3600.00" vehsPerHour="500" type="real_car"/>
+    <flow id="f_8" begin="0.00" from="-E4" to="E2" via="-E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_9" begin="0.00" from="-E4" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_10" begin="0.00" from="-E4" to="E5" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_11" begin="0.00" from="-E4" to="E8" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_12" begin="0.00" from="-E5" to="E4" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_13" begin="0.00" from="-E5" to="E8" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_14" begin="0.00" from="-E5" to="E2" via="-E3" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_15" begin="0.00" from="-E5" to="-E0.80" via="-E3 -E0" end="3600.00" vehsPerHour="500" type="car"/>
+    <flow id="f_16" begin="0.00" from="-E8" to="E5" end="3600.00" vehsPerHour="1800" type="car"/>
+    <flow id="f_17" begin="0.00" from="-E8" to="E4" end="3600.00" vehsPerHour="1800" type="car"/>
+    <flow id="f_18" begin="0.00" from="-E8" to="E2" via="-E3" end="3600.00" vehsPerHour="1800" type="car"/>
+    <flow id="f_19" begin="0.00" from="-E8" to="-E0" via="-E3" end="3600.00" vehsPerHour="1800" type="car"/>
+
+    <flow id="f_20" begin="0.00" from="-E2" to="E4" via="E3" end="3600.00" vehsPerHour="50" type="police"/>
+    <flow id="f_21" begin="0.00" from="-E4" to="E5" end="3600.00" vehsPerHour="50" type="ambulance"/>
+    <flow id="f_22" begin="0.00" from="-E5" to="E4" end="3600.00" vehsPerHour="50" type="firetruck"/>
+    <flow id="f_23" begin="0.00" from="E0" to="E8" via="E00 E3" end="3600.00" vehsPerHour="50" type="ambulance"/>
     
-    <!-- =============================================================== -->
-    <!-- ROUTES FOR 3-WAY JUNCTION (J2_3way) -->
-    <!-- main road continues west-east, branch to north -->
-    <!-- =============================================================== -->
-    <!-- West to East (through) – continues all the way to the eastern boundary of J3 -->
-    <route id="J2_west_to_east" edges="connect_J1_J2 connect_J2_J3 J3_east_out" color="blue"/>
-    <!-- West to North -->
-    <route id="J2_west_to_north" edges="connect_J1_J2 J2_north_out" color="blue"/>
-    <!-- East to West (through) – continue across J1 to the western boundary -->
-    <route id="J2_east_to_west" edges="connect_J3_J2 connect_J2_J1 J1_west_out" color="red"/>
-    <!-- East to North -->
-    <route id="J2_east_to_north" edges="connect_J3_J2 J2_north_out" color="red"/>
-    <!-- North to West -->
-    <route id="J2_north_to_west" edges="J2_north_in connect_J2_J1" color="green"/>
-    <!-- North to East (through J3) -->
-    <route id="J2_north_to_east" edges="J2_north_in connect_J2_J3 J3_east_out" color="green"/>
-    <!-- vehicles leaving J2 heading into J3 may also need full-junction routes; see J3 west entries below -->
-    
-    <!-- =============================================================== -->
-    <!-- ROUTES FOR 4-WAY JUNCTION (J3_4way) -->
-    <!-- =============================================================== -->
-    
-    <!-- North incoming routes -->
-    <route id="J3_north_to_south" edges="J3_north_in J3_south_out" color="blue"/>
-    <route id="J3_north_to_east" edges="J3_north_in J3_east_out" color="blue"/>
-    <route id="J3_north_to_west" edges="J3_north_in connect_J3_J2 connect_J2_J1" color="blue"/>
-    
-    <!-- South incoming routes -->
-    <route id="J3_south_to_north" edges="J3_south_in J3_north_out" color="green"/>
-    <route id="J3_south_to_east" edges="J3_south_in J3_east_out" color="green"/>
-    <route id="J3_south_to_west" edges="J3_south_in connect_J3_J2 connect_J2_J1" color="green"/>
-    
-    <!-- East incoming routes -->
-    <route id="J3_east_to_north" edges="J3_east_in J3_north_out" color="red"/>
-    <route id="J3_east_to_south" edges="J3_east_in J3_south_out" color="red"/>
-    <route id="J3_east_to_west" edges="J3_east_in connect_J3_J2 connect_J2_J1" color="red"/>
-    <!-- West incoming routes (from J2) – added to prevent disappearances -->
-    <route id="J3_west_to_east" edges="connect_J2_J3 J3_east_out" color="1,0,1"/>
-    <route id="J3_west_to_south" edges="connect_J2_J3 J3_south_out" color="1,0,1"/>
-    <route id="J3_west_to_north" edges="connect_J2_J3 J3_north_out" color="1,0,1"/>
-    
-    <!-- =============================================================== -->
-    <!-- TRAFFIC DEMAND -->
-    <!-- =============================================================== -->
-    
-    <!-- Main flows along the linear corridor (now continue all the way east of J3) -->
-    <flow id="flow_J1_w2e" type="car" route="J1_west_to_east" begin="0" end="86400" period="8" departLane="best" departPos="base"/>
-    
-    <!-- J2 flows (north boundary plus an east‑to‑west corridor) -->
-    <flow id="flow_J2_n2w" type="car" route="J2_north_to_west" begin="0" end="86400" period="12" departLane="best" departPos="base"/>
-    <flow id="flow_J2_n2e" type="car" route="J2_north_to_east" begin="0" end="86400" period="12" departLane="best" departPos="base"/>
-    <!-- alternative north-to-east flow that turns south inside J3 -->
-    <flow id="flow_J2_n2e_alt" type="car" route="J2_north_to_east" begin="0" end="86400" period="30" departLane="best" departPos="base"/>
-    
-    <!-- J3: standard 4-way volumes remain unchanged (use original flows above or adjust) -->
-    <flow id="J3_north_south" type="car" route="J3_north_to_south" begin="0" end="86400" period="12" departLane="best" departPos="base"/>
-    <flow id="J3_north_east" type="car" route="J3_north_to_east" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    <flow id="J3_north_west" type="car" route="J3_north_to_west" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    
-    <flow id="J3_south_north" type="car" route="J3_south_to_north" begin="0" end="86400" period="12" departLane="best" departPos="base"/>
-    <flow id="J3_south_east" type="car" route="J3_south_to_east" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    <flow id="J3_south_west" type="car" route="J3_south_to_west" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    
-    <flow id="J3_east_north" type="car" route="J3_east_to_north" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    <flow id="J3_east_south" type="car" route="J3_east_to_south" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    <flow id="J3_east_west" type="car" route="J3_east_to_west" begin="0" end="86400" period="20" departLane="best" departPos="base"/>
-    
+    <!-- Person flows with proper pedestrian type -->
+    <personFlow id="pf_10" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+        <personTrip from="E00" to="-E0.80"/>
+    </personFlow>
+    <personFlow id="pf_13" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+        <personTrip from="E00" to="-E0"/>
+    </personFlow>
+    <personFlow id="pf_4" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+        <personTrip from="-E0.80" to="E00"/>
+    </personFlow>
+    <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+        <personTrip from="-E0.80" to="E0"/>
+    </personFlow>
 </routes>
