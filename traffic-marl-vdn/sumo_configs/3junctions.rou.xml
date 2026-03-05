@@ -1,18 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <!-- Add vehicle type definitions with lower speeds -->
-    <vType id="car" accel="1.89" decel="1.89" sigma="0.5" length="5.0" maxSpeed="1.89" color="1,0,0"/>
-    <vType id="real_car" accel="1.89" decel="1.89" sigma="0.5" length="5.0" maxSpeed="1.89" color="green"/> 
-    <vType id="pedestrian" vClass="pedestrian" maxSpeed="1.0" color="blue"/>
+    <vType id="car" accel="0.10" decel="0.10" sigma="0.5" length="5.0" maxSpeed="0.50" color="1,0,0"/>
+    <vType id="real_car" accel="0.10" decel="0.10" sigma="0.5" length="5.0" maxSpeed="0.50" color="green"/> 
+
+    <!-- Adult pedestrian: Standard walking speed -->
+    <vType id="adult" vClass="pedestrian" maxSpeed="0.40" color="green"/>
+
+    <!-- Elder pedestrian: Slower walking speed -->
+    <vType id="elder" vClass="pedestrian" maxSpeed="0.30" color="gray"/>
+
+    <!-- Student pedestrian: Medium walking speed, could also use "child" vClass if preferred -->
+    <vType id="student" vClass="pedestrian" maxSpeed="0.40" color="yellow"/>
+
+    <!-- Mobility aid pedestrian: Slowest speed, representing wheelchair or walker users -->
+    <vType id="mobility_aid" vClass="pedestrian" maxSpeed="0.20" color="blue"/>
 
     <!-- Emergency Vehicles (higher priority, faster, special colors) -->
-    <vType id="police" accel="1.89" decel="1.89" sigma="0.3" length="6.0" maxSpeed="1.89" guiShape="police" probability="0.1"/>
+    <vType id="police" accel="0.10" decel="0.10" sigma="0.3" length="6.0" maxSpeed="1.00" guiShape="police" probability="0.1"/>
     <!-- Police: Blue, 80 km/h -->
     
-    <vType id="ambulance" accel="1.89" decel="1.89" sigma="0.3" length="8.0" maxSpeed="1.89" guiShape="emergency" probability="0.1"/>
+    <vType id="ambulance" accel="0.10" decel="0.10" sigma="0.3" length="8.0" maxSpeed="1.00" guiShape="emergency" probability="0.1"/>
     <!-- Ambulance: White, 70 km/h -->
     
-    <vType id="firetruck" accel="1.89" decel="1.89" sigma="0.3" length="10.0" maxSpeed="1.89" guiShape="firebrigade" probability="0.05"/>
+    <vType id="firetruck" accel="0.10" decel="0.10" sigma="0.3" length="10.0" maxSpeed="1.00" guiShape="firebrigade" probability="0.05"/>
     <!-- Fire Truck: Red, 60 km/h -->
 
     
@@ -44,16 +55,16 @@
     <flow id="f_23" begin="0.00" from="E0" to="E8" via="E00 E3" end="3600.00" vehsPerHour="50" type="ambulance"/>
     
     <!-- Person flows with proper pedestrian type -->
-    <personFlow id="pf_10" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+    <personFlow id="pf_10" begin="0.00" end="3600.00" personsPerHour="40" type="adult">
         <personTrip from="E00" to="-E0.80"/>
     </personFlow>
-    <personFlow id="pf_13" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+    <personFlow id="pf_13" begin="0.00" end="3600.00" personsPerHour="20" type="elder">
         <personTrip from="E00" to="-E0"/>
     </personFlow>
-    <personFlow id="pf_4" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+    <personFlow id="pf_4" begin="0.00" end="3600.00" personsPerHour="40" type="student">
         <personTrip from="-E0.80" to="E00"/>
     </personFlow>
-    <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="500" type="pedestrian">
+    <personFlow id="pf_8" begin="0.00" end="3600.00" personsPerHour="5" type="mobility_aid">
         <personTrip from="-E0.80" to="E0"/>
     </personFlow>
 </routes>
