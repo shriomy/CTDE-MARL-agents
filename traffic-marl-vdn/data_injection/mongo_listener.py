@@ -6,7 +6,7 @@ import pymongo
 import time
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Any, Union
+from typing import Dict, List, Any, Union, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,15 +37,13 @@ class MongoDBListener:
             logger.info(f"Connected to MongoDB Atlas")
             logger.info(f"   Database: {database}, Collection: {collection}")
             
-            # Get the latest timestamp from the collection to start from
-            latest = self.collection.find_one(sort=[("timestamp", pymongo.DESCENDING)])
-            if latest:
-                # Convert timestamp to numeric for internal tracking
-                self.last_timestamp = self._to_numeric_timestamp(latest['timestamp'])
-                logger.info(f"   Starting from timestamp: {latest['timestamp']} (numeric: {self.last_timestamp})")
-            else:
-                self.last_timestamp = time.time() - 10  # Start 10 seconds ago
-                logger.info(f"   No records found, starting from: {self.last_timestamp}")
+            # Start from current wall-clock time so restarts only process NEW inserts.
+            self.last_timestamp = time.time()
+            logger.info(
+                "   Startup checkpoint set to now: %s (numeric: %.3f). Existing records will be ignored.",
+                self._numeric_to_iso(self.last_timestamp),
+                self.last_timestamp,
+            )
             
         except Exception as e:
             logger.error(f"Failed to connect to MongoDB: {e}")
@@ -62,7 +60,7 @@ class MongoDBListener:
             'last_poll_time': None
         }
     
-    def _to_numeric_timestamp(self, raw_timestamp: Union[str, int, float]) -> float:
+    def _to_numeric_timestamp(self, raw_timestamp: Union[str, int, float]) -> Optional[float]:
         """Convert supported timestamp formats to epoch seconds."""
         try:
             if isinstance(raw_timestamp, (int, float)):
@@ -91,11 +89,11 @@ class MongoDBListener:
                     return dt.timestamp()
 
             logger.warning(f"Unsupported timestamp format: {raw_timestamp}")
-            return time.time()
+            return None
 
         except Exception as e:
             logger.error(f"Error converting timestamp '{raw_timestamp}': {e}")
-            return time.time()
+            return None
     
     def _numeric_to_iso(self, numeric_timestamp: float) -> str:
         """Convert numeric timestamp to ISO format for display"""
@@ -125,6 +123,8 @@ class MongoDBListener:
                 
                 # Convert to numeric for comparison
                 doc_time = self._to_numeric_timestamp(doc_raw_time)
+                if doc_time is None:
+                    continue
                 
                 # Only include if after our last timestamp
                 if doc_time > self.last_timestamp:

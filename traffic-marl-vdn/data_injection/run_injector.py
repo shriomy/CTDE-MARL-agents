@@ -211,8 +211,8 @@ def main():
     parser.add_argument('--traci-port', type=int, default=8813,
                        help='TraCI port for SUMO connection (default: 8813)')
 
-    parser.add_argument('--demand-scale', type=float, default=0.0,
-                       help='SUMO demand scale for route-file flows/personFlows (default: 0.0, injections only)')
+    parser.add_argument('--demand-scale', type=float, default=1.0,
+                       help='SUMO demand scale for route-file flows/personFlows (default: 1.0; use 0.0 for injections only)')
 
     parser.add_argument('--step-length', type=float, default=1.0,
                        help='SUMO simulation step length in seconds (default: 1.0)')
