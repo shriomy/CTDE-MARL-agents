@@ -5,6 +5,13 @@
     "max_steps_per_episode": 1800,
     "save_frequency": 10,
     "log_frequency": 1,
+    "control_modes": {
+        "default_mode": "marl",
+        "fixed_green_steps": 20,
+        "dashboard_enabled": true,
+        "dashboard_host": "localhost",
+        "dashboard_port": 8765
+    },
     
     "agent_config": {
         "learning_rate": 0.0001,

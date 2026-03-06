@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from datetime import datetime
+from typing import Dict, List
 
 import numpy as np
 
@@ -14,9 +15,16 @@ sys.path.append(os.path.join(PROJECT_ROOT, ".."))
 from agents.multi_agent_system import MultiAgentSystem
 from utils.sumo_env_new import SumoEnv
 
+try:
+    from dashboard_server import SimpleDashboardServer
+
+    DASHBOARD_AVAILABLE = True
+except Exception:
+    DASHBOARD_AVAILABLE = False
+
 
 class MARLExecutor:
-    """Decentralized execution of trained MARL agents with logging."""
+    """Persistent multi-mode execution (MARL/fixed/manual) with per-junction switching."""
 
     def __init__(self, config_path: str = None):
         self.root = os.path.join(PROJECT_ROOT, "..")
@@ -72,7 +80,12 @@ class MARLExecutor:
             "avg_speed_history": [],
             "action_history": [],
             "injection_history": [],
+            "mode_history": [],
+            "mode_switch_events": [],
         }
+
+        self._init_mode_control()
+        self._init_dashboard()
 
     def _load_config(self, path: str) -> dict:
         if not os.path.exists(path):
@@ -91,6 +104,14 @@ class MARLExecutor:
         cfg.setdefault("agent_config", {})
         cfg.setdefault("env_config", {})
         cfg.setdefault("max_steps_per_episode", 1800)
+        cfg.setdefault("control_modes", {})
+
+        control_cfg = cfg["control_modes"]
+        control_cfg.setdefault("default_mode", "marl")
+        control_cfg.setdefault("fixed_green_steps", 20)
+        control_cfg.setdefault("dashboard_enabled", True)
+        control_cfg.setdefault("dashboard_host", "localhost")
+        control_cfg.setdefault("dashboard_port", 8765)
 
         # Execution should run continuously until user stops it.
         execution_max_steps = int(cfg.get("execution_max_steps", 0))
@@ -106,6 +127,156 @@ class MARLExecutor:
     def _prepare_paths(self) -> None:
         self.logs_dir = os.path.join(self.root, "logs", "execution")
         os.makedirs(self.logs_dir, exist_ok=True)
+
+    def _init_mode_control(self) -> None:
+        valid_modes = {"marl", "fixed", "manual"}
+        requested_default = str(self.config.get("control_modes", {}).get("default_mode", "marl")).lower()
+        default_mode = requested_default if requested_default in valid_modes else "marl"
+        fixed_green_steps = int(self.config.get("control_modes", {}).get("fixed_green_steps", 20))
+        fixed_green_steps = max(5, fixed_green_steps)
+
+        self.default_mode = default_mode
+        self.junction_modes: Dict[str, str] = {tl_id: default_mode for tl_id in self.agent_ids}
+        self.fixed_state: Dict[str, Dict[str, int]] = {
+            tl_id: {"action": 0, "elapsed": 0, "green_steps": fixed_green_steps} for tl_id in self.agent_ids
+        }
+        self.manual_state: Dict[str, int] = {tl_id: 4 for tl_id in self.agent_ids}
+
+    def _init_dashboard(self) -> None:
+        self.dashboard = None
+        if not DASHBOARD_AVAILABLE:
+            print("Dashboard server not available; running without remote control API")
+            return
+
+        control_cfg = self.config.get("control_modes", {})
+        if not bool(control_cfg.get("dashboard_enabled", True)):
+            print("Dashboard control disabled by config")
+            return
+
+        host = str(control_cfg.get("dashboard_host", "localhost"))
+        port = int(control_cfg.get("dashboard_port", 8765))
+        try:
+            self.dashboard = SimpleDashboardServer(host=host, port=port)
+            self.dashboard.start()
+            print(f"Dashboard command server: ws://{host}:{port}")
+            self._broadcast_runtime_state(reason="startup")
+        except Exception as exc:
+            print(f"Failed to start dashboard server: {exc}")
+            self.dashboard = None
+
+    def _record_mode_event(self, event_type: str, payload: Dict[str, object]) -> None:
+        event = {
+            "timestamp": datetime.now().isoformat(),
+            "event_type": event_type,
+            "payload": payload,
+        }
+        self.metrics["mode_switch_events"].append(event)
+
+    def _runtime_mode_summary(self) -> Dict[str, object]:
+        active = set(self.junction_modes.values())
+        global_mode = list(active)[0] if len(active) == 1 else "mixed"
+        return {
+            "global_mode": global_mode,
+            "junction_modes": dict(self.junction_modes),
+            "manual_actions": dict(self.manual_state),
+            "fixed_state": {k: dict(v) for k, v in self.fixed_state.items()},
+        }
+
+    def _broadcast_runtime_state(self, reason: str = "update") -> None:
+        if self.dashboard is None:
+            return
+        payload = self._runtime_mode_summary()
+        payload["reason"] = reason
+        self.dashboard.send_mode_update(payload)
+
+    def _set_global_mode(self, mode: str) -> None:
+        mode = str(mode).lower()
+        if mode not in {"marl", "fixed", "manual"}:
+            return
+        for tl_id in self.agent_ids:
+            self.junction_modes[tl_id] = mode
+        self._record_mode_event("set_global_mode", {"mode": mode})
+
+    def _set_junction_mode(self, junction_id: str, mode: str) -> None:
+        if junction_id not in self.junction_modes:
+            return
+        mode = str(mode).lower()
+        if mode not in {"marl", "fixed", "manual"}:
+            return
+        self.junction_modes[junction_id] = mode
+        self._record_mode_event("set_junction_mode", {"junction_id": junction_id, "mode": mode})
+
+    def _set_manual_action(self, junction_id: str, action: int) -> None:
+        if junction_id not in self.manual_state:
+            return
+        action = int(action)
+        if action < 0 or action > 4:
+            return
+        self.manual_state[junction_id] = action
+        self._record_mode_event("set_manual_action", {"junction_id": junction_id, "action": action})
+
+    def _set_fixed_timing(self, junction_id: str, green_steps: int) -> None:
+        green_steps = max(5, int(green_steps))
+        if junction_id == "*":
+            for tl_id in self.agent_ids:
+                self.fixed_state[tl_id]["green_steps"] = green_steps
+            self._record_mode_event("set_fixed_timing", {"junction_id": "*", "green_steps": green_steps})
+            return
+
+        if junction_id in self.fixed_state:
+            self.fixed_state[junction_id]["green_steps"] = green_steps
+            self._record_mode_event("set_fixed_timing", {"junction_id": junction_id, "green_steps": green_steps})
+
+    def _process_dashboard_commands(self) -> None:
+        if self.dashboard is None:
+            return
+
+        changed = False
+        commands = self.dashboard.get_pending_commands(max_items=200)
+        for cmd in commands:
+            ctype = str(cmd.get("type", "")).lower()
+            if ctype == "set_global_mode":
+                self._set_global_mode(str(cmd.get("mode", "marl")))
+                changed = True
+            elif ctype == "set_junction_mode":
+                self._set_junction_mode(str(cmd.get("junction_id", "")), str(cmd.get("mode", "marl")))
+                changed = True
+            elif ctype == "set_manual_action":
+                self._set_manual_action(str(cmd.get("junction_id", "")), int(cmd.get("action", 4)))
+                changed = True
+            elif ctype == "set_fixed_timing":
+                self._set_fixed_timing(str(cmd.get("junction_id", "*")), int(cmd.get("green_steps", 20)))
+                changed = True
+            elif ctype == "get_runtime_state":
+                changed = True
+
+        if changed:
+            self._broadcast_runtime_state(reason="command")
+
+    def _next_fixed_action(self, junction_id: str) -> int:
+        state = self.fixed_state[junction_id]
+        if state["elapsed"] >= state["green_steps"]:
+            state["action"] = (state["action"] + 1) % 4
+            state["elapsed"] = 0
+        action = int(state["action"])
+        state["elapsed"] += 1
+        return action
+
+    def _select_joint_actions(self, state: Dict[str, np.ndarray]) -> Dict[str, int]:
+        marl_actions = self.multi_agent.act_with_coordination(state, training_mode=False)
+        final_actions: Dict[str, int] = {}
+
+        for tl_id in self.agent_ids:
+            mode = self.junction_modes.get(tl_id, "marl")
+            if mode == "marl":
+                action = int(marl_actions.get(tl_id, 4))
+            elif mode == "fixed":
+                action = self._next_fixed_action(tl_id)
+            else:
+                action = int(self.manual_state.get(tl_id, 4))
+            final_actions[tl_id] = action
+
+        return final_actions
 
     def _load_models(self) -> str:
         model_dirs = [
@@ -131,7 +302,8 @@ class MARLExecutor:
 
         try:
             while True:
-                actions = self.multi_agent.act_with_coordination(state, training_mode=False)
+                self._process_dashboard_commands()
+                actions = self._select_joint_actions(state)
                 next_state, reward, done, info = self.env.step(actions)
 
                 self.metrics["total_steps"] += 1
@@ -141,6 +313,7 @@ class MARLExecutor:
                 self.metrics["avg_speed_history"].append(float(info.get("avg_speed", 0.0)))
                 self.metrics["action_history"].append({aid: int(a) for aid, a in actions.items()})
                 self.metrics["injection_history"].append(info.get("injection_stats", {}))
+                self.metrics["mode_history"].append(dict(self.junction_modes))
 
                 if step % 50 == 0:
                     print(
@@ -148,6 +321,19 @@ class MARLExecutor:
                         f"vehicles={info.get('vehicle_count', 0)} | speed={info.get('avg_speed', 0.0):.2f}"
                     )
                     print(f"  actions: {actions}")
+                    print(f"  modes: {self.junction_modes}")
+
+                if self.dashboard is not None and step % 2 == 0:
+                    telemetry = {
+                        "step": int(step),
+                        "reward": float(reward),
+                        "vehicle_count": int(info.get("vehicle_count", 0)),
+                        "avg_speed": float(info.get("avg_speed", 0.0)),
+                        "actions": {k: int(v) for k, v in actions.items()},
+                        "modes": dict(self.junction_modes),
+                        "injection_stats": dict(info.get("injection_stats", {})),
+                    }
+                    self.dashboard.send_traffic_update(telemetry)
 
                 step += 1
                 state = next_state
@@ -164,6 +350,8 @@ class MARLExecutor:
             self.save_logs()
             self.multi_agent.close()
             self.env.close()
+            if self.dashboard is not None:
+                self.dashboard.send_system_status("stopped", "Execution stopped")
             print("Execution cleanup complete")
 
     def save_logs(self) -> None:
@@ -180,6 +368,8 @@ class MARLExecutor:
             "avg_speed": float(np.mean(self.metrics["avg_speed_history"])) if self.metrics["avg_speed_history"] else 0.0,
             "actions_last_200": self.metrics["action_history"][-200:],
             "injection_last_200": self.metrics["injection_history"][-200:],
+            "modes_last_200": self.metrics["mode_history"][-200:],
+            "mode_switch_events": self.metrics["mode_switch_events"],
             "config": self.config,
         }
 

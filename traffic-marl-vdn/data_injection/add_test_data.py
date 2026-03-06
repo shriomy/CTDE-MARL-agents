@@ -57,7 +57,7 @@ normal_record = {
     "timestamp": get_ist_timestamp(4),  # 4 seconds later
     "type": "normal_vehicle",
     "data": {
-        "entryPoint": "-E5",  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "E0",  # E0, -E2, -E8, -E4, -E5
         "vehicles": [
             {"type": "truck", "count": 5},
             {"type": "car", "count": 5},

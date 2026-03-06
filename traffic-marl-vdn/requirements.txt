@@ -5,3 +5,4 @@ matplotlib>=3.7.0
 pyzmq>=25.0.0
 sumolib>=1.18.0
 traci>=1.18.0
+websockets>=11.0.0
