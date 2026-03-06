@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from collections import defaultdict
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -113,6 +114,22 @@ class Trainer:
 
         reward_breakdown_sum = {}
         total_injected = {"emergency": 0, "normal": 0, "pedestrian": 0}
+        junction_metrics = {
+            tl_id: {
+                "emergency_detected_by_lane": defaultdict(int),
+                "normal_detected_by_lane": defaultdict(int),
+                "pedestrians_detected_total": 0,
+                "pedestrians_detected_max": 0,
+                "green_change_checks": 0,
+                "green_change_drops": 0,
+                "green_change_left_vehicle_drop_rate": 0.0,
+                "emergency_stops": 0,
+                "emergency_passed_without_stop": 0,
+                "most_priority_lane_histogram": defaultdict(int),
+                "ped_green_when_empty": 0,
+            }
+            for tl_id in self.agent_ids
+        }
 
         for step in range(self.config["max_steps_per_episode"]):
             actions = self.multi_agent.act_with_coordination(state, training_mode=True)
@@ -138,6 +155,41 @@ class Trainer:
             for key, value in info.get("injection_stats", {}).items():
                 total_injected[key] = total_injected.get(key, 0) + int(value)
 
+            for tl_id, diag in info.get("junction_diagnostics", {}).items():
+                if tl_id not in junction_metrics:
+                    continue
+                bucket = junction_metrics[tl_id]
+
+                for lane_id, cnt in diag.get("emergency_detected_by_lane", {}).items():
+                    bucket["emergency_detected_by_lane"][lane_id] += int(cnt)
+                for lane_id, cnt in diag.get("normal_detected_by_lane", {}).items():
+                    bucket["normal_detected_by_lane"][lane_id] += int(cnt)
+
+                ped_now = int(diag.get("pedestrians_detected", 0))
+                bucket["pedestrians_detected_total"] += ped_now
+                bucket["pedestrians_detected_max"] = max(bucket["pedestrians_detected_max"], ped_now)
+
+                bucket["green_change_checks"] = int(diag.get("green_change_checks", bucket["green_change_checks"]))
+                bucket["green_change_drops"] = int(diag.get("green_change_drops", bucket["green_change_drops"]))
+                bucket["green_change_left_vehicle_drop_rate"] = float(
+                    diag.get("green_change_left_vehicle_drop_rate", bucket["green_change_left_vehicle_drop_rate"])
+                )
+
+                bucket["emergency_stops"] += int(diag.get("emergency_stops", 0))
+                bucket["emergency_passed_without_stop"] = max(
+                    bucket["emergency_passed_without_stop"],
+                    int(diag.get("emergency_passed_without_stop", 0)),
+                )
+
+                lane_name = diag.get("most_priority_lane", "")
+                if lane_name:
+                    bucket["most_priority_lane_histogram"][lane_name] += 1
+
+                bucket["ped_green_when_empty"] = max(
+                    bucket["ped_green_when_empty"],
+                    int(diag.get("ped_green_when_empty_total", 0)),
+                )
+
             state = next_state
             total_reward += float(reward)
             step_count += 1
@@ -151,6 +203,26 @@ class Trainer:
         metrics = {
             "reward_breakdown": reward_breakdown_sum,
             "injected": total_injected,
+            "junction_diagnostics": {
+                tl_id: {
+                    "emergency_detected_by_lane": dict(vals["emergency_detected_by_lane"]),
+                    "normal_detected_by_lane": dict(vals["normal_detected_by_lane"]),
+                    "pedestrians_detected_total": int(vals["pedestrians_detected_total"]),
+                    "pedestrians_detected_max": int(vals["pedestrians_detected_max"]),
+                    "green_change_checks": int(vals["green_change_checks"]),
+                    "green_change_drops": int(vals["green_change_drops"]),
+                    "green_change_left_vehicle_drop_rate": float(vals["green_change_left_vehicle_drop_rate"]),
+                    "emergency_stops": int(vals["emergency_stops"]),
+                    "emergency_passed_without_stop": int(vals["emergency_passed_without_stop"]),
+                    "most_priority_lane": (
+                        max(vals["most_priority_lane_histogram"], key=vals["most_priority_lane_histogram"].get)
+                        if vals["most_priority_lane_histogram"]
+                        else ""
+                    ),
+                    "ped_green_when_empty": int(vals["ped_green_when_empty"]),
+                }
+                for tl_id, vals in junction_metrics.items()
+            },
         }
         return total_reward, (episode_loss / max(step_count, 1)), step_count, metrics
 
@@ -229,6 +301,7 @@ class Trainer:
             "epsilon": {aid: float(ag.epsilon) for aid, ag in self.multi_agent.agents.items()},
             "reward_breakdown": episode_metrics.get("reward_breakdown", {}),
             "injected": episode_metrics.get("injected", {}),
+            "junction_diagnostics": episode_metrics.get("junction_diagnostics", {}),
             "timestamp": datetime.now().isoformat(),
         }
 

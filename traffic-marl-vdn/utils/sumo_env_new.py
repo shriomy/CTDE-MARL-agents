@@ -49,12 +49,23 @@ class SumoEnv:
         self.tl_ids: List[str] = []
         self.tl_specs: Dict[str, TrafficLightSpec] = {}
         self.incoming_lanes: Dict[str, List[str]] = {}
+        self.incoming_edges: Dict[str, List[str]] = {}
         self.outgoing_lanes: Dict[str, List[str]] = {}
 
         self.current_phase: Dict[str, int] = {}
         self.current_phase_duration: Dict[str, float] = {}
 
         self.prev_reward_snapshot: Dict[str, float] = {}
+        self.prev_arrived_delta: float = 0.0
+
+        # Episode diagnostics for training logs.
+        self.episode_diag = {
+            "green_change_drop": defaultdict(int),
+            "green_change_checks": defaultdict(int),
+            "ped_green_empty_count": defaultdict(int),
+            "emergency_stopped_ids": defaultdict(set),
+            "emergency_seen_outgoing_ids": defaultdict(set),
+        }
 
         # Optional live injection from MongoDB during training.
         self.enable_data_injection = bool(self.env_config.get("enable_data_injection", False))
@@ -115,6 +126,7 @@ class SumoEnv:
             # Keep stable order while removing duplicates.
             dedup_lanes = list(dict.fromkeys(lanes))
             self.incoming_lanes[tl_id] = dedup_lanes
+            self.incoming_edges[tl_id] = sorted({lane.split("_")[0] for lane in dedup_lanes if "_" in lane})
 
             outgoing = set()
             for lane_id in dedup_lanes:
@@ -208,9 +220,116 @@ class SumoEnv:
         traci.load(self.sumo_cmd[1:])
         self.episode_step = 0
         self.prev_reward_snapshot = self._reward_snapshot()
+        self.prev_arrived_delta = 0.0
         self.current_phase = {tl_id: int(traci.trafficlight.getPhase(tl_id)) for tl_id in self.tl_ids}
         self.current_phase_duration = {tl_id: 0.0 for tl_id in self.tl_ids}
+        self.episode_diag = {
+            "green_change_drop": defaultdict(int),
+            "green_change_checks": defaultdict(int),
+            "ped_green_empty_count": defaultdict(int),
+            "emergency_stopped_ids": defaultdict(set),
+            "emergency_seen_outgoing_ids": defaultdict(set),
+        }
         return self.get_state()
+
+    def _count_persons_for_tl(self, tl_id: str) -> int:
+        """Count pedestrians relevant to a junction using known crossing and incoming edges."""
+        relevant_edges = set(self.pedestrian_wait_edges.get(tl_id, set()))
+        relevant_edges.update(self.incoming_edges.get(tl_id, []))
+
+        count = 0
+        for person_id in traci.person.getIDList():
+            try:
+                if traci.person.getRoadID(person_id) in relevant_edges:
+                    count += 1
+            except Exception:
+                continue
+        return count
+
+    def _collect_junction_diagnostics(
+        self,
+        step_meta: Dict[str, Dict[str, float]],
+        arrived_delta: float,
+    ) -> Dict[str, Dict[str, Any]]:
+        """Collect per-junction metrics required for episode training logs."""
+        out: Dict[str, Dict[str, Any]] = {}
+
+        for tl_id in self.tl_ids:
+            emergency_by_lane: Dict[str, int] = {}
+            normal_by_lane: Dict[str, int] = {}
+            lane_priority_score: Dict[str, float] = {}
+            emergency_stops = 0
+
+            for lane_id in self.incoming_lanes.get(tl_id, []):
+                emergency_count_lane = 0
+                normal_count_lane = 0
+                lane_priority = 0.0
+                for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
+                    veh_type = traci.vehicle.getTypeID(veh_id)
+                    speed = traci.vehicle.getSpeed(veh_id)
+                    is_emergency = veh_type in self.EMERGENCY_TYPES
+
+                    lane_priority += float(self.vehicle_weights.get(veh_type, 1.0))
+                    if is_emergency:
+                        emergency_count_lane += 1
+                        if speed < 0.1:
+                            emergency_stops += 1
+                            self.episode_diag["emergency_stopped_ids"][tl_id].add(veh_id)
+                    else:
+                        normal_count_lane += 1
+
+                emergency_by_lane[lane_id] = emergency_count_lane
+                normal_by_lane[lane_id] = normal_count_lane
+                lane_priority_score[lane_id] = lane_priority
+
+            for out_lane in self.outgoing_lanes.get(tl_id, []):
+                for veh_id in traci.lane.getLastStepVehicleIDs(out_lane):
+                    try:
+                        if traci.vehicle.getTypeID(veh_id) in self.EMERGENCY_TYPES:
+                            self.episode_diag["emergency_seen_outgoing_ids"][tl_id].add(veh_id)
+                    except Exception:
+                        continue
+
+            ped_count = self._count_persons_for_tl(tl_id)
+            ped_empty_green = 0
+            meta = step_meta.get(tl_id, {})
+            if meta.get("is_ped_green", 0.0) > 0.5 and ped_count <= 0:
+                ped_empty_green = 1
+                self.episode_diag["ped_green_empty_count"][tl_id] += 1
+
+            if meta.get("switched", 0.0) > 0.5:
+                self.episode_diag["green_change_checks"][tl_id] += 1
+                if arrived_delta < self.prev_arrived_delta:
+                    self.episode_diag["green_change_drop"][tl_id] += 1
+
+            most_priority_lane = ""
+            if lane_priority_score:
+                most_priority_lane = max(lane_priority_score, key=lane_priority_score.get)
+
+            stopped_ids = self.episode_diag["emergency_stopped_ids"][tl_id]
+            outgoing_ids = self.episode_diag["emergency_seen_outgoing_ids"][tl_id]
+            passed_without_stop = len(outgoing_ids - stopped_ids)
+
+            checks = self.episode_diag["green_change_checks"][tl_id]
+            drops = self.episode_diag["green_change_drop"][tl_id]
+            drop_rate = float(drops / checks) if checks > 0 else 0.0
+
+            out[tl_id] = {
+                "emergency_detected_by_lane": emergency_by_lane,
+                "normal_detected_by_lane": normal_by_lane,
+                "pedestrians_detected": ped_count,
+                "green_change_left_vehicle_drop_rate": drop_rate,
+                "green_change_checks": checks,
+                "green_change_drops": drops,
+                "emergency_stops": emergency_stops,
+                "emergency_passed_without_stop": passed_without_stop,
+                "most_priority_lane": most_priority_lane,
+                "ped_green_when_empty_step": ped_empty_green,
+                "ped_green_when_empty_total": self.episode_diag["ped_green_empty_count"][tl_id],
+            }
+
+        self.prev_arrived_delta = arrived_delta
+        return out
 
     def _lane_wait_features(self, lane_id: str) -> Tuple[float, float, float, float, float, float]:
         vehicle_ids = traci.lane.getLastStepVehicleIDs(lane_id)
@@ -458,8 +577,13 @@ class SumoEnv:
         traci.simulationStep()
         self.episode_step += 1
 
+        snapshot_now = self._reward_snapshot()
+        snapshot_prev = self.prev_reward_snapshot or snapshot_now
+        arrived_delta = max(0.0, snapshot_now["arrived"] - snapshot_prev["arrived"])
+
         next_state = self.get_state()
         reward, reward_components = self.get_reward(step_meta)
+        junction_diagnostics = self._collect_junction_diagnostics(step_meta, arrived_delta)
         done = self.episode_step >= self.max_steps
 
         vehicle_ids = traci.vehicle.getIDList()
@@ -472,6 +596,7 @@ class SumoEnv:
             "reward_components": reward_components,
             "step_meta": step_meta,
             "injection_stats": injection_stats,
+            "junction_diagnostics": junction_diagnostics,
         }
 
         return next_state, reward, done, info

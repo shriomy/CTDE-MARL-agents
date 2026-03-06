@@ -7,6 +7,7 @@ import time
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Union, Optional
+from bson import ObjectId
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +37,15 @@ class MongoDBListener:
             self.client.admin.command('ping')
             logger.info(f"Connected to MongoDB Atlas")
             logger.info(f"Database: {database}, Collection: {collection}")
+
+            # Only process documents inserted AFTER listener startup.
+            startup_utc = datetime.now(timezone.utc)
+            self.start_object_id = ObjectId.from_datetime(startup_utc)
+            logger.info(
+                "Startup insertion checkpoint set to ObjectId > %s (%s)",
+                str(self.start_object_id),
+                startup_utc.isoformat(),
+            )
             
             # Start from current wall-clock time so restarts only process NEW inserts.
             self.last_timestamp = time.time()
@@ -81,18 +91,15 @@ class MongoDBListener:
                 except ValueError:
                     pass
 
-                # ISO 8601 with timezone suffix like +00:00.
-                if '+' in ts:
-                    dt_str = ts.split('+')[0]
-                    dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%f")
-                    dt = dt.replace(tzinfo=timezone.utc)
+                # ISO 8601 with timezone offset (e.g., +05:30) or trailing Z.
+                try:
+                    normalized = ts.replace('Z', '+00:00')
+                    dt = datetime.fromisoformat(normalized)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
                     return dt.timestamp()
-
-                # ISO 8601 with trailing Z.
-                if ts.endswith('Z'):
-                    dt = datetime.strptime(ts[:-1], "%Y-%m-%dT%H:%M:%S.%f")
-                    dt = dt.replace(tzinfo=timezone.utc)
-                    return dt.timestamp()
+                except ValueError:
+                    pass
 
             return None
 
@@ -111,8 +118,9 @@ class MongoDBListener:
         Returns list of new records.
         """
         try:
-            # Get all records (we'll filter by timestamp ourselves)
-            all_records = list(self.collection.find().sort("timestamp", pymongo.ASCENDING))
+            # Primary gate: insertion order via ObjectId to exclude pre-start records.
+            query = {'_id': {'$gt': self.start_object_id}}
+            all_records = list(self.collection.find(query).sort('_id', pymongo.ASCENDING))
             
             new_records = []
             
@@ -131,25 +139,24 @@ class MongoDBListener:
                 if doc_time is None:
                     continue
                 
-                # Only include if after our last timestamp
+                # Accept all post-start inserts (ObjectId gate), regardless of payload timestamp.
+                new_records.append(doc)
+                self.processed_ids.add(doc['_id'])
+
+                # Keep timestamp only for diagnostic printouts.
                 if doc_time > self.last_timestamp:
-                    new_records.append(doc)
-                    self.processed_ids.add(doc['_id'])
-                    
-                    # Update last timestamp
-                    if doc_time > self.last_timestamp:
-                        self.last_timestamp = doc_time
-                    
-                    # Update statistics
-                    self.stats['total_polled'] += 1
-                    if doc.get('type') == 'emergency_vehicle':
-                        self.stats['emergency_vehicles'] += 1
-                    elif doc.get('type') == 'pedestrian':
-                        self.stats['pedestrians'] += 1
-                    elif doc.get('type') == 'normal_vehicle':
-                        self.stats['normal_vehicles'] += 1
-                    
-                    logger.debug(f"New record found: {doc.get('type')} at {doc_raw_time}")
+                    self.last_timestamp = doc_time
+
+                # Update statistics
+                self.stats['total_polled'] += 1
+                if doc.get('type') == 'emergency_vehicle':
+                    self.stats['emergency_vehicles'] += 1
+                elif doc.get('type') == 'pedestrian':
+                    self.stats['pedestrians'] += 1
+                elif doc.get('type') == 'normal_vehicle':
+                    self.stats['normal_vehicles'] += 1
+
+                logger.debug(f"New record found: {doc.get('type')} at {doc_raw_time}")
             
             self.stats['last_poll_time'] = datetime.now()
             
