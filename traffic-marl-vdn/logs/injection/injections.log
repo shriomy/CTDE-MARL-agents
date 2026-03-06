@@ -2769,3 +2769,488 @@ Injection Statistics:
 2026-03-06 17:05:31,200 - INFO -    - Normal: 11
 2026-03-06 17:05:31,200 - INFO -    Total pedestrians injected: 18
 2026-03-06 17:05:31,298 - INFO - Injector cleanup complete
+2026-03-06 17:06:13,293 - INFO - ============================================================
+2026-03-06 17:06:13,294 - INFO - STARTING SUMO DATA INJECTOR
+2026-03-06 17:06:13,294 - INFO - ============================================================
+2026-03-06 17:06:13,294 - INFO - MongoDB: mongodb+srv://rolexultimate23_db_user:qwerty12345@cluster0.axqeteq.mongodb.net/?appName=Cluster0
+2026-03-06 17:06:13,294 - INFO - Poll interval: 1.0ms
+2026-03-06 17:06:13,294 - INFO - SUMO port: 8813
+2026-03-06 17:06:13,294 - INFO - ============================================================
+2026-03-06 17:06:13,520 - INFO - Connected to SUMO on port 8813
+2026-03-06 17:06:13,521 - INFO -    Simulation time: 0.0ms
+2026-03-06 17:06:13,521 - INFO -    Vehicles in simulation: 0
+2026-03-06 17:06:13,543 - INFO - Simulation stepping... (step #50)
+2026-03-06 17:06:13,543 - INFO -    SUMO status: time=50.0ms, vehicles=24
+2026-03-06 17:06:13,566 - INFO - Simulation stepping... (step #100)
+2026-03-06 17:06:13,566 - INFO -    SUMO status: time=100.0ms, vehicles=24
+2026-03-06 17:06:13,588 - INFO - Simulation stepping... (step #150)
+2026-03-06 17:06:13,588 - INFO -    SUMO status: time=150.0ms, vehicles=24
+2026-03-06 17:06:13,611 - INFO - Simulation stepping... (step #200)
+2026-03-06 17:06:13,611 - INFO -    SUMO status: time=200.0ms, vehicles=27
+2026-03-06 17:06:13,634 - INFO - Simulation stepping... (step #250)
+2026-03-06 17:06:13,635 - INFO -    SUMO status: time=250.0ms, vehicles=28
+2026-03-06 17:06:13,657 - INFO - Simulation stepping... (step #300)
+2026-03-06 17:06:13,658 - INFO -    SUMO status: time=300.0ms, vehicles=28
+2026-03-06 17:06:13,682 - INFO - Simulation stepping... (step #350)
+2026-03-06 17:06:13,682 - INFO -    SUMO status: time=350.0ms, vehicles=35
+2026-03-06 17:06:13,710 - INFO - Simulation stepping... (step #400)
+2026-03-06 17:06:13,711 - INFO -    SUMO status: time=400.0ms, vehicles=46
+2026-03-06 17:06:13,739 - INFO - Simulation stepping... (step #450)
+2026-03-06 17:06:13,740 - INFO -    SUMO status: time=450.0ms, vehicles=46
+2026-03-06 17:06:13,769 - INFO - Simulation stepping... (step #500)
+2026-03-06 17:06:13,769 - INFO -    SUMO status: time=500.0ms, vehicles=46
+2026-03-06 17:06:13,799 - INFO - Simulation stepping... (step #550)
+2026-03-06 17:06:13,799 - INFO -    SUMO status: time=550.0ms, vehicles=49
+2026-03-06 17:06:13,828 - INFO - Simulation stepping... (step #600)
+2026-03-06 17:06:13,828 - INFO -    SUMO status: time=600.0ms, vehicles=50
+2026-03-06 17:06:13,863 - INFO - Simulation stepping... (step #650)
+2026-03-06 17:06:13,864 - INFO -    SUMO status: time=650.0ms, vehicles=56
+2026-03-06 17:06:13,902 - INFO - Simulation stepping... (step #700)
+2026-03-06 17:06:13,903 - INFO -    SUMO status: time=700.0ms, vehicles=57
+2026-03-06 17:06:13,942 - INFO - Simulation stepping... (step #750)
+2026-03-06 17:06:13,943 - INFO -    SUMO status: time=750.0ms, vehicles=70
+2026-03-06 17:06:13,989 - INFO - Simulation stepping... (step #800)
+2026-03-06 17:06:13,990 - INFO -    SUMO status: time=800.0ms, vehicles=74
+2026-03-06 17:06:14,037 - INFO - Simulation stepping... (step #850)
+2026-03-06 17:06:14,038 - INFO -    SUMO status: time=850.0ms, vehicles=74
+2026-03-06 17:06:14,086 - INFO - Simulation stepping... (step #900)
+2026-03-06 17:06:14,088 - INFO -    SUMO status: time=900.0ms, vehicles=74
+2026-03-06 17:06:14,148 - INFO - Simulation stepping... (step #950)
+2026-03-06 17:06:14,148 - INFO -    SUMO status: time=950.0ms, vehicles=84
+2026-03-06 17:06:15,176 - INFO - Simulation stepping... (step #1000)
+2026-03-06 17:06:15,177 - INFO -    SUMO status: time=1000.0ms, vehicles=85
+2026-03-06 17:06:18,715 - INFO - Found 2 new records to inject!
+2026-03-06 17:06:18,715 - INFO - Processing 2 records for injection
+2026-03-06 17:06:18,715 - INFO - Record: type=pedestrian, timestamp=2026-03-06 11:36:19.421000
+2026-03-06 17:06:18,715 - INFO - Attempting to inject pedestrians: {'pedestrians': [{'type': 'elderly', 'position': 'south_side', 'count': 9}, {'type': 'student', 'position': 'north_side', 'count': 5}, {'type': 'adult', 'position': 'south_side', 'count': 3}, {'type': 'mobility_aid', 'position': 'north_side', 'count': 9}]}
+2026-03-06 17:06:18,724 - INFO - SUCCESS: Injected 18 pedestrians
+2026-03-06 17:06:18,724 - INFO - Record: type=normal_vehicle, timestamp=2026-03-06 11:36:22.386000
+2026-03-06 17:06:18,724 - INFO - Attempting to inject normal vehicles: {'entryPoint': '-E4', 'vehicles': [{'type': 'truck', 'count': 1}, {'type': 'car', 'count': 2}, {'type': 'lorry', 'count': 1}, {'type': 'bus', 'count': 1}, {'type': 'auto', 'count': 1}, {'type': 'bike', 'count': 5}]}
+2026-03-06 17:06:18,727 - INFO - SUCCESS: Injected 11 normal vehicles
+2026-03-06 17:06:18,879 - INFO - Simulation stepping... (step #1050)
+2026-03-06 17:06:18,880 - INFO -    SUMO status: time=1050.0ms, vehicles=87
+2026-03-06 17:06:22,502 - INFO - Simulation stepping... (step #1100)
+2026-03-06 17:06:22,504 - INFO -    SUMO status: time=1100.0ms, vehicles=98
+2026-03-06 17:06:26,208 - INFO - Simulation stepping... (step #1150)
+2026-03-06 17:06:26,209 - INFO -    SUMO status: time=1150.0ms, vehicles=104
+2026-03-06 17:06:30,126 - INFO - Simulation stepping... (step #1200)
+2026-03-06 17:06:30,127 - INFO -    SUMO status: time=1200.0ms, vehicles=107
+2026-03-06 17:06:34,187 - INFO - Simulation stepping... (step #1250)
+2026-03-06 17:06:34,188 - INFO -    SUMO status: time=1250.0ms, vehicles=113
+2026-03-06 17:06:38,032 - INFO - Simulation stepping... (step #1300)
+2026-03-06 17:06:38,034 - INFO -    SUMO status: time=1300.0ms, vehicles=117
+2026-03-06 17:06:41,866 - INFO - Simulation stepping... (step #1350)
+2026-03-06 17:06:41,867 - INFO -    SUMO status: time=1350.0ms, vehicles=118
+2026-03-06 17:06:45,855 - INFO - Simulation stepping... (step #1400)
+2026-03-06 17:06:45,856 - INFO -    SUMO status: time=1400.0ms, vehicles=118
+2026-03-06 17:06:49,776 - INFO - Simulation stepping... (step #1450)
+2026-03-06 17:06:49,777 - INFO -    SUMO status: time=1450.0ms, vehicles=126
+2026-03-06 17:06:53,744 - INFO - Simulation stepping... (step #1500)
+2026-03-06 17:06:53,745 - INFO -    SUMO status: time=1500.0ms, vehicles=135
+2026-03-06 17:06:57,943 - INFO - Simulation stepping... (step #1550)
+2026-03-06 17:06:57,945 - INFO -    SUMO status: time=1550.0ms, vehicles=141
+2026-03-06 17:07:01,883 - INFO - Simulation stepping... (step #1600)
+2026-03-06 17:07:01,883 - INFO -    SUMO status: time=1600.0ms, vehicles=141
+2026-03-06 17:07:06,031 - INFO - Simulation stepping... (step #1650)
+2026-03-06 17:07:06,033 - INFO -    SUMO status: time=1650.0ms, vehicles=146
+2026-03-06 17:07:09,912 - INFO - Simulation stepping... (step #1700)
+2026-03-06 17:07:09,914 - INFO -    SUMO status: time=1700.0ms, vehicles=146
+2026-03-06 17:07:13,907 - INFO - Simulation stepping... (step #1750)
+2026-03-06 17:07:13,908 - INFO -    SUMO status: time=1750.0ms, vehicles=146
+2026-03-06 17:07:17,732 - INFO - Simulation stepping... (step #1800)
+2026-03-06 17:07:17,733 - INFO -    SUMO status: time=1800.0ms, vehicles=146
+2026-03-06 17:07:21,693 - INFO - Simulation stepping... (step #1850)
+2026-03-06 17:07:21,694 - INFO -    SUMO status: time=1850.0ms, vehicles=163
+2026-03-06 17:07:25,625 - INFO - Simulation stepping... (step #1900)
+2026-03-06 17:07:25,626 - INFO -    SUMO status: time=1900.0ms, vehicles=161
+2026-03-06 17:07:29,640 - INFO - Simulation stepping... (step #1950)
+2026-03-06 17:07:29,640 - INFO -    SUMO status: time=1950.0ms, vehicles=161
+2026-03-06 17:07:33,611 - INFO - Simulation stepping... (step #2000)
+2026-03-06 17:07:33,612 - INFO -    SUMO status: time=2000.0ms, vehicles=165
+2026-03-06 17:07:37,345 - INFO - Simulation stepping... (step #2050)
+2026-03-06 17:07:37,346 - INFO -    SUMO status: time=2050.0ms, vehicles=165
+2026-03-06 17:07:41,341 - INFO - Simulation stepping... (step #2100)
+2026-03-06 17:07:41,342 - INFO -    SUMO status: time=2100.0ms, vehicles=163
+2026-03-06 17:07:45,144 - INFO - Simulation stepping... (step #2150)
+2026-03-06 17:07:45,145 - INFO -    SUMO status: time=2150.0ms, vehicles=166
+2026-03-06 17:07:49,263 - INFO - Simulation stepping... (step #2200)
+2026-03-06 17:07:49,265 - INFO -    SUMO status: time=2200.0ms, vehicles=181
+2026-03-06 17:07:53,524 - INFO - Simulation stepping... (step #2250)
+2026-03-06 17:07:53,526 - INFO -    SUMO status: time=2250.0ms, vehicles=182
+2026-03-06 17:07:57,667 - INFO - Simulation stepping... (step #2300)
+2026-03-06 17:07:57,668 - INFO -    SUMO status: time=2300.0ms, vehicles=182
+2026-03-06 17:08:01,613 - INFO - Simulation stepping... (step #2350)
+2026-03-06 17:08:01,614 - INFO -    SUMO status: time=2350.0ms, vehicles=181
+2026-03-06 17:08:05,217 - INFO - Simulation stepping... (step #2400)
+2026-03-06 17:08:05,218 - INFO -    SUMO status: time=2400.0ms, vehicles=180
+2026-03-06 17:08:08,911 - INFO - Simulation stepping... (step #2450)
+2026-03-06 17:08:08,912 - INFO -    SUMO status: time=2450.0ms, vehicles=183
+2026-03-06 17:08:12,840 - INFO - Simulation stepping... (step #2500)
+2026-03-06 17:08:12,841 - INFO -    SUMO status: time=2500.0ms, vehicles=178
+2026-03-06 17:08:16,536 - INFO - Simulation stepping... (step #2550)
+2026-03-06 17:08:16,537 - INFO -    SUMO status: time=2550.0ms, vehicles=186
+2026-03-06 17:08:20,290 - INFO - Simulation stepping... (step #2600)
+2026-03-06 17:08:20,291 - INFO -    SUMO status: time=2600.0ms, vehicles=185
+2026-03-06 17:08:23,902 - INFO - Simulation stepping... (step #2650)
+2026-03-06 17:08:23,904 - INFO -    SUMO status: time=2650.0ms, vehicles=185
+2026-03-06 17:08:27,845 - INFO - Simulation stepping... (step #2700)
+2026-03-06 17:08:27,846 - INFO -    SUMO status: time=2700.0ms, vehicles=185
+2026-03-06 17:08:31,743 - INFO - Simulation stepping... (step #2750)
+2026-03-06 17:08:31,744 - INFO -    SUMO status: time=2750.0ms, vehicles=194
+2026-03-06 17:08:35,713 - INFO - Simulation stepping... (step #2800)
+2026-03-06 17:08:35,714 - INFO -    SUMO status: time=2800.0ms, vehicles=190
+2026-03-06 17:08:39,539 - INFO - Simulation stepping... (step #2850)
+2026-03-06 17:08:39,540 - INFO -    SUMO status: time=2850.0ms, vehicles=186
+2026-03-06 17:08:43,261 - INFO - Simulation stepping... (step #2900)
+2026-03-06 17:08:43,263 - INFO -    SUMO status: time=2900.0ms, vehicles=197
+2026-03-06 17:08:47,218 - INFO - Simulation stepping... (step #2950)
+2026-03-06 17:08:47,219 - INFO -    SUMO status: time=2950.0ms, vehicles=204
+2026-03-06 17:08:51,017 - INFO - Simulation stepping... (step #3000)
+2026-03-06 17:08:51,018 - INFO -    SUMO status: time=3000.0ms, vehicles=202
+2026-03-06 17:08:54,884 - INFO - Simulation stepping... (step #3050)
+2026-03-06 17:08:54,885 - INFO -    SUMO status: time=3050.0ms, vehicles=207
+2026-03-06 17:08:58,819 - INFO - Simulation stepping... (step #3100)
+2026-03-06 17:08:58,821 - INFO -    SUMO status: time=3100.0ms, vehicles=206
+2026-03-06 17:09:02,918 - INFO - Simulation stepping... (step #3150)
+2026-03-06 17:09:02,919 - INFO -    SUMO status: time=3150.0ms, vehicles=203
+2026-03-06 17:09:07,103 - INFO - Simulation stepping... (step #3200)
+2026-03-06 17:09:07,105 - INFO -    SUMO status: time=3200.0ms, vehicles=199
+2026-03-06 17:09:11,108 - INFO - Simulation stepping... (step #3250)
+2026-03-06 17:09:11,110 - INFO -    SUMO status: time=3250.0ms, vehicles=205
+2026-03-06 17:09:15,170 - INFO - Simulation stepping... (step #3300)
+2026-03-06 17:09:15,172 - INFO -    SUMO status: time=3300.0ms, vehicles=206
+2026-03-06 17:09:19,279 - INFO - Simulation stepping... (step #3350)
+2026-03-06 17:09:19,280 - INFO -    SUMO status: time=3350.0ms, vehicles=209
+2026-03-06 17:09:23,465 - INFO - Simulation stepping... (step #3400)
+2026-03-06 17:09:23,466 - INFO -    SUMO status: time=3400.0ms, vehicles=208
+2026-03-06 17:09:27,589 - INFO - Simulation stepping... (step #3450)
+2026-03-06 17:09:27,590 - INFO -    SUMO status: time=3450.0ms, vehicles=209
+2026-03-06 17:09:31,733 - INFO - Simulation stepping... (step #3500)
+2026-03-06 17:09:31,735 - INFO -    SUMO status: time=3500.0ms, vehicles=206
+2026-03-06 17:09:35,503 - INFO - Simulation stepping... (step #3550)
+2026-03-06 17:09:35,503 - INFO -    SUMO status: time=3550.0ms, vehicles=200
+2026-03-06 17:09:39,534 - INFO - Simulation stepping... (step #3600)
+2026-03-06 17:09:39,535 - INFO -    SUMO status: time=3600.0ms, vehicles=197
+2026-03-06 17:09:43,733 - INFO - Simulation stepping... (step #3650)
+2026-03-06 17:09:43,734 - INFO -    SUMO status: time=3650.0ms, vehicles=218
+2026-03-06 17:09:47,982 - INFO - Simulation stepping... (step #3700)
+2026-03-06 17:09:47,983 - INFO -    SUMO status: time=3700.0ms, vehicles=217
+2026-03-06 17:09:52,078 - INFO - Simulation stepping... (step #3750)
+2026-03-06 17:09:52,080 - INFO -    SUMO status: time=3750.0ms, vehicles=215
+2026-03-06 17:09:56,288 - INFO - Simulation stepping... (step #3800)
+2026-03-06 17:09:56,290 - INFO -    SUMO status: time=3800.0ms, vehicles=215
+2026-03-06 17:10:00,377 - INFO - Simulation stepping... (step #3850)
+2026-03-06 17:10:00,378 - INFO -    SUMO status: time=3850.0ms, vehicles=210
+2026-03-06 17:10:04,736 - INFO - Simulation stepping... (step #3900)
+2026-03-06 17:10:04,737 - INFO -    SUMO status: time=3900.0ms, vehicles=207
+2026-03-06 17:10:08,930 - INFO - Simulation stepping... (step #3950)
+2026-03-06 17:10:08,931 - INFO -    SUMO status: time=3950.0ms, vehicles=212
+2026-03-06 17:10:13,181 - INFO - Simulation stepping... (step #4000)
+2026-03-06 17:10:13,182 - INFO -    SUMO status: time=4000.0ms, vehicles=219
+2026-03-06 17:10:17,446 - INFO - Simulation stepping... (step #4050)
+2026-03-06 17:10:17,449 - INFO -    SUMO status: time=4050.0ms, vehicles=219
+2026-03-06 17:10:21,593 - INFO - Simulation stepping... (step #4100)
+2026-03-06 17:10:21,595 - INFO -    SUMO status: time=4100.0ms, vehicles=218
+2026-03-06 17:10:25,811 - INFO - Simulation stepping... (step #4150)
+2026-03-06 17:10:25,813 - INFO -    SUMO status: time=4150.0ms, vehicles=220
+2026-03-06 17:10:30,071 - INFO - Simulation stepping... (step #4200)
+2026-03-06 17:10:30,071 - INFO -    SUMO status: time=4200.0ms, vehicles=219
+2026-03-06 17:10:34,390 - INFO - Simulation stepping... (step #4250)
+2026-03-06 17:10:34,392 - INFO -    SUMO status: time=4250.0ms, vehicles=221
+2026-03-06 17:10:38,649 - INFO - Simulation stepping... (step #4300)
+2026-03-06 17:10:38,650 - INFO -    SUMO status: time=4300.0ms, vehicles=220
+2026-03-06 17:10:42,906 - INFO - Simulation stepping... (step #4350)
+2026-03-06 17:10:42,907 - INFO -    SUMO status: time=4350.0ms, vehicles=227
+2026-03-06 17:10:47,075 - INFO - Simulation stepping... (step #4400)
+2026-03-06 17:10:47,077 - INFO -    SUMO status: time=4400.0ms, vehicles=228
+2026-03-06 17:10:51,327 - INFO - Simulation stepping... (step #4450)
+2026-03-06 17:10:51,327 - INFO -    SUMO status: time=4450.0ms, vehicles=225
+2026-03-06 17:10:55,539 - INFO - Simulation stepping... (step #4500)
+2026-03-06 17:10:55,541 - INFO -    SUMO status: time=4500.0ms, vehicles=220
+2026-03-06 17:10:59,915 - INFO - Simulation stepping... (step #4550)
+2026-03-06 17:10:59,916 - INFO -    SUMO status: time=4550.0ms, vehicles=226
+2026-03-06 17:11:04,082 - INFO - Simulation stepping... (step #4600)
+2026-03-06 17:11:04,084 - INFO -    SUMO status: time=4600.0ms, vehicles=223
+2026-03-06 17:11:08,257 - INFO - Simulation stepping... (step #4650)
+2026-03-06 17:11:08,259 - INFO -    SUMO status: time=4650.0ms, vehicles=219
+2026-03-06 17:11:12,516 - INFO - Simulation stepping... (step #4700)
+2026-03-06 17:11:12,518 - INFO -    SUMO status: time=4700.0ms, vehicles=225
+2026-03-06 17:11:16,742 - INFO - Simulation stepping... (step #4750)
+2026-03-06 17:11:16,744 - INFO -    SUMO status: time=4750.0ms, vehicles=225
+2026-03-06 17:11:21,018 - INFO - Simulation stepping... (step #4800)
+2026-03-06 17:11:21,020 - INFO -    SUMO status: time=4800.0ms, vehicles=220
+2026-03-06 17:11:25,258 - INFO - Simulation stepping... (step #4850)
+2026-03-06 17:11:25,260 - INFO -    SUMO status: time=4850.0ms, vehicles=220
+2026-03-06 17:11:29,551 - INFO - Simulation stepping... (step #4900)
+2026-03-06 17:11:29,551 - INFO -    SUMO status: time=4900.0ms, vehicles=219
+2026-03-06 17:11:33,804 - INFO - Simulation stepping... (step #4950)
+2026-03-06 17:11:33,805 - INFO -    SUMO status: time=4950.0ms, vehicles=217
+2026-03-06 17:11:37,998 - INFO - Simulation stepping... (step #5000)
+2026-03-06 17:11:37,999 - INFO -    SUMO status: time=5000.0ms, vehicles=213
+2026-03-06 17:11:42,259 - INFO - Simulation stepping... (step #5050)
+2026-03-06 17:11:42,261 - INFO -    SUMO status: time=5050.0ms, vehicles=219
+2026-03-06 17:11:46,537 - INFO - Simulation stepping... (step #5100)
+2026-03-06 17:11:46,539 - INFO -    SUMO status: time=5100.0ms, vehicles=226
+2026-03-06 17:11:50,706 - INFO - Simulation stepping... (step #5150)
+2026-03-06 17:11:50,707 - INFO -    SUMO status: time=5150.0ms, vehicles=225
+2026-03-06 17:11:54,958 - INFO - Simulation stepping... (step #5200)
+2026-03-06 17:11:54,960 - INFO -    SUMO status: time=5200.0ms, vehicles=220
+2026-03-06 17:11:59,321 - INFO - Simulation stepping... (step #5250)
+2026-03-06 17:11:59,323 - INFO -    SUMO status: time=5250.0ms, vehicles=222
+2026-03-06 17:12:03,654 - INFO - Simulation stepping... (step #5300)
+2026-03-06 17:12:03,657 - INFO -    SUMO status: time=5300.0ms, vehicles=217
+2026-03-06 17:12:07,882 - INFO - Simulation stepping... (step #5350)
+2026-03-06 17:12:07,882 - INFO -    SUMO status: time=5350.0ms, vehicles=213
+2026-03-06 17:12:12,315 - INFO - Simulation stepping... (step #5400)
+2026-03-06 17:12:12,316 - INFO -    SUMO status: time=5400.0ms, vehicles=209
+2026-03-06 17:12:16,566 - INFO - Simulation stepping... (step #5450)
+2026-03-06 17:12:16,568 - INFO -    SUMO status: time=5450.0ms, vehicles=222
+2026-03-06 17:12:20,788 - INFO - Simulation stepping... (step #5500)
+2026-03-06 17:12:20,790 - INFO -    SUMO status: time=5500.0ms, vehicles=219
+2026-03-06 17:12:25,095 - INFO - Simulation stepping... (step #5550)
+2026-03-06 17:12:25,097 - INFO -    SUMO status: time=5550.0ms, vehicles=216
+2026-03-06 17:12:29,456 - INFO - Simulation stepping... (step #5600)
+2026-03-06 17:12:29,457 - INFO -    SUMO status: time=5600.0ms, vehicles=217
+2026-03-06 17:12:33,687 - INFO - Simulation stepping... (step #5650)
+2026-03-06 17:12:33,688 - INFO -    SUMO status: time=5650.0ms, vehicles=216
+2026-03-06 17:12:38,018 - INFO - Simulation stepping... (step #5700)
+2026-03-06 17:12:38,020 - INFO -    SUMO status: time=5700.0ms, vehicles=212
+2026-03-06 17:12:42,352 - INFO - Simulation stepping... (step #5750)
+2026-03-06 17:12:42,354 - INFO -    SUMO status: time=5750.0ms, vehicles=216
+2026-03-06 17:12:46,597 - INFO - Simulation stepping... (step #5800)
+2026-03-06 17:12:46,599 - INFO -    SUMO status: time=5800.0ms, vehicles=229
+2026-03-06 17:12:50,935 - INFO - Simulation stepping... (step #5850)
+2026-03-06 17:12:50,936 - INFO -    SUMO status: time=5850.0ms, vehicles=224
+2026-03-06 17:12:55,171 - INFO - Simulation stepping... (step #5900)
+2026-03-06 17:12:55,173 - INFO -    SUMO status: time=5900.0ms, vehicles=219
+2026-03-06 17:12:59,520 - INFO - Simulation stepping... (step #5950)
+2026-03-06 17:12:59,521 - INFO -    SUMO status: time=5950.0ms, vehicles=219
+2026-03-06 17:13:03,776 - INFO - Simulation stepping... (step #6000)
+2026-03-06 17:13:03,778 - INFO -    SUMO status: time=6000.0ms, vehicles=218
+2026-03-06 17:13:07,970 - INFO - Simulation stepping... (step #6050)
+2026-03-06 17:13:07,971 - INFO -    SUMO status: time=6050.0ms, vehicles=217
+2026-03-06 17:13:12,035 - INFO - Simulation stepping... (step #6100)
+2026-03-06 17:13:12,036 - INFO -    SUMO status: time=6100.0ms, vehicles=214
+2026-03-06 17:13:16,079 - INFO - Simulation stepping... (step #6150)
+2026-03-06 17:13:16,081 - INFO -    SUMO status: time=6150.0ms, vehicles=220
+2026-03-06 17:13:20,369 - INFO - Simulation stepping... (step #6200)
+2026-03-06 17:13:20,370 - INFO -    SUMO status: time=6200.0ms, vehicles=215
+2026-03-06 17:13:24,589 - INFO - Simulation stepping... (step #6250)
+2026-03-06 17:13:24,590 - INFO -    SUMO status: time=6250.0ms, vehicles=215
+2026-03-06 17:13:28,842 - INFO - Simulation stepping... (step #6300)
+2026-03-06 17:13:28,844 - INFO -    SUMO status: time=6300.0ms, vehicles=213
+2026-03-06 17:13:33,104 - INFO - Simulation stepping... (step #6350)
+2026-03-06 17:13:33,105 - INFO -    SUMO status: time=6350.0ms, vehicles=220
+2026-03-06 17:13:37,359 - INFO - Simulation stepping... (step #6400)
+2026-03-06 17:13:37,361 - INFO -    SUMO status: time=6400.0ms, vehicles=216
+2026-03-06 17:13:41,684 - INFO - Simulation stepping... (step #6450)
+2026-03-06 17:13:41,685 - INFO -    SUMO status: time=6450.0ms, vehicles=213
+2026-03-06 17:13:45,929 - INFO - Simulation stepping... (step #6500)
+2026-03-06 17:13:45,930 - INFO -    SUMO status: time=6500.0ms, vehicles=221
+2026-03-06 17:13:50,270 - INFO - Simulation stepping... (step #6550)
+2026-03-06 17:13:50,272 - INFO -    SUMO status: time=6550.0ms, vehicles=219
+2026-03-06 17:13:54,529 - INFO - Simulation stepping... (step #6600)
+2026-03-06 17:13:54,531 - INFO -    SUMO status: time=6600.0ms, vehicles=214
+2026-03-06 17:13:58,779 - INFO - Simulation stepping... (step #6650)
+2026-03-06 17:13:58,781 - INFO -    SUMO status: time=6650.0ms, vehicles=218
+2026-03-06 17:14:03,113 - INFO - Simulation stepping... (step #6700)
+2026-03-06 17:14:03,114 - INFO -    SUMO status: time=6700.0ms, vehicles=220
+2026-03-06 17:14:07,364 - INFO - Simulation stepping... (step #6750)
+2026-03-06 17:14:07,366 - INFO -    SUMO status: time=6750.0ms, vehicles=217
+2026-03-06 17:14:11,619 - INFO - Simulation stepping... (step #6800)
+2026-03-06 17:14:11,621 - INFO -    SUMO status: time=6800.0ms, vehicles=215
+2026-03-06 17:14:15,877 - INFO - Simulation stepping... (step #6850)
+2026-03-06 17:14:15,879 - INFO -    SUMO status: time=6850.0ms, vehicles=217
+2026-03-06 17:14:20,106 - INFO - Simulation stepping... (step #6900)
+2026-03-06 17:14:20,108 - INFO -    SUMO status: time=6900.0ms, vehicles=217
+2026-03-06 17:14:24,267 - INFO - Simulation stepping... (step #6950)
+2026-03-06 17:14:24,269 - INFO -    SUMO status: time=6950.0ms, vehicles=220
+2026-03-06 17:14:28,500 - INFO - Simulation stepping... (step #7000)
+2026-03-06 17:14:28,501 - INFO -    SUMO status: time=7000.0ms, vehicles=216
+2026-03-06 17:14:32,757 - INFO - Simulation stepping... (step #7050)
+2026-03-06 17:14:32,758 - INFO -    SUMO status: time=7050.0ms, vehicles=215
+2026-03-06 17:14:36,823 - INFO - Simulation stepping... (step #7100)
+2026-03-06 17:14:36,825 - INFO -    SUMO status: time=7100.0ms, vehicles=210
+2026-03-06 17:14:40,991 - INFO - Simulation stepping... (step #7150)
+2026-03-06 17:14:40,993 - INFO -    SUMO status: time=7150.0ms, vehicles=206
+2026-03-06 17:14:45,302 - INFO - Simulation stepping... (step #7200)
+2026-03-06 17:14:45,303 - INFO -    SUMO status: time=7200.0ms, vehicles=203
+2026-03-06 17:14:49,501 - INFO - Simulation stepping... (step #7250)
+2026-03-06 17:14:49,503 - INFO -    SUMO status: time=7250.0ms, vehicles=221
+2026-03-06 17:14:53,730 - INFO - Simulation stepping... (step #7300)
+2026-03-06 17:14:53,732 - INFO -    SUMO status: time=7300.0ms, vehicles=219
+2026-03-06 17:14:57,818 - INFO - Simulation stepping... (step #7350)
+2026-03-06 17:14:57,820 - INFO -    SUMO status: time=7350.0ms, vehicles=217
+2026-03-06 17:15:01,946 - INFO - Simulation stepping... (step #7400)
+2026-03-06 17:15:01,947 - INFO -    SUMO status: time=7400.0ms, vehicles=217
+2026-03-06 17:15:06,190 - INFO - Simulation stepping... (step #7450)
+2026-03-06 17:15:06,192 - INFO -    SUMO status: time=7450.0ms, vehicles=212
+2026-03-06 17:15:10,385 - INFO - Simulation stepping... (step #7500)
+2026-03-06 17:15:10,386 - INFO -    SUMO status: time=7500.0ms, vehicles=208
+2026-03-06 17:15:14,736 - INFO - Simulation stepping... (step #7550)
+2026-03-06 17:15:14,738 - INFO -    SUMO status: time=7550.0ms, vehicles=208
+2026-03-06 17:15:18,670 - INFO - Simulation stepping... (step #7600)
+2026-03-06 17:15:18,671 - INFO -    SUMO status: time=7600.0ms, vehicles=214
+2026-03-06 17:15:22,619 - INFO - Simulation stepping... (step #7650)
+2026-03-06 17:15:22,620 - INFO -    SUMO status: time=7650.0ms, vehicles=211
+2026-03-06 17:15:26,670 - INFO - Simulation stepping... (step #7700)
+2026-03-06 17:15:26,672 - INFO -    SUMO status: time=7700.0ms, vehicles=209
+2026-03-06 17:15:30,915 - INFO - Simulation stepping... (step #7750)
+2026-03-06 17:15:30,916 - INFO -    SUMO status: time=7750.0ms, vehicles=209
+2026-03-06 17:15:35,141 - INFO - Simulation stepping... (step #7800)
+2026-03-06 17:15:35,142 - INFO -    SUMO status: time=7800.0ms, vehicles=208
+2026-03-06 17:15:39,401 - INFO - Simulation stepping... (step #7850)
+2026-03-06 17:15:39,402 - INFO -    SUMO status: time=7850.0ms, vehicles=211
+2026-03-06 17:15:43,514 - INFO - Simulation stepping... (step #7900)
+2026-03-06 17:15:43,515 - INFO -    SUMO status: time=7900.0ms, vehicles=206
+2026-03-06 17:15:47,505 - INFO - Simulation stepping... (step #7950)
+2026-03-06 17:15:47,507 - INFO -    SUMO status: time=7950.0ms, vehicles=211
+2026-03-06 17:15:51,552 - INFO - Simulation stepping... (step #8000)
+2026-03-06 17:15:51,553 - INFO -    SUMO status: time=8000.0ms, vehicles=211
+2026-03-06 17:15:55,341 - INFO - Simulation stepping... (step #8050)
+2026-03-06 17:15:55,342 - INFO -    SUMO status: time=8050.0ms, vehicles=208
+2026-03-06 17:15:59,000 - INFO - Simulation stepping... (step #8100)
+2026-03-06 17:15:59,000 - INFO -    SUMO status: time=8100.0ms, vehicles=203
+2026-03-06 17:16:02,632 - INFO - Simulation stepping... (step #8150)
+2026-03-06 17:16:02,634 - INFO -    SUMO status: time=8150.0ms, vehicles=210
+2026-03-06 17:16:06,304 - INFO - Simulation stepping... (step #8200)
+2026-03-06 17:16:06,305 - INFO -    SUMO status: time=8200.0ms, vehicles=208
+2026-03-06 17:16:10,057 - INFO - Simulation stepping... (step #8250)
+2026-03-06 17:16:10,058 - INFO -    SUMO status: time=8250.0ms, vehicles=205
+2026-03-06 17:16:10,580 - ERROR - Injector error: Connection closed by SUMO.
+2026-03-06 17:16:10,583 - INFO - ============================================================
+2026-03-06 17:16:10,583 - INFO - CLEANING UP INJECTOR
+2026-03-06 17:16:10,583 - INFO - ============================================================
+2026-03-06 17:16:10,583 - INFO - Disconnected from SUMO
+2026-03-06 17:16:10,583 - INFO - 
+Injection Statistics:
+2026-03-06 17:16:10,584 - INFO -    Total vehicles injected: 11
+2026-03-06 17:16:10,584 - INFO -    - Emergency: 0
+2026-03-06 17:16:10,584 - INFO -    - Normal: 11
+2026-03-06 17:16:10,584 - INFO -    Total pedestrians injected: 18
+2026-03-06 17:16:10,698 - INFO - Injector cleanup complete
+2026-03-06 17:33:17,271 - INFO - ============================================================
+2026-03-06 17:33:17,272 - INFO - STARTING SUMO DATA INJECTOR
+2026-03-06 17:33:17,272 - INFO - ============================================================
+2026-03-06 17:33:17,272 - INFO - MongoDB: mongodb+srv://rolexultimate23_db_user:qwerty12345@cluster0.axqeteq.mongodb.net/?appName=Cluster0
+2026-03-06 17:33:17,272 - INFO - Poll interval: 1.0ms
+2026-03-06 17:33:17,273 - INFO - SUMO port: 8813
+2026-03-06 17:33:17,273 - INFO - ============================================================
+2026-03-06 17:33:17,465 - INFO - Connected to SUMO on port 8813
+2026-03-06 17:33:17,467 - INFO -    Simulation time: 0.0ms
+2026-03-06 17:33:17,467 - INFO -    Vehicles in simulation: 0
+2026-03-06 17:33:17,494 - INFO - Simulation stepping... (step #50)
+2026-03-06 17:33:17,494 - INFO -    SUMO status: time=50.0ms, vehicles=24
+2026-03-06 17:33:17,513 - INFO - Simulation stepping... (step #100)
+2026-03-06 17:33:17,514 - INFO -    SUMO status: time=100.0ms, vehicles=24
+2026-03-06 17:33:17,545 - INFO - Simulation stepping... (step #150)
+2026-03-06 17:33:17,551 - INFO -    SUMO status: time=150.0ms, vehicles=24
+2026-03-06 17:33:17,578 - INFO - Simulation stepping... (step #200)
+2026-03-06 17:33:17,579 - INFO -    SUMO status: time=200.0ms, vehicles=27
+2026-03-06 17:33:17,612 - INFO - Simulation stepping... (step #250)
+2026-03-06 17:33:17,614 - INFO -    SUMO status: time=250.0ms, vehicles=28
+2026-03-06 17:33:17,645 - INFO - Simulation stepping... (step #300)
+2026-03-06 17:33:17,647 - INFO -    SUMO status: time=300.0ms, vehicles=28
+2026-03-06 17:33:17,674 - INFO - Simulation stepping... (step #350)
+2026-03-06 17:33:17,677 - INFO -    SUMO status: time=350.0ms, vehicles=35
+2026-03-06 17:33:17,710 - INFO - Simulation stepping... (step #400)
+2026-03-06 17:33:17,711 - INFO -    SUMO status: time=400.0ms, vehicles=46
+2026-03-06 17:33:17,739 - INFO - Simulation stepping... (step #450)
+2026-03-06 17:33:17,739 - INFO -    SUMO status: time=450.0ms, vehicles=46
+2026-03-06 17:33:17,793 - INFO - Simulation stepping... (step #500)
+2026-03-06 17:33:17,798 - INFO -    SUMO status: time=500.0ms, vehicles=46
+2026-03-06 17:33:17,856 - INFO - Simulation stepping... (step #550)
+2026-03-06 17:33:17,857 - INFO -    SUMO status: time=550.0ms, vehicles=49
+2026-03-06 17:33:17,912 - INFO - Simulation stepping... (step #600)
+2026-03-06 17:33:17,914 - INFO -    SUMO status: time=600.0ms, vehicles=50
+2026-03-06 17:33:17,953 - INFO - Simulation stepping... (step #650)
+2026-03-06 17:33:17,954 - INFO -    SUMO status: time=650.0ms, vehicles=56
+2026-03-06 17:33:17,994 - INFO - Simulation stepping... (step #700)
+2026-03-06 17:33:17,995 - INFO -    SUMO status: time=700.0ms, vehicles=57
+2026-03-06 17:33:18,039 - INFO - Simulation stepping... (step #750)
+2026-03-06 17:33:18,039 - INFO -    SUMO status: time=750.0ms, vehicles=70
+2026-03-06 17:33:18,082 - INFO - Simulation stepping... (step #800)
+2026-03-06 17:33:18,084 - INFO -    SUMO status: time=800.0ms, vehicles=74
+2026-03-06 17:33:18,133 - INFO - Simulation stepping... (step #850)
+2026-03-06 17:33:18,136 - INFO -    SUMO status: time=850.0ms, vehicles=74
+2026-03-06 17:33:18,197 - INFO - Simulation stepping... (step #900)
+2026-03-06 17:33:18,198 - INFO -    SUMO status: time=900.0ms, vehicles=74
+2026-03-06 17:33:18,256 - INFO - Simulation stepping... (step #950)
+2026-03-06 17:33:18,257 - INFO -    SUMO status: time=950.0ms, vehicles=84
+2026-03-06 17:33:18,321 - INFO - Simulation stepping... (step #1000)
+2026-03-06 17:33:18,322 - INFO -    SUMO status: time=1000.0ms, vehicles=85
+2026-03-06 17:33:18,376 - INFO - Simulation stepping... (step #1050)
+2026-03-06 17:33:18,377 - INFO -    SUMO status: time=1050.0ms, vehicles=85
+2026-03-06 17:33:18,438 - INFO - Simulation stepping... (step #1100)
+2026-03-06 17:33:18,439 - INFO -    SUMO status: time=1100.0ms, vehicles=95
+2026-03-06 17:33:18,568 - INFO - Found 5 new records to inject!
+2026-03-06 17:33:18,568 - INFO - Processing 5 records for injection
+2026-03-06 17:33:18,569 - INFO - Record: type=emergency_vehicle, timestamp=2026-03-06 17:30:39.183000
+2026-03-06 17:33:18,569 - INFO - Attempting to inject emergency vehicle: {'vehicle_type': 'ambulance', 'entryPoint': '-E4'}
+2026-03-06 17:33:18,573 - INFO - SUCCESS: Injected emergency vehicle: inj_emergency_ambulance_1772818239
+2026-03-06 17:33:18,574 - INFO - Record: type=emergency_vehicle, timestamp=2026-03-06 17:31:00.632000
+2026-03-06 17:33:18,574 - INFO - Attempting to inject emergency vehicle: {'vehicle_type': 'ambulance', 'entryPoint': '-E4'}
+2026-03-06 17:33:18,576 - INFO - SUCCESS: Injected emergency vehicle: inj_emergency_ambulance_1772818260
+2026-03-06 17:33:18,581 - INFO - Record: type=emergency_vehicle, timestamp=2026-03-06 17:31:03.978000
+2026-03-06 17:33:18,581 - INFO - Attempting to inject emergency vehicle: {'vehicle_type': 'fire_truck', 'entryPoint': '-E4'}
+2026-03-06 17:33:18,586 - INFO - SUCCESS: Injected emergency vehicle: inj_emergency_firetruck_1772818263
+2026-03-06 17:33:18,590 - INFO - Record: type=emergency_vehicle, timestamp=2026-03-06 17:31:18.679000
+2026-03-06 17:33:18,591 - INFO - Attempting to inject emergency vehicle: {'vehicle_type': 'fire_truck', 'entryPoint': '-E4'}
+2026-03-06 17:33:18,598 - INFO - SUCCESS: Injected emergency vehicle: inj_emergency_firetruck_1772818278
+2026-03-06 17:33:18,598 - INFO - Record: type=emergency_vehicle, timestamp=2026-03-06 17:31:23.029000
+2026-03-06 17:33:18,599 - INFO - Attempting to inject emergency vehicle: {'vehicle_type': 'ambulance', 'entryPoint': '-E4'}
+2026-03-06 17:33:18,606 - INFO - SUCCESS: Injected emergency vehicle: inj_emergency_ambulance_1772818283
+2026-03-06 17:33:18,737 - INFO - Simulation stepping... (step #1150)
+2026-03-06 17:33:18,738 - INFO -    SUMO status: time=1150.0ms, vehicles=99
+2026-03-06 17:33:18,817 - INFO - Simulation stepping... (step #1200)
+2026-03-06 17:33:18,818 - INFO -    SUMO status: time=1200.0ms, vehicles=101
+2026-03-06 17:33:18,893 - INFO - Simulation stepping... (step #1250)
+2026-03-06 17:33:18,895 - INFO -    SUMO status: time=1250.0ms, vehicles=107
+2026-03-06 17:33:18,968 - INFO - Simulation stepping... (step #1300)
+2026-03-06 17:33:18,969 - INFO -    SUMO status: time=1300.0ms, vehicles=111
+2026-03-06 17:33:19,045 - INFO - Simulation stepping... (step #1350)
+2026-03-06 17:33:19,046 - INFO -    SUMO status: time=1350.0ms, vehicles=112
+2026-03-06 17:33:19,114 - INFO - Simulation stepping... (step #1400)
+2026-03-06 17:33:19,116 - INFO -    SUMO status: time=1400.0ms, vehicles=112
+2026-03-06 17:33:19,189 - INFO - Simulation stepping... (step #1450)
+2026-03-06 17:33:19,190 - INFO -    SUMO status: time=1450.0ms, vehicles=120
+2026-03-06 17:33:19,265 - INFO - Simulation stepping... (step #1500)
+2026-03-06 17:33:19,266 - INFO -    SUMO status: time=1500.0ms, vehicles=129
+2026-03-06 17:33:19,355 - INFO - Simulation stepping... (step #1550)
+2026-03-06 17:33:19,356 - INFO -    SUMO status: time=1550.0ms, vehicles=135
+2026-03-06 17:33:19,439 - INFO - Simulation stepping... (step #1600)
+2026-03-06 17:33:19,440 - INFO -    SUMO status: time=1600.0ms, vehicles=135
+2026-03-06 17:33:19,639 - INFO - Simulation stepping... (step #1650)
+2026-03-06 17:33:19,640 - INFO -    SUMO status: time=1650.0ms, vehicles=140
+2026-03-06 17:33:19,722 - INFO - Simulation stepping... (step #1700)
+2026-03-06 17:33:19,722 - INFO -    SUMO status: time=1700.0ms, vehicles=140
+2026-03-06 17:33:19,808 - INFO - Simulation stepping... (step #1750)
+2026-03-06 17:33:19,808 - INFO -    SUMO status: time=1750.0ms, vehicles=140
+2026-03-06 17:33:19,892 - INFO - Simulation stepping... (step #1800)
+2026-03-06 17:33:19,892 - INFO -    SUMO status: time=1800.0ms, vehicles=140
+2026-03-06 17:33:19,980 - INFO - Simulation stepping... (step #1850)
+2026-03-06 17:33:19,981 - INFO -    SUMO status: time=1850.0ms, vehicles=157
+2026-03-06 17:33:20,077 - INFO - Simulation stepping... (step #1900)
+2026-03-06 17:33:20,078 - INFO -    SUMO status: time=1900.0ms, vehicles=155
+2026-03-06 17:33:20,167 - INFO - Simulation stepping... (step #1950)
+2026-03-06 17:33:20,169 - INFO -    SUMO status: time=1950.0ms, vehicles=155
+2026-03-06 17:33:20,259 - INFO - Simulation stepping... (step #2000)
+2026-03-06 17:33:20,260 - INFO -    SUMO status: time=2000.0ms, vehicles=159
+2026-03-06 17:33:20,353 - INFO - Simulation stepping... (step #2050)
+2026-03-06 17:33:20,354 - INFO -    SUMO status: time=2050.0ms, vehicles=159
+2026-03-06 17:33:20,442 - INFO - Simulation stepping... (step #2100)
+2026-03-06 17:33:20,443 - INFO -    SUMO status: time=2100.0ms, vehicles=157
+2026-03-06 17:33:20,784 - ERROR - Injector error: Connection closed by SUMO.
+2026-03-06 17:33:20,787 - INFO - ============================================================
+2026-03-06 17:33:20,787 - INFO - CLEANING UP INJECTOR
+2026-03-06 17:33:20,788 - INFO - ============================================================
+2026-03-06 17:33:20,788 - INFO - Disconnected from SUMO
+2026-03-06 17:33:20,788 - INFO - 
+Injection Statistics:
+2026-03-06 17:33:20,788 - INFO -    Total vehicles injected: 5
+2026-03-06 17:33:20,788 - INFO -    - Emergency: 5
+2026-03-06 17:33:20,788 - INFO -      * ambulance: 3
+2026-03-06 17:33:20,788 - INFO -      * fire_truck: 2
+2026-03-06 17:33:20,788 - INFO -    - Normal: 0
+2026-03-06 17:33:20,788 - INFO -    Total pedestrians injected: 0
+2026-03-06 17:33:20,951 - INFO - Injector cleanup complete

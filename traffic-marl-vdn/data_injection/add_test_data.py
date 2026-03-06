@@ -27,20 +27,18 @@ def to_iso_display(dt):
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+00:00"
 
-# Test Emergency Vehicle
-# emergency_record = {
-#     "timestamp": get_bson_timestamp(0),  # Stored as MongoDB Date (BSON datetime)
-#     "type": "emergency_vehicle",
-#     "data": {
-#         "vehicle_type": "ambulance",
-#         "entryPoint": "-E4"  # E0, -E2, -E8, -E4, -E5
-#     }
-# }
-# result = collection.insert_one(emergency_record)
-# print(f"Added emergency vehicle: {result.inserted_id}")
-# print(f"  Timestamp: {to_iso_display(emergency_record['timestamp'])}")
+emergency_record = {
+    "timestamp": get_bson_timestamp(0),  # Stored as MongoDB Date (BSON datetime)
+    "type": "emergency_vehicle",
+    "data": {
+        "vehicle_type": "ambulance",
+        "entryPoint": "-E4"  # E0, -E2, -E8, -E4, -E5
+    }
+}
+result = collection.insert_one(emergency_record)
+print(f"Added emergency vehicle: {result.inserted_id}")
+print(f"  Timestamp: {to_iso_display(emergency_record['timestamp'])}")
 
-# Test Pedestrians
 pedestrian_record = {
     "timestamp": get_bson_timestamp(2),  # 2 seconds later
     "type": "pedestrian",
@@ -77,29 +75,29 @@ result = collection.insert_one(normal_record)
 print(f"Added normal vehicles: {result.inserted_id}")
 print(f"  Timestamp: {to_iso_display(normal_record['timestamp'])}")
 
-# police_record = {
-#     "timestamp": get_bson_timestamp(6),
-#     "type": "emergency_vehicle",
-#     "data": {
-#         "vehicle_type": "police",
-#         "entryPoint": "-E5"  # E0, -E2, -E8, -E4, -E5
-#     }
-# }
-# result = collection.insert_one(police_record)
-# print(f"Added police vehicle: {result.inserted_id}")
-# print(f"  Timestamp: {to_iso_display(police_record['timestamp'])}")
+police_record = {
+    "timestamp": get_bson_timestamp(6),
+    "type": "emergency_vehicle",
+    "data": {
+        "vehicle_type": "police",
+        "entryPoint": "-E5"  # E0, -E2, -E8, -E4, -E5
+    }
+}
+result = collection.insert_one(police_record)
+print(f"Added police vehicle: {result.inserted_id}")
+print(f"  Timestamp: {to_iso_display(police_record['timestamp'])}")
 
-# fireTruck_record = {
-#     "timestamp": get_bson_timestamp(6),
-#     "type": "emergency_vehicle",
-#     "data": {
-#         "vehicle_type": "firetruck",
-#         "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
-#     }
-# }
-# result = collection.insert_one(fireTruck_record)
-# print(f"Added firetruck vehicle: {result.inserted_id}")
-# print(f"  Timestamp: {to_iso_display(fireTruck_record['timestamp'])}")
+fireTruck_record = {
+    "timestamp": get_bson_timestamp(6),
+    "type": "emergency_vehicle",
+    "data": {
+        "vehicle_type": "firetruck",
+        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
+    }
+}
+result = collection.insert_one(fireTruck_record)
+print(f"Added firetruck vehicle: {result.inserted_id}")
+print(f"  Timestamp: {to_iso_display(fireTruck_record['timestamp'])}")
 
 print("\n" + "="*60)
 print("TEST DATA ADDED SUCCESSFULLY!")
