@@ -156,8 +156,12 @@ Simply put; the whole workflow for this component begins in two main phases.
     open the html file with a web browser.
 25. Run the fixed timed traffic to compare -> python normal_traffic/fixed_time_executor.py 
     Open fixed_time_dashboard.html
-26. 
-
+26. for the integration of all 4 components, the following steps were followed;
+27. Created the new 3 jucntion SUMO network with pedestrians and emergency vehicles
+28. created data_injection folder to process real time injections of other 3 components.
+29. connected mongoDB -> python test_atlas_connection.py
+30. testing the injector with SUMO -> python -m data_injection.run_injector --sumo-config sumo_configs/3junctions.sumocfg --gui --interval 1.0 --traci-port 8813
+31. to create dummy data -> python -m data_injection.add_test_data
 
 
 

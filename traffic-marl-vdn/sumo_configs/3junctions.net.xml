@@ -145,10 +145,10 @@
         <lane id=":J9_w0_0" index="0" allow="pedestrian" speed="2.78" length="9.60" width="12.80" shape="443.97,414.85 437.57,414.85 450.37,414.85 443.97,414.85"/>
     </edge>
 
-    <edge id="-E0" from="J1" to="J4" priority="-1" length="80.70">
-        <lane id="-E0_0" index="0" allow="pedestrian" speed="13.89" length="80.70" width="2.00" shape="-144.79,26.34 -572.65,26.79"/>
-        <lane id="-E0_1" index="1" disallow="pedestrian" speed="13.89" length="80.70" shape="-144.79,23.74 -572.66,24.19"/>
-        <lane id="-E0_2" index="2" disallow="pedestrian" speed="13.89" length="80.70" shape="-144.79,20.54 -572.66,20.99"/>
+    <edge id="-E0" from="J1" to="J4" priority="-1" >
+        <lane id="-E0_0" index="0" allow="pedestrian" speed="13.89" length="427.87" width="2.00" shape="-144.79,26.34 -572.65,26.79"/>
+        <lane id="-E0_1" index="1" disallow="pedestrian" speed="13.89" length="427.87" shape="-144.79,23.74 -572.66,24.19"/>
+        <lane id="-E0_2" index="2" disallow="pedestrian" speed="13.89" length="427.87" shape="-144.79,20.54 -572.66,20.99"/>
     </edge>
     <edge id="-E0.80" from="J4" to="J0" priority="-1">
         <lane id="-E0.80_0" index="0" allow="pedestrian" speed="13.89" length="207.39" width="2.00" shape="-576.67,26.79 -784.06,26.63"/>
@@ -175,10 +175,10 @@
         <lane id="-E8_0" index="0" speed="13.89" length="329.34" shape="448.77,-320.47 448.74,8.87"/>
         <lane id="-E8_1" index="1" speed="13.89" length="329.34" shape="445.57,-320.47 445.54,8.87"/>
     </edge>
-    <edge id="E0" from="J0" to="J4" priority="-1" length="42.35">
-        <lane id="E0_0" index="0" allow="pedestrian" speed="13.89" length="42.35" width="2.00" shape="-784.04,11.83 -576.65,11.99"/>
-        <lane id="E0_1" index="1" disallow="pedestrian" speed="13.89" length="42.35" shape="-784.05,14.43 -576.66,14.59"/>
-        <lane id="E0_2" index="2" disallow="pedestrian" speed="13.89" length="42.35" shape="-784.05,17.63 -576.66,17.79"/>
+    <edge id="E0" from="J0" to="J4" priority="-1">
+        <lane id="E0_0" index="0" allow="pedestrian" speed="13.89" length="207.39" width="2.00" shape="-784.04,11.83 -576.65,11.99"/>
+        <lane id="E0_1" index="1" disallow="pedestrian" speed="13.89" length="207.39" shape="-784.05,14.43 -576.66,14.59"/>
+        <lane id="E0_2" index="2" disallow="pedestrian" speed="13.89" length="207.39" shape="-784.05,17.63 -576.66,17.79"/>
     </edge>
     <edge id="E00" from="J4" to="J1" priority="-1">
         <lane id="E00_0" index="0" allow="pedestrian" speed="13.89" length="427.87" width="2.00" shape="-572.67,11.99 -144.80,11.54"/>
@@ -193,9 +193,9 @@
         <lane id="E3_0" index="0" speed="13.89" length="561.52" shape="-127.98,14.14 433.54,14.47"/>
         <lane id="E3_1" index="1" speed="13.89" length="561.52" shape="-127.98,17.34 433.54,17.67"/>
     </edge>
-    <edge id="E4" from="J8" to="J9" priority="-1" length="52.73">
-        <lane id="E4_0" index="0" speed="13.89" length="52.73" shape="448.74,29.68 448.77,414.85"/>
-        <lane id="E4_1" index="1" speed="13.89" length="52.73" shape="445.54,29.68 445.57,414.85"/>
+    <edge id="E4" from="J8" to="J9" priority="-1">
+        <lane id="E4_0" index="0" speed="13.89" length="385.17" shape="448.74,29.68 448.77,414.85"/>
+        <lane id="E4_1" index="1" speed="13.89" length="385.17" shape="445.54,29.68 445.57,414.85"/>
     </edge>
     <edge id="E5" from="J8" to="J10" priority="-1">
         <lane id="E5_0" index="0" speed="13.89" length="485.34" shape="454.34,14.47 939.68,13.85"/>
@@ -207,30 +207,30 @@
     </edge>
 
     <tlLogic id="J1" type="static" programID="0" offset="0">
-        <phase duration="42" state="GGGrrrrrr"/>
-        <phase duration="3"  state="yyyyyyrrr"/>
-        <phase duration="42" state="rrrGGGrrr"/>
-        <phase duration="3"  state="rrryyyyyy"/>
-        <phase duration="42" state="rrrrrrGGG"/>
-        <phase duration="3"  state="yyyrrryyy"/>
+        <phase duration="140" state="GGGrrrrrr"/>
+        <phase duration="30"  state="yyyyyyrrr"/>
+        <phase duration="140" state="rrrGGGrrr"/>
+        <phase duration="30"  state="rrryyyyyy"/>
+        <phase duration="140" state="rrrrrrGGG"/>
+        <phase duration="30"  state="yyyrrryyy"/>
     </tlLogic>
     <tlLogic id="J4" type="static" programID="0" offset="0">
-        <phase duration="77" state="GGGGGGrr"/>
-        <phase duration="3"  state="yyyyyyrr"/>
-        <phase duration="2"  state="rrrrrryy"/>
-        <phase duration="10" state="rrrrrrGG"/>
-        <phase duration="3"  state="rrrrrryy"/>
-        <phase duration="2"  state="yyyyyyrr"/>
+        <phase duration="260" state="GGGGGGrr"/>
+        <phase duration="15"  state="yyyyyyrr"/>
+        <phase duration="10"  state="rrrrrryy"/>
+        <phase duration="130" state="rrrrrrGG"/>
+        <phase duration="30"  state="rrrrrryy"/>
+        <phase duration="20"  state="yyyyyyrr"/>
     </tlLogic>
     <tlLogic id="J8" type="static" programID="0" offset="0">
-        <phase duration="42" state="GGGGrrrrrrrrrrrr"/>
-        <phase duration="3"  state="yyyyyyyyrrrrrrrr"/>
-        <phase duration="42" state="rrrrGGGGrrrrrrrr"/>
-        <phase duration="3"  state="rrrryyyyyyyyrrrr"/>
-        <phase duration="42" state="rrrrrrrrGGGGrrrr"/>
-        <phase duration="3"  state="rrrrrrrryyyyyyyy"/>
-        <phase duration="42" state="rrrrrrrrrrrrGGGG"/>
-        <phase duration="3"  state="yyyyrrrrrrrryyyy"/>
+        <phase duration="140" state="GGGGrrrrrrrrrrrr"/>
+        <phase duration="30"  state="yyyyyyyyrrrrrrrr"/>
+        <phase duration="140" state="rrrrGGGGrrrrrrrr"/>
+        <phase duration="30"  state="rrrryyyyyyyyrrrr"/>
+        <phase duration="140" state="rrrrrrrrGGGGrrrr"/>
+        <phase duration="30"  state="rrrrrrrryyyyyyyy"/>
+        <phase duration="140" state="rrrrrrrrrrrrGGGG"/>
+        <phase duration="30"  state="yyyyrrrrrrrryyyy"/>
     </tlLogic>
 
     <junction id="J0" type="dead_end" x="-784.05" y="19.23" incLanes="-E0.80_0 -E0.80_1 -E0.80_2" intLanes="" shape="-784.05,19.23 -784.06,27.63 -784.05,19.23"/>
