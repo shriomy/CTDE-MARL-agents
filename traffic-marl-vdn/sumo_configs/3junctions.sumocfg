@@ -25,7 +25,6 @@
   
     <gui_only>
         <gui-settings-file value="gui-settings.xml"/>
-        <delay value="50"/>
     </gui_only>
 
 </configuration>

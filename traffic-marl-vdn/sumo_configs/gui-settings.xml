@@ -2,7 +2,6 @@
 <viewsettings>
     <scheme name="real world"/>
     <viewport zoom="100" x="54" y="20"/>
-    <delay value="100"/>
     <show-route-ids value="true"/>
     <show-vehicle-ids value="true"/>
     <lane-show-borders value="true"/>
