@@ -416,12 +416,6 @@ class SUMOVehicleFactory:
             data = record.get('data', {})
             pedestrians = data.get('pedestrians', [])
             timestamp = record.get('timestamp', '')
-            logger.info(
-                "Pedestrian injection request: timestamp=%s, groups=%d, payload=%s",
-                timestamp,
-                len(pedestrians),
-                pedestrians,
-            )
             
             ts_int = self._timestamp_to_int(timestamp)
             
@@ -431,8 +425,6 @@ class SUMOVehicleFactory:
             except:
                 logger.error("SUMO not connected!")
                 return []
-
-            logger.info("SUMO pedestrian injection start at sim_time=%.2f", current_time)
             
             for ped_info in pedestrians:
                 ped_type = ped_info.get('type', '').lower()
@@ -450,31 +442,16 @@ class SUMOVehicleFactory:
                 mapped_type = type_map.get(ped_type, 'adult')
                 props = self.PEDESTRIAN_TYPES[mapped_type]
                 type_id = props['vType']
-                logger.info(
-                    "Pedestrian group: source_type=%s mapped_type=%s position=%s count=%s vType=%s",
-                    ped_type,
-                    mapped_type,
-                    position,
-                    count,
-                    type_id,
-                )
 
                 # Crossing rules (as in your personFlow examples):
                 # - Start E00 -> finish at -E0.80 or -E0
                 # - Start -E0.80 -> finish at E00 or E0
                 if 'south' in position:
                     from_edge = 'E00'
-                    to_edge = random.choice(['-E0.80', '-E0'])
+                    to_edge = '-E0.80'
                 else:
                     from_edge = '-E0.80'
-                    to_edge = random.choice(['E00', 'E0'])
-
-                logger.info(
-                    "Pedestrian crossing plan: position=%s from_edge=%s to_edge=%s",
-                    position,
-                    from_edge,
-                    to_edge,
-                )
+                    to_edge = 'E00'
 
                 try:
                     count_int = int(count)
@@ -502,15 +479,6 @@ class SUMOVehicleFactory:
                             typeID=type_id
                         )
 
-                        logger.info(
-                            "Ped added: id=%s vType=%s from_edge=%s depart=%.2f pos=%.2f",
-                            ped_id,
-                            type_id,
-                            from_edge,
-                            depart_time,
-                            spawn_pos,
-                        )
-
                         # Explicitly provide from->to edges so SUMO computes an actual crossing path.
                         traci.person.appendWalkingStage(
                             personID=ped_id,
@@ -519,8 +487,10 @@ class SUMOVehicleFactory:
                         )
 
                         logger.info(
-                            "Ped stage appended: id=%s walk_edges=%s arrivalPos=%.2f",
+                            "Ped stage appended: id=%s start_edge=%s end_edge=%s walk_edges=%s arrivalPos=%.2f",
                             ped_id,
+                            from_edge,
+                            to_edge,
                             walk_edges,
                             arrival_pos,
                         )

@@ -41,10 +41,10 @@ pedestrian_record = {
     "type": "pedestrian",
     "data": {
         "pedestrians": [
-            {"type": "elderly", "position": "south_side", "count": 2},
-            {"type": "student", "position": "north_side", "count": 5},
-            {"type": "adult", "position": "south_side", "count": 3},
-            {"type": "mobility_aid", "position": "north_side", "count": 4},
+            {"type": "elderly", "position": "south_side", "count": 2},  
+            {"type": "student", "position": "north_side", "count": 5},      
+            {"type": "adult", "position": "south_side", "count": 3},        
+            {"type": "mobility_aid", "position": "north_side", "count": 4},   
         ]
     }
 }
