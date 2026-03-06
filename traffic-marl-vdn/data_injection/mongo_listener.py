@@ -1,6 +1,6 @@
 """
 MongoDB Listener for real-time data injection into SUMO.
-Supports both Unix numeric and ISO 8601 timestamps in SUMOinjections.
+Primary timestamp format is MongoDB Date/BSON datetime.
 """
 import pymongo
 import time
@@ -35,12 +35,12 @@ class MongoDBListener:
             # Test connection
             self.client.admin.command('ping')
             logger.info(f"Connected to MongoDB Atlas")
-            logger.info(f"   Database: {database}, Collection: {collection}")
+            logger.info(f"Database: {database}, Collection: {collection}")
             
             # Start from current wall-clock time so restarts only process NEW inserts.
             self.last_timestamp = time.time()
-            logger.info(
-                "   Startup checkpoint set to now: %s (numeric: %.3f). Existing records will be ignored.",
+            logger.debug(
+                "Startup checkpoint set to now: %s (numeric: %.3f). Existing records will be ignored.",
                 self._numeric_to_iso(self.last_timestamp),
                 self.last_timestamp,
             )
@@ -60,9 +60,15 @@ class MongoDBListener:
             'last_poll_time': None
         }
     
-    def _to_numeric_timestamp(self, raw_timestamp: Union[str, int, float]) -> Optional[float]:
+    def _to_numeric_timestamp(self, raw_timestamp: Union[str, int, float, datetime]) -> Optional[float]:
         """Convert supported timestamp formats to epoch seconds."""
         try:
+            if isinstance(raw_timestamp, datetime):
+                # Support MongoDB Date/BSON datetime values directly.
+                if raw_timestamp.tzinfo is None:
+                    raw_timestamp = raw_timestamp.replace(tzinfo=timezone.utc)
+                return raw_timestamp.timestamp()
+
             if isinstance(raw_timestamp, (int, float)):
                 return float(raw_timestamp)
 
@@ -88,11 +94,10 @@ class MongoDBListener:
                     dt = dt.replace(tzinfo=timezone.utc)
                     return dt.timestamp()
 
-            logger.warning(f"Unsupported timestamp format: {raw_timestamp}")
             return None
 
         except Exception as e:
-            logger.error(f"Error converting timestamp '{raw_timestamp}': {e}")
+            logger.debug(f"Error converting timestamp '{raw_timestamp}': {e}")
             return None
     
     def _numeric_to_iso(self, numeric_timestamp: float) -> str:
@@ -144,7 +149,7 @@ class MongoDBListener:
                     elif doc.get('type') == 'normal_vehicle':
                         self.stats['normal_vehicles'] += 1
                     
-                    logger.info(f"New record found: {doc.get('type')} at {doc_raw_time}")
+                    logger.debug(f"New record found: {doc.get('type')} at {doc_raw_time}")
             
             self.stats['last_poll_time'] = datetime.now()
             

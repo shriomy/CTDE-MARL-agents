@@ -7,7 +7,7 @@ import random
 import logging
 import time
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,12 @@ class SUMOVehicleFactory:
     def _timestamp_to_int(self, raw_timestamp: Any) -> int:
         """Convert numeric/ISO timestamp to integer seconds for stable IDs."""
         try:
+            if isinstance(raw_timestamp, datetime):
+                # MongoDB Date values are returned as datetime; treat naive as UTC.
+                if raw_timestamp.tzinfo is None:
+                    raw_timestamp = raw_timestamp.replace(tzinfo=timezone.utc)
+                return int(raw_timestamp.timestamp())
+
             if isinstance(raw_timestamp, (int, float)):
                 return int(float(raw_timestamp))
 
