@@ -54,7 +54,7 @@ class Trainer:
         default_config = {
             "sumo_config_path": "sumo_configs/3junctions.sumocfg",
             "use_gui": False,
-            "num_episodes": 100,
+            "num_episodes": 50,
             "max_steps_per_episode": 1800,
             "save_frequency": 10,
             "log_frequency": 1,

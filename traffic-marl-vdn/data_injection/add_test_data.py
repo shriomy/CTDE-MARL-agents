@@ -41,8 +41,8 @@ pedestrian_record = {
     "data": {
         "pedestrians": [
             {"type": "elderly", "position": "south_side", "count": 9},  
-            {"type": "student", "position": "north_side", "count": 5},      
-            {"type": "adult", "position": "south_side", "count": 30},        
+            {"type": "student", "position": "north_side", "count":1},      
+            {"type": "adult", "position": "south_side", "count": 3},        
             {"type": "mobility_aid", "position": "north_side", "count": 9},   
         ]
     }
@@ -57,12 +57,12 @@ normal_record = {
     "timestamp": get_ist_timestamp(4),  # 4 seconds later
     "type": "normal_vehicle",
     "data": {
-        "entryPoint": "E0",  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E5",  # E0, -E2, -E8, -E4, -E5
         "vehicles": [
-            {"type": "truck", "count": 1},
-            {"type": "car", "count": 2},
+            {"type": "truck", "count": 5},
+            {"type": "car", "count": 5},
             {"type": "lorry", "count": 1},
-            {"type": "bus", "count": 1},
+            {"type": "bus", "count": 5},
             {"type": "auto", "count": 1},
             {"type": "bike", "count": 10},
         ]
@@ -78,7 +78,7 @@ emergency_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "ambulance",
-        "entryPoint": "-E0"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(emergency_record)
@@ -91,7 +91,7 @@ police_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "police",
-        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E2"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(police_record)
@@ -104,7 +104,7 @@ fireTruck_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "firetruck",
-        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "E0"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(fireTruck_record)

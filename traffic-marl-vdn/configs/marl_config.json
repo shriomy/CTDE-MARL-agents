@@ -1,13 +1,13 @@
 {
     "sumo_config_path": "sumo_configs/3junctions.sumocfg",
-    "use_gui": false,
-    "num_episodes": 100,
+    "use_gui": true,
+    "num_episodes": 50,
     "max_steps_per_episode": 1800,
     "save_frequency": 10,
     "log_frequency": 1,
     
     "agent_config": {
-        "learning_rate": 0.00001,     
+        "learning_rate": 0.0001,
         "gamma": 0.95,               
         "epsilon_start": 1.0,
         "epsilon_min": 0.05,
@@ -24,10 +24,10 @@
     "env_config": {
         "enable_data_injection": true,
         "injection_poll_interval": 1.0,
-        "min_green_time": 20,
-        "max_green_time": 90,
-        "yellow_time": 3,
-        "green_extension": 5,
+        "min_green_time": 50,
+        "max_green_time": 150,
+        "yellow_time": 10,
+        "green_extension": 40,
         "min_ped_green_time": 12,
         "max_ped_green_time": 45,
         "top_k_lanes": 6,

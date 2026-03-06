@@ -27,6 +27,9 @@ class TrafficLightSpec:
 class TrafficActions:
     """Action executor that preserves yellow transitions and timing constraints."""
 
+    # Remember requested target phase while a yellow transition is in progress.
+    _pending_targets: Dict[str, int] = {}
+
     @staticmethod
     def _phase_elapsed(tl_id: str) -> float:
         """Get elapsed time in current phase with fallback for older APIs."""
@@ -62,10 +65,12 @@ class TrafficActions:
             if elapsed < spec.yellow_hold:
                 return result
 
-            # SUMO phase plans are ordered so yellow transitions naturally proceed to next phase.
-            next_phase = (current_phase + 1) % len(traci.trafficlight.getAllProgramLogics(tl_id)[0].phases)
+            # Complete yellow by moving to the policy-requested target, if available.
+            fallback_phase = (current_phase + 1) % len(traci.trafficlight.getAllProgramLogics(tl_id)[0].phases)
+            next_phase = int(TrafficActions._pending_targets.get(tl_id, fallback_phase))
             min_hold = spec.min_ped_green if next_phase in spec.pedestrian_green_phases else spec.min_green
             TrafficActions._apply_phase(tl_id, next_phase, min_hold)
+            TrafficActions._pending_targets.pop(tl_id, None)
             result["new_phase"] = float(next_phase)
             result["switched"] = 1.0
             return result
@@ -89,21 +94,19 @@ class TrafficActions:
             yellow_phase = spec.green_to_yellow.get(current_phase)
             if yellow_phase is None:
                 TrafficActions._apply_phase(tl_id, target_green, min_hold)
+                TrafficActions._pending_targets.pop(tl_id, None)
                 result["new_phase"] = float(target_green)
                 result["switched"] = 1.0
                 return result
+            TrafficActions._pending_targets[tl_id] = int(target_green)
             TrafficActions._apply_phase(tl_id, yellow_phase, spec.yellow_hold)
             result["new_phase"] = float(yellow_phase)
             result["switched"] = 1.0
             return result
 
-        # Same target: extend if possible, otherwise trigger yellow to prevent very long greens.
+        # Same target: keep current policy-selected phase. We do not force
+        # heuristic switching here; policy quality is shaped by reward.
         if elapsed >= max_hold:
-            yellow_phase = spec.green_to_yellow.get(current_phase)
-            if yellow_phase is not None:
-                TrafficActions._apply_phase(tl_id, yellow_phase, spec.yellow_hold)
-                result["new_phase"] = float(yellow_phase)
-                result["switched"] = 1.0
             return result
 
         try:

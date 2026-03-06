@@ -1,260 +1,212 @@
-# Save this as marl_execution/executor_fixed.py
+import json
 import os
 import sys
 import time
-import json
-import numpy as np
 from datetime import datetime
 
-# Add the project root to Python path
-project_root = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(project_root)
-sys.path.append(os.path.join(project_root, ".."))
+import numpy as np
 
-try:
-    from utils.sumo_env_new import SumoEnv
-    from agents.multi_agent_system import MultiAgentSystem
-    print("✓ Successfully imported all modules")
-except ImportError as e:
-    print(f"✗ Import error: {e}")
-    print(f"Python path: {sys.path}")
-    sys.exit(1)
+# Add the project root to Python path
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(PROJECT_ROOT)
+sys.path.append(os.path.join(PROJECT_ROOT, ".."))
+
+from agents.multi_agent_system import MultiAgentSystem
+from utils.sumo_env_new import SumoEnv
+
 
 class MARLExecutor:
-    """Decentralized execution of trained MARL agents"""
-    
-    def __init__(self):
-        # Configuration - using absolute paths
-        self.config = {
-            'sumo_config_path': os.path.join(project_root, "..", "sumo_configs", "1x2.sumocfg"),
-            'use_gui': True,
-            'agent_config': {
-                'learning_rate': 0.001,
-                'gamma': 0.99,
-                'epsilon_start': 1.0,
-                'epsilon_min': 0.05,
-                'epsilon_decay': 0.9995,
-                'buffer_size': 10000,
-                'central_buffer_size': 50000,
-                'batch_size': 32,
-                'target_update_freq': 10,
-                'enable_communication': True,
-                'num_actions': 5
-            }
-        }
-        
-        # Verify SUMO config exists
+    """Decentralized execution of trained MARL agents with logging."""
+
+    def __init__(self, config_path: str = None):
+        self.root = os.path.join(PROJECT_ROOT, "..")
+        self.config_path = config_path or os.path.join(self.root, "configs", "marl_config.json")
+
+        self.config = self._load_config(self.config_path)
+        self._prepare_paths()
+
+        print(f"Using config: {self.config_path}")
         print(f"SUMO config: {self.config['sumo_config_path']}")
-        if not os.path.exists(self.config['sumo_config_path']):
-            print("✗ ERROR: SUMO config file not found!")
-            print(f"Looking for: {self.config['sumo_config_path']}")
-            sys.exit(1)
-        print("✓ SUMO config file found")
-        
-        # Initialize SUMO environment
-        print("Starting SUMO environment...")
+
         self.env = SumoEnv(
-            config_path=self.config['sumo_config_path'],
-            use_gui=True
+            config_path=self.config["sumo_config_path"],
+            use_gui=bool(self.config.get("use_gui", True)),
+            env_config=dict(self.config.get("env_config", {})),
         )
         self.env.start()
-        print("✓ SUMO started successfully")
-        
-        # Get traffic light IDs
+
         self.agent_ids = self.env.tl_ids
-        print(f"Agents to control: {self.agent_ids}")
-        
-        # Get state dimension
-        initial_state = self.env.get_state()
-        sample_agent = self.agent_ids[0]
-        base_state_dim = int(initial_state[sample_agent].shape[0])  # Should be 13
-        enhanced_state_dim = base_state_dim + 10  # 13 + 10 = 23
-        print(f"State dimensions: base={base_state_dim}, enhanced={enhanced_state_dim}")
-        
-        # Initialize multi-agent system
-        print("Initializing multi-agent system...")
+        print(f"Agents: {self.agent_ids}")
+
+        init_state = self.env.get_state()
+        sample_id = self.agent_ids[0]
+        base_state_dim = int(init_state[sample_id].shape[0])
+
+        agent_cfg = dict(self.config.get("agent_config", {}))
+        agent_cfg["enable_communication"] = True
+
         self.multi_agent = MultiAgentSystem(
             agent_ids=self.agent_ids,
-            state_dim=enhanced_state_dim,
-            action_dim=5,
-            config=self.config['agent_config']
+            base_state_dim=base_state_dim,
+            action_dim=agent_cfg.get("num_actions", 5),
+            config=agent_cfg,
         )
-        
-        # Load trained models
-        print("Looking for trained models...")
-        model_dirs = [
-            os.path.join(project_root, "..", "models", "final"),
-            os.path.join(project_root, "..", "models", "episode_100"),
-            os.path.join(project_root, "..", "models", "episode_50"),
-            os.path.join(project_root, "..", "models", "episode_10"),
-        ]
-        
-        loaded = False
-        for model_dir in model_dirs:
-            if os.path.exists(model_dir):
-                print(f"  Trying: {model_dir}")
-                if self.multi_agent.load_models(model_dir):
-                    print(f"✓ Models loaded from {model_dir}")
-                    loaded = True
-                    break
-        
-        if not loaded:
-            print("✗ WARNING: No trained models found!")
-            print("  The agents will use random policies")
-            print("  Make sure to train models first with: python main.py")
-        
-        # Disable exploration
-        for agent_id in self.agent_ids:
-            self.multi_agent.agents[agent_id].epsilon = 0.0
-            print(f"  {agent_id}: epsilon = {self.multi_agent.agents[agent_id].epsilon}")
-        
-        # Enable communication
-        self.multi_agent.communication_enabled = True
-        print("Communication enabled: Yes")
-        
-        # Create logs directory
-        log_dir = os.path.join(project_root, "..", "logs", "execution")
-        os.makedirs(log_dir, exist_ok=True)
-        print(f"Logs will be saved to: {log_dir}")
-        
-        # Metrics
-        self.metrics = {
-            'step': 0,
-            'total_reward': 0,
-            'queue_history': [],
-            'action_history': [],
-            'reward_history': []
-        }
-        
-        print("\n" + "="*60)
-        print("READY FOR DECENTRALIZED EXECUTION")
-        print("="*60)
-    
-    def run_single_episode(self, max_steps=None):
-        """Run continuous decentralized execution"""
-        print(f"\nStarting continuous execution")
-        print("Press Ctrl+C in this terminal to stop")
-        print("-" * 40)
-        
-        # Reset environment
-        state = self.env.reset()
-        
-        step = 0
-        try:
-            while True:  # Run forever until interrupted
-                # Get actions from agents
-                actions = self.multi_agent.act_with_coordination(
-                    state, 
-                    training_mode=False
-                )
-                
-                # Execute in SUMO
-                next_state, reward, done, info = self.env.step(actions)
-                
-                # Print progress every 50 steps
-                if step % 50 == 0:
-                    print(f"\nStep {step}:")
-                    print(f"  Reward: {reward:.2f}")
-                    print(f"  Vehicles: {info['vehicle_count']}, Speed: {info['avg_speed']:.1f} m/s")
-                    
-                    for agent_id in self.agent_ids:
-                        queues = state[agent_id][:4] * 10.0
-                        action_names = ["WEST", "NORTH", "EAST", "SOUTH", "EXTEND"]
-                        print(f"  {agent_id}:")
-                        print(f"    Action: {action_names[actions[agent_id]]}")
-                        print(f"    Queues: W={queues[0]:.1f}, N={queues[1]:.1f}, "
-                            f"E={queues[2]:.1f}, S={queues[3]:.1f}")
-                
-                # Update state
-                state = next_state
-                step += 1
-                
-                # Check if SUMO simulation ended (reached 3600 seconds)
-                if done:
-                    print(f"\nSUMO simulation reached time limit (3600 seconds)")
-                    print("Resetting simulation...")
-                    state = self.env.reset()
-                    step = 0
-                
-                # Small delay to make it watchable
-                time.sleep(0.05)
-                
-        except KeyboardInterrupt:
-            print("\n\nExecution stopped by user")
-            self.save_metrics()
-    
-    def save_metrics(self):
-        """Save execution metrics to file"""
-        import json
-        from datetime import datetime
-        
-        log_dir = os.path.join(project_root, "..", "logs", "execution")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        # Save detailed metrics
-        metrics_file = os.path.join(log_dir, f"execution_{timestamp}.json")
-        with open(metrics_file, 'w') as f:
-            json.dump(self.metrics, f, indent=2)
-        
-        # Save summary
-        summary = {
-            'timestamp': timestamp,
-            'total_steps': self.metrics['step'],
-            'total_reward': float(self.metrics['total_reward']),
-            'avg_reward': float(np.mean(self.metrics['reward_history'])) if self.metrics['reward_history'] else 0,
-            'agents': self.agent_ids,
-            'final_queues': self.metrics['queue_history'][-1] if self.metrics['queue_history'] else {}
-        }
-        
-        summary_file = os.path.join(log_dir, f"summary_{timestamp}.json")
-        with open(summary_file, 'w') as f:
-            json.dump(summary, f, indent=2)
-        
-        print(f"\nMetrics saved to: {metrics_file}")
-        print(f"Summary saved to: {summary_file}")
-        
-        # Print action statistics
-        print("\nAction Statistics:")
-        for agent_id in self.agent_ids:
-            actions = [step[agent_id] for step in self.metrics['action_history'] if agent_id in step]
-            if actions:
-                unique, counts = np.unique(actions, return_counts=True)
-                action_names = ["WEST", "NORTH", "EAST", "SOUTH", "EXTEND"]
-                print(f"  {agent_id}:")
-                for action, count in zip(unique, counts):
-                    percentage = (count / len(actions)) * 100
-                    print(f"    {action_names[action]}: {count} times ({percentage:.1f}%)")
-    
-    def run(self):
-        """Main execution loop"""
-        self.run_single_episode(max_steps=500)
-        
-        # Close SUMO
-        self.env.close()
-        print("\nSUMO closed. Execution complete!")
 
-def main():
-    print("="*60)
-    print("MARL TRAFFIC CONTROL - DECENTRALIZED EXECUTION")
-    print("="*60)
-    print("This will:")
-    print("1. Start SUMO GUI with your 1x2 network")
-    print("2. Load trained MARL agents")
-    print("3. Execute decentralized control with coordination")
-    print("4. Log all actions and metrics")
-    print("="*60)
-    
-    input("Press Enter to start (or Ctrl+C to cancel)...")
-    
+        print(f"State dims: base={base_state_dim}, enhanced={self.multi_agent.state_dim}")
+
+        loaded_path = self._load_models()
+        if loaded_path:
+            print(f"Loaded trained models from: {loaded_path}")
+        else:
+            print("WARNING: No models loaded, policy may act randomly")
+
+        for agent in self.multi_agent.agents.values():
+            agent.epsilon = 0.0
+
+        self.metrics = {
+            "start_time": datetime.now().isoformat(),
+            "total_steps": 0,
+            "total_reward": 0.0,
+            "reward_history": [],
+            "vehicle_count_history": [],
+            "avg_speed_history": [],
+            "action_history": [],
+            "injection_history": [],
+        }
+
+    def _load_config(self, path: str) -> dict:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Config not found: {path}")
+
+        with open(path, "r") as f:
+            cfg = json.load(f)
+
+        sumo_cfg = cfg.get("sumo_config_path", "sumo_configs/3junctions.sumocfg")
+        if not os.path.isabs(sumo_cfg):
+            cfg["sumo_config_path"] = os.path.join(self.root, sumo_cfg)
+
+        if not os.path.exists(cfg["sumo_config_path"]):
+            raise FileNotFoundError(f"SUMO config not found: {cfg['sumo_config_path']}")
+
+        cfg.setdefault("agent_config", {})
+        cfg.setdefault("env_config", {})
+        cfg.setdefault("max_steps_per_episode", 1800)
+
+        # Execution should run continuously until user stops it.
+        execution_max_steps = int(cfg.get("execution_max_steps", 0))
+        if execution_max_steps <= 0:
+            execution_max_steps = 10**9
+        cfg["env_config"]["max_steps_per_episode"] = execution_max_steps
+
+        # For execution we usually want external live inserts only.
+        cfg["env_config"]["enable_data_injection"] = True
+
+        return cfg
+
+    def _prepare_paths(self) -> None:
+        self.logs_dir = os.path.join(self.root, "logs", "execution")
+        os.makedirs(self.logs_dir, exist_ok=True)
+
+    def _load_models(self) -> str:
+        model_dirs = [
+            os.path.join(self.root, "models", "final"),
+            os.path.join(self.root, "models", "episode_100"),
+            os.path.join(self.root, "models", "episode_90"),
+            os.path.join(self.root, "models", "episode_80"),
+        ]
+
+        for mdir in model_dirs:
+            if os.path.exists(mdir) and self.multi_agent.load_models(mdir):
+                return mdir
+        return ""
+
+    def run(self) -> None:
+        print("=" * 60)
+        print("DECENTRALIZED EXECUTION STARTED")
+        print("Press Ctrl+C to stop")
+        print("=" * 60)
+
+        state = self.env.reset()
+        step = 0
+
+        try:
+            while True:
+                actions = self.multi_agent.act_with_coordination(state, training_mode=False)
+                next_state, reward, done, info = self.env.step(actions)
+
+                self.metrics["total_steps"] += 1
+                self.metrics["total_reward"] += float(reward)
+                self.metrics["reward_history"].append(float(reward))
+                self.metrics["vehicle_count_history"].append(int(info.get("vehicle_count", 0)))
+                self.metrics["avg_speed_history"].append(float(info.get("avg_speed", 0.0)))
+                self.metrics["action_history"].append({aid: int(a) for aid, a in actions.items()})
+                self.metrics["injection_history"].append(info.get("injection_stats", {}))
+
+                if step % 50 == 0:
+                    print(
+                        f"Step {step} | reward={reward:.3f} | "
+                        f"vehicles={info.get('vehicle_count', 0)} | speed={info.get('avg_speed', 0.0):.2f}"
+                    )
+                    print(f"  actions: {actions}")
+
+                step += 1
+                state = next_state
+
+                # In execution mode, done can be ignored because max_steps is set very high.
+                if done and step % 200 == 0:
+                    print("Execution horizon flag raised; continuing without simulation reset.")
+
+                time.sleep(0.05)
+
+        except KeyboardInterrupt:
+            print("\nExecution stopped by user")
+        finally:
+            self.save_logs()
+            self.multi_agent.close()
+            self.env.close()
+            print("Execution cleanup complete")
+
+    def save_logs(self) -> None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        run_log = {
+            "timestamp": datetime.now().isoformat(),
+            "total_steps": int(self.metrics["total_steps"]),
+            "total_reward": float(self.metrics["total_reward"]),
+            "avg_reward": float(np.mean(self.metrics["reward_history"])) if self.metrics["reward_history"] else 0.0,
+            "avg_vehicle_count": (
+                float(np.mean(self.metrics["vehicle_count_history"])) if self.metrics["vehicle_count_history"] else 0.0
+            ),
+            "avg_speed": float(np.mean(self.metrics["avg_speed_history"])) if self.metrics["avg_speed_history"] else 0.0,
+            "actions_last_200": self.metrics["action_history"][-200:],
+            "injection_last_200": self.metrics["injection_history"][-200:],
+            "config": self.config,
+        }
+
+        detail_path = os.path.join(self.logs_dir, f"execution_{timestamp}.json")
+        with open(detail_path, "w") as f:
+            json.dump(run_log, f, indent=2)
+
+        summary_path = os.path.join(self.logs_dir, f"summary_{timestamp}.json")
+        summary = {
+            "timestamp": run_log["timestamp"],
+            "total_steps": run_log["total_steps"],
+            "total_reward": run_log["total_reward"],
+            "avg_reward": run_log["avg_reward"],
+            "avg_vehicle_count": run_log["avg_vehicle_count"],
+            "avg_speed": run_log["avg_speed"],
+        }
+        with open(summary_path, "w") as f:
+            json.dump(summary, f, indent=2)
+
+        print(f"Logs saved: {detail_path}")
+        print(f"Summary saved: {summary_path}")
+
+
+def main() -> None:
     executor = MARLExecutor()
     executor.run()
 
+
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\nExecution cancelled by user")
-    except Exception as e:
-        print(f"\nERROR: {e}")
-        import traceback
-        traceback.print_exc()
+    main()
