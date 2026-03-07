@@ -341,6 +341,44 @@ class MARLExecutor:
 
         return final_actions
 
+    def _build_junction_live_metrics(
+        self,
+        state: Dict[str, np.ndarray],
+        info: Dict[str, object],
+    ) -> Dict[str, Dict[str, float]]:
+        """Build compact per-junction metrics for dashboard and detailed junction page."""
+        out: Dict[str, Dict[str, float]] = {}
+        diagnostics = dict(info.get("junction_diagnostics", {}))
+
+        for tl_id in self.agent_ids:
+            vec = np.asarray(state.get(tl_id, np.zeros(9, dtype=np.float32)), dtype=np.float32)
+            diag = dict(diagnostics.get(tl_id, {}))
+
+            total_queue = float(np.clip(vec[-9] * 100.0, 0.0, 9999.0)) if vec.size >= 9 else 0.0
+            avg_wait = float(np.clip(vec[-7] * 90.0, 0.0, 9999.0)) if vec.size >= 7 else 0.0
+
+            emergency_by_lane = dict(diag.get("emergency_detected_by_lane", {}))
+            normal_by_lane = dict(diag.get("normal_detected_by_lane", {}))
+
+            lane_counts = []
+            for lane_id in sorted(set(list(normal_by_lane.keys()) + list(emergency_by_lane.keys()))):
+                lane_counts.append(int(normal_by_lane.get(lane_id, 0)) + int(emergency_by_lane.get(lane_id, 0)))
+            lane_counts.sort(reverse=True)
+
+            emergency_count = int(sum(int(v) for v in emergency_by_lane.values()))
+            pedestrians = int(diag.get("pedestrians_detected", 0))
+
+            out[tl_id] = {
+                "vehicles_waiting": total_queue,
+                "vehicle_density": float(min(1.0, total_queue / 100.0)),
+                "avg_wait_time": avg_wait,
+                "pedestrians": pedestrians,
+                "emergency": emergency_count,
+                "lane_counts": lane_counts,
+            }
+
+        return out
+
     def _load_models(self) -> str:
         model_dirs = [
             os.path.join(self.root, "models", "final"),
@@ -388,6 +426,7 @@ class MARLExecutor:
 
                 if self.dashboard is not None and step % 2 == 0:
                     frame_data = self._capture_live_frame(step)
+                    junction_live = self._build_junction_live_metrics(next_state, info)
                     telemetry = {
                         "step": int(step),
                         "reward": float(reward),
@@ -396,6 +435,9 @@ class MARLExecutor:
                         "actions": {k: int(v) for k, v in actions.items()},
                         "modes": dict(self.junction_modes),
                         "injection_stats": dict(info.get("injection_stats", {})),
+                        "step_meta": dict(info.get("step_meta", {})),
+                        "junction_diagnostics": dict(info.get("junction_diagnostics", {})),
+                        "junction_live": junction_live,
                     }
                     if frame_data:
                         telemetry["sumo_live_frame"] = frame_data
