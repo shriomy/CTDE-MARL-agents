@@ -10,7 +10,11 @@
         "fixed_green_steps": 20,
         "dashboard_enabled": true,
         "dashboard_host": "localhost",
-        "dashboard_port": 8765
+        "dashboard_port": 8765,
+        "stream_sumo_gui": true,
+        "stream_frame_interval_steps": 20,
+        "stream_frame_width": 1950,
+        "stream_frame_height": 1100
     },
     
     "agent_config": {

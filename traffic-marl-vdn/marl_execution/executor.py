@@ -2,10 +2,12 @@ import json
 import os
 import sys
 import time
+import base64
 from datetime import datetime
 from typing import Dict, List
 
 import numpy as np
+import traci
 
 # Add the project root to Python path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -85,6 +87,7 @@ class MARLExecutor:
         }
 
         self._init_mode_control()
+        self._init_live_frame_stream()
         self._init_dashboard()
 
     def _load_config(self, path: str) -> dict:
@@ -112,6 +115,10 @@ class MARLExecutor:
         control_cfg.setdefault("dashboard_enabled", True)
         control_cfg.setdefault("dashboard_host", "localhost")
         control_cfg.setdefault("dashboard_port", 8765)
+        control_cfg.setdefault("stream_sumo_gui", True)
+        control_cfg.setdefault("stream_frame_interval_steps", 20)
+        control_cfg.setdefault("stream_frame_width", 960)
+        control_cfg.setdefault("stream_frame_height", 540)
 
         # Execution should run continuously until user stops it.
         execution_max_steps = int(cfg.get("execution_max_steps", 0))
@@ -127,6 +134,62 @@ class MARLExecutor:
     def _prepare_paths(self) -> None:
         self.logs_dir = os.path.join(self.root, "logs", "execution")
         os.makedirs(self.logs_dir, exist_ok=True)
+
+    def _init_live_frame_stream(self) -> None:
+        control_cfg = self.config.get("control_modes", {})
+        self.live_frame_enabled = bool(control_cfg.get("stream_sumo_gui", True)) and bool(self.config.get("use_gui", True))
+        self.live_frame_interval_steps = max(5, int(control_cfg.get("stream_frame_interval_steps", 20)))
+        self.live_frame_width = max(320, int(control_cfg.get("stream_frame_width", 960)))
+        self.live_frame_height = max(240, int(control_cfg.get("stream_frame_height", 540)))
+
+        self._live_frame_last_step = -10**9
+        self._live_frame_failures = 0
+        self._sumo_view_id = ""
+
+        self.live_frames_dir = os.path.join(self.logs_dir, "live_frames")
+        os.makedirs(self.live_frames_dir, exist_ok=True)
+        self.live_frame_path = os.path.join(self.live_frames_dir, "latest_frame.png")
+
+    def _resolve_sumo_view_id(self) -> str:
+        if self._sumo_view_id:
+            return self._sumo_view_id
+        try:
+            views = list(traci.gui.getIDList())
+            if views:
+                self._sumo_view_id = str(views[0])
+        except Exception:
+            self._sumo_view_id = ""
+        return self._sumo_view_id
+
+    def _capture_live_frame(self, step: int) -> str:
+        """Capture one SUMO GUI frame and return it as a PNG data URL."""
+        if not self.live_frame_enabled:
+            return ""
+        if step - self._live_frame_last_step < self.live_frame_interval_steps:
+            return ""
+
+        view_id = self._resolve_sumo_view_id()
+        if not view_id:
+            return ""
+
+        try:
+            traci.gui.screenshot(
+                view_id,
+                self.live_frame_path,
+                self.live_frame_width,
+                self.live_frame_height,
+            )
+            with open(self.live_frame_path, "rb") as f:
+                payload = base64.b64encode(f.read()).decode("ascii")
+
+            self._live_frame_last_step = step
+            self._live_frame_failures = 0
+            return f"data:image/png;base64,{payload}"
+        except Exception:
+            self._live_frame_failures += 1
+            if self._live_frame_failures > 5:
+                self.live_frame_enabled = False
+            return ""
 
     def _init_mode_control(self) -> None:
         valid_modes = {"marl", "fixed", "manual"}
@@ -324,6 +387,7 @@ class MARLExecutor:
                     print(f"  modes: {self.junction_modes}")
 
                 if self.dashboard is not None and step % 2 == 0:
+                    frame_data = self._capture_live_frame(step)
                     telemetry = {
                         "step": int(step),
                         "reward": float(reward),
@@ -333,6 +397,8 @@ class MARLExecutor:
                         "modes": dict(self.junction_modes),
                         "injection_stats": dict(info.get("injection_stats", {})),
                     }
+                    if frame_data:
+                        telemetry["sumo_live_frame"] = frame_data
                     self.dashboard.send_traffic_update(telemetry)
 
                 step += 1
