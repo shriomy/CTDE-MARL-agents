@@ -157,7 +157,7 @@ class SumoEnv:
                 )
             elif tl_id == "J4":
                 self.tl_specs[tl_id] = TrafficLightSpec(
-                    action_to_green={0: 0, 1: 3},
+                    action_to_green={0: 0, 1: 2},
                     green_to_yellow={0: 1, 3: 4},
                     yellow_phases={1, 2, 4, 5},
                     pedestrian_green_phases={3},
