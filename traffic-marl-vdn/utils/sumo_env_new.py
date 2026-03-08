@@ -144,7 +144,7 @@ class SumoEnv:
         for tl_id in self.tl_ids:
             if tl_id == "J1":
                 self.tl_specs[tl_id] = TrafficLightSpec(
-                    action_to_green={0: 0, 1: 2, 2: 4, 3: 4},
+                    action_to_green={0: 4, 1: 2, 2: 0},
                     green_to_yellow={0: 1, 2: 3, 4: 5},
                     yellow_phases={1, 3, 5},
                     pedestrian_green_phases=set(),
@@ -157,7 +157,7 @@ class SumoEnv:
                 )
             elif tl_id == "J4":
                 self.tl_specs[tl_id] = TrafficLightSpec(
-                    action_to_green={0: 0, 1: 3, 2: 0, 3: 3},
+                    action_to_green={0: 0, 1: 6, 2: 4, 3: 4},
                     green_to_yellow={0: 1, 3: 4},
                     yellow_phases={1, 2, 4, 5},
                     pedestrian_green_phases={3},
@@ -170,7 +170,7 @@ class SumoEnv:
                 )
             elif tl_id == "J8":
                 self.tl_specs[tl_id] = TrafficLightSpec(
-                    action_to_green={0: 0, 1: 2, 2: 4, 3: 6},
+                    action_to_green={0: 0, 1: 6, 2: 2, 3: 4},
                     green_to_yellow={0: 1, 2: 3, 4: 5, 6: 7},
                     yellow_phases={1, 3, 5, 7},
                     pedestrian_green_phases=set(),
@@ -552,13 +552,23 @@ class SumoEnv:
                 stats["pedestrian"] += len(created)
         return stats
 
-    def step(self, actions: Dict[str, int]) -> Tuple[Dict[str, np.ndarray], float, bool, Dict[str, Any]]:
+    def step(
+        self,
+        actions: Dict[str, int],
+        ignore_timing_for: Dict[str, bool] = None,
+    ) -> Tuple[Dict[str, np.ndarray], float, bool, Dict[str, Any]]:
         """Apply joint action, advance simulation, and return next state and global reward."""
         step_meta: Dict[str, Dict[str, float]] = {}
+        ignore_timing_for = ignore_timing_for or {}
 
         for tl_id, action in actions.items():
             spec = self.tl_specs[tl_id]
-            transition = TrafficActions.execute_action(tl_id, int(action), spec)
+            transition = TrafficActions.execute_action(
+                tl_id,
+                int(action),
+                spec,
+                ignore_timing_rules=bool(ignore_timing_for.get(tl_id, False)),
+            )
             new_phase = int(transition["new_phase"])
             current_phase = int(traci.trafficlight.getPhase(tl_id))
 

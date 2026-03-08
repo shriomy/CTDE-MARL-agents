@@ -43,7 +43,7 @@ pedestrian_record = {
             {"type": "elderly", "position": "south_side", "count": 10},  
             {"type": "student", "position": "north_side", "count":2},      
             {"type": "adult", "position": "south_side", "count": 1},        
-            {"type": "mobility_aid", "position": "north_side", "count": 0},   
+            {"type": "mobility_aid", "position": "north_side", "count": 7},   
         ]
     }
 }
@@ -57,10 +57,10 @@ normal_record = {
     "timestamp": get_ist_timestamp(4),  # 4 seconds later
     "type": "normal_vehicle",
     "data": {
-        "entryPoint": "-E0",  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E8",  # E0, -E2, -E8, -E4, -E5
         "vehicles": [
             {"type": "truck", "count": 1},
-            {"type": "car", "count": 12},
+            {"type": "car", "count": 5},
             {"type": "lorry", "count": 2},
             {"type": "bus", "count": 8},
             {"type": "auto", "count": 6},

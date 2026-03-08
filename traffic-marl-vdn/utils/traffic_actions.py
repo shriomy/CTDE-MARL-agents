@@ -44,7 +44,12 @@ class TrafficActions:
         traci.trafficlight.setPhaseDuration(tl_id, max(1.0, float(duration)))
 
     @staticmethod
-    def execute_action(tl_id: str, action: int, spec: TrafficLightSpec) -> Dict[str, float]:
+    def execute_action(
+        tl_id: str,
+        action: int,
+        spec: TrafficLightSpec,
+        ignore_timing_rules: bool = False,
+    ) -> Dict[str, float]:
         """
         Execute one action at a traffic light using junction-specific rules.
 
@@ -60,6 +65,29 @@ class TrafficActions:
             "target_action": float(action),
         }
 
+        # Map policy action to a target green phase for this junction.
+        if action == 4:
+            target_green = current_phase
+        else:
+            target_green = spec.action_to_green.get(int(action), current_phase)
+            if target_green is None:
+                target_green = current_phase
+
+        # Manual-mode override: force requested phase and bypass timing rules.
+        if ignore_timing_rules:
+            forced_hold = 30.0
+            if target_green != current_phase:
+                TrafficActions._apply_phase(tl_id, int(target_green), forced_hold)
+                result["new_phase"] = float(target_green)
+                result["switched"] = 1.0
+            else:
+                try:
+                    traci.trafficlight.setPhaseDuration(tl_id, forced_hold)
+                except Exception:
+                    pass
+            TrafficActions._pending_targets.pop(tl_id, None)
+            return result
+
         # If we are in yellow/all-red, complete the safety interval before any choice.
         if current_phase in spec.yellow_phases:
             if elapsed < spec.yellow_hold:
@@ -74,14 +102,6 @@ class TrafficActions:
             result["new_phase"] = float(next_phase)
             result["switched"] = 1.0
             return result
-
-        # Map policy action to a target green phase for this junction.
-        if action == 4:
-            target_green = current_phase
-        else:
-            target_green = spec.action_to_green.get(int(action), current_phase)
-            if target_green is None:
-                target_green = current_phase
 
         in_ped_phase = current_phase in spec.pedestrian_green_phases
         min_hold = spec.min_ped_green if in_ped_phase else spec.min_green

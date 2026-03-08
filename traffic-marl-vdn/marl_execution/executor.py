@@ -525,7 +525,14 @@ class MARLExecutor:
             while True:
                 self._process_dashboard_commands()
                 actions = self._select_joint_actions(state)
-                next_state, reward, done, info = self.env.step(actions)
+                manual_overrides = {
+                    tl_id: (self.junction_modes.get(tl_id) == "manual")
+                    for tl_id in self.agent_ids
+                }
+                next_state, reward, done, info = self.env.step(
+                    actions,
+                    ignore_timing_for=manual_overrides,
+                )
                 self._publish_iot_signals(dict(info.get("step_meta", {})))
 
                 self.metrics["total_steps"] += 1
@@ -539,11 +546,11 @@ class MARLExecutor:
 
                 if step % 50 == 0:
                     print(
-                        f"Step {step} | reward={reward:.3f} | "
-                        f"vehicles={info.get('vehicle_count', 0)} | speed={info.get('avg_speed', 0.0):.2f}"
+                        # f"Step {step} | reward={reward:.3f} | "
+                        # f"vehicles={info.get('vehicle_count', 0)} | speed={info.get('avg_speed', 0.0):.2f}"
                     )
-                    print(f"  actions: {actions}")
-                    print(f"  modes: {self.junction_modes}")
+                    # print(f"  actions: {actions}")
+                    # print(f"  modes: {self.junction_modes}")
 
                 if self.dashboard is not None and step % 2 == 0:
                     frame_data = self._capture_live_frame(step)

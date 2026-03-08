@@ -207,9 +207,9 @@
     </edge>
 
     <tlLogic id="J1" type="static" programID="0" offset="0">
-        <phase duration="140" state="GGGrrrrrr"/>
+        <phase duration="140" state="GGGrrrrrr"/> 
         <phase duration="30"  state="yyyyyyrrr"/>
-        <phase duration="140" state="rrrGGGrrr"/>
+        <phase duration="140" state="rrrGGGrrr"/> 
         <phase duration="30"  state="rrryyyyyy"/>
         <phase duration="140" state="rrrrrrGGG"/>
         <phase duration="30"  state="yyyrrryyy"/>
