@@ -469,6 +469,7 @@ class MARLExecutor:
         """Build compact per-junction metrics for dashboard and detailed junction page."""
         out: Dict[str, Dict[str, float]] = {}
         diagnostics = dict(info.get("junction_diagnostics", {}))
+        step_meta = dict(info.get("step_meta", {}))
 
         for tl_id in self.agent_ids:
             vec = np.asarray(state.get(tl_id, np.zeros(9, dtype=np.float32)), dtype=np.float32)
@@ -480,13 +481,37 @@ class MARLExecutor:
             emergency_by_lane = dict(diag.get("emergency_detected_by_lane", {}))
             normal_by_lane = dict(diag.get("normal_detected_by_lane", {}))
 
+            combined_by_lane: Dict[str, int] = {}
+            for lane_id in set(list(normal_by_lane.keys()) + list(emergency_by_lane.keys())):
+                combined_by_lane[lane_id] = int(normal_by_lane.get(lane_id, 0)) + int(
+                    emergency_by_lane.get(lane_id, 0)
+                )
+
+            counts_by_edge: Dict[str, int] = {}
+            for lane_id, lane_count in combined_by_lane.items():
+                edge_id = lane_id.split("_")[0] if "_" in lane_id else lane_id
+                counts_by_edge[edge_id] = int(counts_by_edge.get(edge_id, 0)) + int(lane_count)
+
             lane_counts = []
-            for lane_id in sorted(set(list(normal_by_lane.keys()) + list(emergency_by_lane.keys()))):
-                lane_counts.append(int(normal_by_lane.get(lane_id, 0)) + int(emergency_by_lane.get(lane_id, 0)))
+            for lane_id in sorted(combined_by_lane.keys()):
+                lane_counts.append(int(combined_by_lane.get(lane_id, 0)))
             lane_counts.sort(reverse=True)
 
             emergency_count = int(sum(int(v) for v in emergency_by_lane.values()))
             pedestrians = int(diag.get("pedestrians_detected", 0))
+
+            phase = -1
+            try:
+                phase = int(dict(step_meta.get(tl_id, {})).get("phase", -1))
+            except Exception:
+                phase = -1
+            if phase < 0:
+                try:
+                    phase = int(traci.trafficlight.getPhase(tl_id))
+                except Exception:
+                    phase = -1
+
+            signal_state = self._junction_signal_payload(tl_id, phase)
 
             out[tl_id] = {
                 "vehicles_waiting": total_queue,
@@ -495,6 +520,8 @@ class MARLExecutor:
                 "pedestrians": pedestrians,
                 "emergency": emergency_count,
                 "lane_counts": lane_counts,
+                "lane_counts_by_edge": counts_by_edge,
+                "signal_state": signal_state,
             }
 
         return out
