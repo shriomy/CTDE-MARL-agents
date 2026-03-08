@@ -269,34 +269,78 @@ class MARLExecutor:
         return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
 
     def _junction_signal_payload(self, junction_id: str, phase: int) -> Dict[str, str]:
-        """Map SUMO phase index to RED/GREEN lane states for Arduino consumers."""
-        if junction_id == "J4":
-            payload = {"E0": "red", "-E0": "red", "J4_c0": "red", "J4_c1": "red"}
-            if int(phase) == 0:
-                payload["E0"] = "green"
-                payload["-E0"] = "green"
-            elif int(phase) == 2:
-                payload["J4_c0"] = "green"
-                payload["J4_c1"] = "green"
-            return payload
+        """Map SUMO live signal state to per-road red/yellow/green values for IOT consumers."""
 
-        if junction_id == "J1":
-            payload = {"-E3": "red", "-E2": "red", "E00": "red"}
-            phase_to_lane = {0: "-E3", 2: "-E2", 4: "E00"}
-            lane = phase_to_lane.get(int(phase))
-            if lane:
-                payload[lane] = "green"
-            return payload
+        # Link-index groups from 3junctions.net.xml for controlled approaches/crossings.
+        link_groups: Dict[str, Dict[str, List[int]]] = {
+            "J1": {
+                "-E3": [0, 1, 2],
+                "E00": [3, 4, 5],
+                "-E2": [6, 7, 8],
+            },
+            "J4": {
+                "-E0": [0, 1, 2],
+                "E0": [3, 4, 5],
+                "J4_c0": [6],
+                "J4_c1": [7],
+            },
+            "J8": {
+                "-E4": [0, 1, 2, 3],
+                "-E5": [4, 5, 6, 7],
+                "-E8": [8, 9, 10, 11],
+                "E3": [12, 13, 14, 15],
+            },
+        }
 
-        if junction_id == "J8":
-            payload = {"-E5": "red", "-E4": "red", "-E8": "red", "E3": "red"}
-            phase_to_lane = {0: "-E5", 2: "-E4", 4: "-E8", 6: "E3"}
-            lane = phase_to_lane.get(int(phase))
-            if lane:
-                payload[lane] = "green"
-            return payload
+        groups = link_groups.get(junction_id)
+        if not groups:
+            return {}
 
-        return {}
+        payload = {edge_id: "red" for edge_id in groups.keys()}
+
+        def _char_to_color(signal_char: str) -> str:
+            ch = str(signal_char)
+            if ch in {"g", "G"}:
+                return "green"
+            if ch in {"y", "Y"}:
+                return "yellow"
+            return "red"
+
+        def _merge_colors(colors: List[str]) -> str:
+            if any(c == "green" for c in colors):
+                return "green"
+            if any(c == "yellow" for c in colors):
+                return "yellow"
+            return "red"
+
+        try:
+            live_state = str(traci.trafficlight.getRedYellowGreenState(junction_id))
+            for edge_id, indices in groups.items():
+                lane_colors = []
+                for idx in indices:
+                    if 0 <= int(idx) < len(live_state):
+                        lane_colors.append(_char_to_color(live_state[int(idx)]))
+                if lane_colors:
+                    payload[edge_id] = _merge_colors(lane_colors)
+            return payload
+        except Exception:
+            # Fallback to phase-based defaults when live state is unavailable.
+            if junction_id == "J4":
+                if int(phase) == 0:
+                    payload["E0"] = "green"
+                    payload["-E0"] = "green"
+                elif int(phase) == 2:
+                    payload["J4_c0"] = "green"
+                    payload["J4_c1"] = "green"
+            elif junction_id == "J1":
+                lane = {0: "-E3", 2: "E00", 4: "-E2"}.get(int(phase))
+                if lane:
+                    payload[lane] = "green"
+            elif junction_id == "J8":
+                lane = {0: "-E4", 2: "-E5", 4: "-E8", 6: "E3"}.get(int(phase))
+                if lane:
+                    payload[lane] = "green"
+            return payload
 
     def _upsert_junction_iot_record(self, junction_id: str, signal_state: Dict[str, str]) -> None:
         if self.iot_collection is None or not signal_state:
