@@ -22,9 +22,9 @@ class SumoEnv:
         "bus": 2.2,
         "truck": 2.4,
         "lorry": 2.5,
-        "ambulance": 4.0,
-        "police": 3.8,
-        "firetruck": 4.2,
+        "ambulance": 8.0,
+        "police": 6.8,
+        "firetruck": 8.2,
     }
 
     EMERGENCY_TYPES = {"ambulance", "police", "firetruck"}
@@ -36,7 +36,7 @@ class SumoEnv:
 
         self.sumo_cmd: List[str] = []
         self.episode_step = 0
-        self.max_steps = int(self.env_config.get("max_steps_per_episode", 1800))
+        self.max_steps = int(self.env_config.get("max_steps_per_episode", 3600))
 
         self.top_k_lanes = int(self.env_config.get("top_k_lanes", 6))
         self.vehicle_weights = dict(self.DEFAULT_VEHICLE_WEIGHTS)
@@ -518,7 +518,7 @@ class SumoEnv:
             "stop_normal_penalty": -0.30 * delta_stop_normal,
             "stop_emergency_penalty": -1.00 * delta_stop_emergency,
             "stop_ped_penalty": -0.60 * delta_stop_ped,
-            "throughput_bonus": 0.80 * throughput,
+            "throughput_bonus": 2.0 * throughput,
             "no_emergency_stop_bonus": 0.60 * no_emergency_stop_bonus,
             "priority_flow_bonus": 0.50 * reduced_stop_bonus,
             "empty_ped_green_penalty": -0.60 * empty_ped_green_penalty,

@@ -20,7 +20,7 @@ class Trainer:
 
         print("Initializing SUMO environment...")
         env_config = dict(self.config.get("env_config", {}))
-        env_config["max_steps_per_episode"] = self.config.get("max_steps_per_episode", 1800)
+        env_config["max_steps_per_episode"] = self.config.get("max_steps_per_episode", 3600)
 
         self.env = SumoEnv(
             config_path=self.config["sumo_config_path"],
@@ -55,7 +55,7 @@ class Trainer:
             "sumo_config_path": "sumo_configs/3junctions.sumocfg",
             "use_gui": False,
             "num_episodes": 50,
-            "max_steps_per_episode": 1800,
+            "max_steps_per_episode": 3600,
             "save_frequency": 10,
             "log_frequency": 1,
             "agent_config": {

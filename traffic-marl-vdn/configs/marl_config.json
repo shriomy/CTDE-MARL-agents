@@ -2,7 +2,7 @@
     "sumo_config_path": "sumo_configs/3junctions.sumocfg",
     "use_gui": true,
     "num_episodes": 50,
-    "max_steps_per_episode": 1800,
+    "max_steps_per_episode": 3600,
     "save_frequency": 10,
     "log_frequency": 1,
     "control_modes": {
@@ -50,9 +50,9 @@
             "bus": 2.2,
             "truck": 2.4,
             "lorry": 2.5,
-            "ambulance": 4.0,
-            "police": 3.8,
-            "firetruck": 4.2
+            "ambulance": 8.0,
+            "police": 6.8,
+            "firetruck": 8.2
         }
     }
 }

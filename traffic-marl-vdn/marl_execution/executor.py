@@ -9,6 +9,11 @@ from typing import Dict, List
 import numpy as np
 import traci
 
+try:
+    import pymongo
+except Exception:
+    pymongo = None
+
 # Add the project root to Python path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(PROJECT_ROOT)
@@ -89,6 +94,7 @@ class MARLExecutor:
         self._init_mode_control()
         self._init_live_frame_stream()
         self._init_dashboard()
+        self._init_iot_signal_store()
 
     def _load_config(self, path: str) -> dict:
         if not os.path.exists(path):
@@ -226,6 +232,120 @@ class MARLExecutor:
         except Exception as exc:
             print(f"Failed to start dashboard server: {exc}")
             self.dashboard = None
+
+    def _init_iot_signal_store(self) -> None:
+        """Initialize MongoDB store used for Arduino traffic-light state sync."""
+        self.iot_client = None
+        self.iot_collection = None
+
+        if pymongo is None:
+            print("IOT signal publishing disabled: pymongo is not installed")
+            return
+
+        env_cfg = self.config.get("env_config", {})
+        self.iot_mongo_uri = str(
+            env_cfg.get(
+                "mongo_uri",
+                "mongodb+srv://rolexultimate23_db_user:qwerty12345@cluster0.axqeteq.mongodb.net/?appName=Cluster0",
+            )
+        )
+        self.iot_db_name = str(env_cfg.get("iot_mongo_db", "EmergencyDetection"))
+        self.iot_collection_name = str(env_cfg.get("iot_signals_collection", "Traffic_Signals_IOT"))
+
+        try:
+            self.iot_client = pymongo.MongoClient(self.iot_mongo_uri)
+            self.iot_client.admin.command("ping")
+            self.iot_collection = self.iot_client[self.iot_db_name][self.iot_collection_name]
+            self._ensure_iot_seed_records()
+            print(
+                f"IOT signal publishing enabled: {self.iot_db_name}.{self.iot_collection_name}"
+            )
+        except Exception as exc:
+            print(f"IOT signal publishing disabled (MongoDB error): {exc}")
+            self.iot_client = None
+            self.iot_collection = None
+
+    def _iso_utc_now(self) -> str:
+        return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+    def _junction_signal_payload(self, junction_id: str, phase: int) -> Dict[str, str]:
+        """Map SUMO phase index to RED/GREEN lane states for Arduino consumers."""
+        if junction_id == "J4":
+            payload = {"E0": "red", "-E0": "red", "J4_c0": "red", "J4_c1": "red"}
+            if int(phase) == 0:
+                payload["E0"] = "green"
+                payload["-E0"] = "green"
+            elif int(phase) == 3:
+                payload["J4_c0"] = "green"
+                payload["J4_c1"] = "green"
+            return payload
+
+        if junction_id == "J1":
+            payload = {"-E3": "red", "-E2": "red", "E00": "red"}
+            phase_to_lane = {0: "-E3", 2: "-E2", 4: "E00"}
+            lane = phase_to_lane.get(int(phase))
+            if lane:
+                payload[lane] = "green"
+            return payload
+
+        if junction_id == "J8":
+            payload = {"-E5": "red", "-E4": "red", "-E8": "red", "E3": "red"}
+            phase_to_lane = {0: "-E5", 2: "-E4", 4: "-E8", 6: "E3"}
+            lane = phase_to_lane.get(int(phase))
+            if lane:
+                payload[lane] = "green"
+            return payload
+
+        return {}
+
+    def _upsert_junction_iot_record(self, junction_id: str, signal_state: Dict[str, str]) -> None:
+        if self.iot_collection is None or not signal_state:
+            return
+
+        now_iso = self._iso_utc_now()
+        doc = {
+            "timestamp": now_iso,
+            "junction": {
+                junction_id: signal_state,
+            },
+        }
+
+        self.iot_collection.update_one(
+            {f"junction.{junction_id}": {"$exists": True}},
+            {"$set": doc},
+            upsert=True,
+        )
+
+    def _ensure_iot_seed_records(self) -> None:
+        """Ensure one document exists per J1/J4/J8 in Traffic_Signals_IOT."""
+        if self.iot_collection is None:
+            return
+
+        for junction_id in ["J4", "J1", "J8"]:
+            try:
+                phase = int(traci.trafficlight.getPhase(junction_id))
+            except Exception:
+                phase = -1
+            signal_state = self._junction_signal_payload(junction_id, phase)
+            self._upsert_junction_iot_record(junction_id, signal_state)
+
+    def _publish_iot_signals(self, step_meta: Dict[str, Dict[str, float]]) -> None:
+        """Update per-junction traffic-light state docs after each execution step."""
+        if self.iot_collection is None:
+            return
+
+        for junction_id in ["J4", "J1", "J8"]:
+            meta = step_meta.get(junction_id, {})
+            if "phase" in meta:
+                phase = int(meta.get("phase", -1))
+            else:
+                try:
+                    phase = int(traci.trafficlight.getPhase(junction_id))
+                except Exception:
+                    phase = -1
+
+            signal_state = self._junction_signal_payload(junction_id, phase)
+            self._upsert_junction_iot_record(junction_id, signal_state)
 
     def _record_mode_event(self, event_type: str, payload: Dict[str, object]) -> None:
         event = {
@@ -406,6 +526,7 @@ class MARLExecutor:
                 self._process_dashboard_commands()
                 actions = self._select_joint_actions(state)
                 next_state, reward, done, info = self.env.step(actions)
+                self._publish_iot_signals(dict(info.get("step_meta", {})))
 
                 self.metrics["total_steps"] += 1
                 self.metrics["total_reward"] += float(reward)
@@ -458,6 +579,8 @@ class MARLExecutor:
             self.save_logs()
             self.multi_agent.close()
             self.env.close()
+            if self.iot_client is not None:
+                self.iot_client.close()
             if self.dashboard is not None:
                 self.dashboard.send_system_status("stopped", "Execution stopped")
             print("Execution cleanup complete")

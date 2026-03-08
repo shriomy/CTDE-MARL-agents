@@ -40,10 +40,10 @@ pedestrian_record = {
     "type": "pedestrian",
     "data": {
         "pedestrians": [
-            {"type": "elderly", "position": "south_side", "count": 9},  
-            {"type": "student", "position": "north_side", "count":1},      
-            {"type": "adult", "position": "south_side", "count": 3},        
-            {"type": "mobility_aid", "position": "north_side", "count": 9},   
+            {"type": "elderly", "position": "south_side", "count": 10},  
+            {"type": "student", "position": "north_side", "count":2},      
+            {"type": "adult", "position": "south_side", "count": 1},        
+            {"type": "mobility_aid", "position": "north_side", "count": 0},   
         ]
     }
 }
@@ -53,32 +53,32 @@ print(f"Added pedestrians: {result.inserted_id}")
 print(f"  Timestamp: {to_iso_display(pedestrian_record['timestamp'])}")
 
 # Test Normal Vehicles
-# normal_record = {
-#     "timestamp": get_ist_timestamp(4),  # 4 seconds later
-#     "type": "normal_vehicle",
-#     "data": {
-#         "entryPoint": "-E2",  # E0, -E2, -E8, -E4, -E5
-#         "vehicles": [
-#             {"type": "truck", "count": 5},
-#             {"type": "car", "count": 5},
-#             {"type": "lorry", "count": 1},
-#             {"type": "bus", "count": 5},
-#             {"type": "auto", "count": 1},
-#             {"type": "bike", "count": 10},
-#         ]
-#     }
-# }
-# result = collection.insert_one(normal_record)
-# inserted_ids.append(result.inserted_id)
-# print(f"Added normal vehicles: {result.inserted_id}")
-# print(f"  Timestamp: {to_iso_display(normal_record['timestamp'])}")
+normal_record = {
+    "timestamp": get_ist_timestamp(4),  # 4 seconds later
+    "type": "normal_vehicle",
+    "data": {
+        "entryPoint": "-E0",  # E0, -E2, -E8, -E4, -E5
+        "vehicles": [
+            {"type": "truck", "count": 1},
+            {"type": "car", "count": 12},
+            {"type": "lorry", "count": 2},
+            {"type": "bus", "count": 8},
+            {"type": "auto", "count": 6},
+            {"type": "bike", "count": 1},
+        ]
+    }
+}
+result = collection.insert_one(normal_record)
+inserted_ids.append(result.inserted_id)
+print(f"Added normal vehicles: {result.inserted_id}")
+print(f"  Timestamp: {to_iso_display(normal_record['timestamp'])}")
 
 emergency_record = {
     "timestamp": get_ist_timestamp(0),
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "ambulance",
-        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E2"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(emergency_record)
@@ -91,7 +91,7 @@ police_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "police",
-        "entryPoint": "-E2"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E4"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(police_record)
@@ -104,7 +104,7 @@ fireTruck_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "firetruck",
-        "entryPoint": "E0"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(fireTruck_record)
@@ -112,9 +112,6 @@ inserted_ids.append(result.inserted_id)
 print(f"Added firetruck vehicle: {result.inserted_id}")
 print(f"  Timestamp: {to_iso_display(fireTruck_record['timestamp'])}")
 
-# print("\n" + "="*60)
-print("TEST DATA ADDED SUCCESSFULLY!")
-# print("="*60)
 print("\nRecords inserted in this run:")
 query = {"_id": {"$in": inserted_ids}}
 for doc in collection.find(query).sort("timestamp", pymongo.ASCENDING):
@@ -136,11 +133,6 @@ for doc in collection.find(query).sort("timestamp", pymongo.ASCENDING):
         print(f"    Total pedestrians: {total}")
 
 # print(f"\nTotal records currently in collection: {collection.count_documents({})}")
-
-# print("\n" + "="*60)
-# print("Now run the injector with:")
-# print("python -m data_injection.run_injector --sumo-config sumo_configs/3junctions.sumocfg --gui --interval 1.0")
-# print("="*60)
 
 # Close connection
 client.close()
