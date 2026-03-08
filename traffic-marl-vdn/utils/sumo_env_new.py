@@ -158,9 +158,9 @@ class SumoEnv:
             elif tl_id == "J4":
                 self.tl_specs[tl_id] = TrafficLightSpec(
                     action_to_green={0: 0, 1: 2},
-                    green_to_yellow={0: 1, 3: 4},
-                    yellow_phases={1, 2, 4, 5},
-                    pedestrian_green_phases={3},
+                    green_to_yellow={0: 1, 2: 1},
+                    yellow_phases={1},
+                    pedestrian_green_phases={2},
                     min_green=float(self.env_config.get("min_green_time", 20.0)),
                     max_green=float(self.env_config.get("max_green_time", 100.0)),
                     yellow_hold=float(self.env_config.get("yellow_time", 3.0)),

@@ -275,7 +275,7 @@ class MARLExecutor:
             if int(phase) == 0:
                 payload["E0"] = "green"
                 payload["-E0"] = "green"
-            elif int(phase) == 3:
+            elif int(phase) == 2:
                 payload["J4_c0"] = "green"
                 payload["J4_c1"] = "green"
             return payload
@@ -438,8 +438,10 @@ class MARLExecutor:
 
     def _next_fixed_action(self, junction_id: str) -> int:
         state = self.fixed_state[junction_id]
+        tl_spec = self.env.tl_specs.get(junction_id)
+        action_count = max(1, len(tl_spec.action_to_green)) if tl_spec is not None else 4
         if state["elapsed"] >= state["green_steps"]:
-            state["action"] = (state["action"] + 1) % 4
+            state["action"] = (state["action"] + 1) % action_count
             state["elapsed"] = 0
         action = int(state["action"])
         state["elapsed"] += 1
