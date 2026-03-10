@@ -689,12 +689,13 @@ class SumoEnv:
         # Arrivals is the right throughput signal for "vehicles left the network".
         departed = float(traci.simulation.getArrivedNumber())
         arrived_priority = 0.0
-        try:
-            for veh_id in traci.simulation.getArrivedIDList():
+        for veh_id in traci.simulation.getArrivedIDList():
+            try:
                 veh_type = traci.vehicle.getTypeID(veh_id)
                 arrived_priority += float(self.vehicle_weights.get(veh_type, 1.0))
-        except Exception:
-            arrived_priority = 0.0
+            except Exception:
+                # Vehicle can be removed before variable lookup in the same step.
+                continue
 
         avg_wait_emergency = waiting_emergency / vehicle_count_emergency if vehicle_count_emergency > 0 else 0.0
         total_vehicles = vehicle_count_normal + vehicle_count_emergency

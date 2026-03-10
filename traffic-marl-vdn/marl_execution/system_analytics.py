@@ -63,6 +63,8 @@ class SystemAnalyticsStore:
         self.collection = None
         self.window_start_epoch = time.time()
         self.acc: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        # Per-window transition memory for unique moving->stopped stop events.
+        self._emergency_prev_stopped: Dict[str, bool] = {}
 
         if not self.enabled:
             return
@@ -188,6 +190,8 @@ class SystemAnalyticsStore:
             "quality": {
                 "emergency_stops": 0.0,
                 "green_no_stopped_events": 0.0,
+                "green_no_stopped_vehicle_sec": 0.0,
+                "green_no_stopped_pedestrian_sec": 0.0,
                 "green_no_stopped_sec": 0.0,
                 "green_total_sec": 0.0,
             },
@@ -251,9 +255,20 @@ class SystemAnalyticsStore:
                 try:
                     em_stops_lane = 0.0
                     for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
-                        veh_type = traci.vehicle.getTypeID(veh_id)
-                        if veh_type in {"ambulance", "police", "firetruck"} and float(traci.vehicle.getSpeed(veh_id)) < 0.1:
+                        try:
+                            veh_type = traci.vehicle.getTypeID(veh_id)
+                            speed = float(traci.vehicle.getSpeed(veh_id))
+                        except Exception:
+                            continue
+                        if veh_type not in {"ambulance", "police", "firetruck"}:
+                            continue
+
+                        is_stopped = speed < 0.1
+                        was_stopped = bool(self._emergency_prev_stopped.get(veh_id, False))
+                        if is_stopped and not was_stopped:
+                            # Unique stop event: moving -> stopped transition.
                             em_stops_lane += 1.0
+                        self._emergency_prev_stopped[veh_id] = is_stopped
                     bucket["quality"]["emergency_stops"] += em_stops_lane
                 except Exception:
                     pass
@@ -262,6 +277,7 @@ class SystemAnalyticsStore:
                     bucket["quality"]["green_total_sec"] += self.step_sec
                     if stopped <= 0.01:
                         bucket["quality"]["green_no_stopped_events"] += 1.0
+                        bucket["quality"]["green_no_stopped_vehicle_sec"] += self.step_sec
                         bucket["quality"]["green_no_stopped_sec"] += self.step_sec
 
             ped_bucket = self._get_bucket(junction_id, "pedestrian", "pedestrian", lane_mode, fixed)
@@ -278,7 +294,18 @@ class SystemAnalyticsStore:
                 ped_bucket["quality"]["green_total_sec"] += self.step_sec
                 if p_waiting <= 0.01:
                     ped_bucket["quality"]["green_no_stopped_events"] += 1.0
+                    ped_bucket["quality"]["green_no_stopped_pedestrian_sec"] += self.step_sec
                     ped_bucket["quality"]["green_no_stopped_sec"] += self.step_sec
+
+        # Keep only active emergency vehicles in transition memory.
+        if self._emergency_prev_stopped:
+            try:
+                active_vehicle_ids = set(traci.vehicle.getIDList())
+                stale_ids = set(self._emergency_prev_stopped.keys()) - active_vehicle_ids
+                for veh_id in stale_ids:
+                    self._emergency_prev_stopped.pop(veh_id, None)
+            except Exception:
+                pass
 
         if now_epoch - self.window_start_epoch >= self.window_sec:
             self.flush(now_epoch)
@@ -290,6 +317,7 @@ class SystemAnalyticsStore:
     def flush(self, now_epoch: Optional[float] = None) -> None:
         if not self.enabled or self.collection is None or not self.acc:
             self.window_start_epoch = time.time()
+            self._emergency_prev_stopped = {}
             return
 
         now_epoch = now_epoch or time.time()
@@ -336,6 +364,8 @@ class SystemAnalyticsStore:
                     "quality": {
                         "emergency_stops": float(bucket["quality"]["emergency_stops"]),
                         "green_no_stopped_events": float(bucket["quality"]["green_no_stopped_events"]),
+                        "green_no_stopped_vehicle_sec": float(bucket["quality"].get("green_no_stopped_vehicle_sec", 0.0)),
+                        "green_no_stopped_pedestrian_sec": float(bucket["quality"].get("green_no_stopped_pedestrian_sec", 0.0)),
                         "green_no_stopped_sec": float(bucket["quality"]["green_no_stopped_sec"]),
                         "green_total_sec": float(bucket["quality"]["green_total_sec"]),
                     },
@@ -350,6 +380,7 @@ class SystemAnalyticsStore:
 
         self.acc = {}
         self.window_start_epoch = now_epoch
+        self._emergency_prev_stopped = {}
 
     def _range_to_start(self, range_key: str) -> datetime:
         now = datetime.now(timezone.utc)
@@ -384,6 +415,8 @@ class SystemAnalyticsStore:
                     "throughput_total": {"$sum": "$counts.throughput_total"},
                     "emergency_stops": {"$sum": "$quality.emergency_stops"},
                     "green_no_stopped_events": {"$sum": "$quality.green_no_stopped_events"},
+                    "green_no_stopped_vehicle_sec": {"$sum": "$quality.green_no_stopped_vehicle_sec"},
+                    "green_no_stopped_pedestrian_sec": {"$sum": "$quality.green_no_stopped_pedestrian_sec"},
                     "vehicle_wait_sum": {"$sum": "$wait_time_sec.vehicle_sum"},
                     "vehicle_wait_count": {"$sum": "$counts.vehicles_seen"},
                     "emergency_wait_sum": {"$sum": "$wait_time_sec.emergency_sum"},
@@ -425,6 +458,8 @@ class SystemAnalyticsStore:
                         ),
                         "emergency_vehicle_stops": float(rec.get("emergency_stops", 0.0)),
                         "green_no_stopped_events": float(rec.get("green_no_stopped_events", 0.0)),
+                        "green_no_stopped_vehicle_sec": float(rec.get("green_no_stopped_vehicle_sec", 0.0)),
+                        "green_no_stopped_pedestrian_sec": float(rec.get("green_no_stopped_pedestrian_sec", 0.0)),
                         "throughput_average_per_min": self._safe_avg(
                             float(rec.get("throughput_total", 0.0)) * 60.0,
                             duration,

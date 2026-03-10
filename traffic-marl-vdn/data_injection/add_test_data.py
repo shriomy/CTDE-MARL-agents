@@ -53,38 +53,38 @@ print(f"Added pedestrians: {result.inserted_id}")
 print(f"  Timestamp: {to_iso_display(pedestrian_record['timestamp'])}")
 
 # Test Normal Vehicles
-normal_record = {
-    "timestamp": get_ist_timestamp(4),  # 4 seconds later
-    "type": "normal_vehicle",
-    "data": {
-        "entryPoint": "-E8",  # E0, -E2, -E8, -E4, -E5
-        "vehicles": [
-            {"type": "truck", "count": 1},
-            {"type": "car", "count": 5},
-            {"type": "lorry", "count": 2},
-            {"type": "bus", "count": 8},
-            {"type": "auto", "count": 6},
-            {"type": "bike", "count": 1},
-        ]
-    }
-}
-result = collection.insert_one(normal_record)
-inserted_ids.append(result.inserted_id)
-print(f"Added normal vehicles: {result.inserted_id}")
-print(f"  Timestamp: {to_iso_display(normal_record['timestamp'])}")
+# normal_record = {
+#     "timestamp": get_ist_timestamp(4),  # 4 seconds later
+#     "type": "normal_vehicle",
+#     "data": {
+#         "entryPoint": "-E8",  # E0, -E2, -E8, -E4, -E5
+#         "vehicles": [
+#             {"type": "truck", "count": 1},
+#             {"type": "car", "count": 5},
+#             {"type": "lorry", "count": 2},
+#             {"type": "bus", "count": 8},
+#             {"type": "auto", "count": 6},
+#             {"type": "bike", "count": 1},
+#         ]
+#     }
+# }
+# result = collection.insert_one(normal_record)
+# inserted_ids.append(result.inserted_id)
+# print(f"Added normal vehicles: {result.inserted_id}")
+# print(f"  Timestamp: {to_iso_display(normal_record['timestamp'])}")
 
-emergency_record = {
-    "timestamp": get_ist_timestamp(0),
-    "type": "emergency_vehicle",
-    "data": {
-        "vehicle_type": "ambulance",
-        "entryPoint": "-E2"  # E0, -E2, -E8, -E4, -E5
-    }
-}
-result = collection.insert_one(emergency_record)
-inserted_ids.append(result.inserted_id)
-print(f"Added emergency vehicle: {result.inserted_id}")
-print(f"  Timestamp: {to_iso_display(emergency_record['timestamp'])}")
+# emergency_record = {
+#     "timestamp": get_ist_timestamp(0),
+#     "type": "emergency_vehicle",
+#     "data": {
+#         "vehicle_type": "ambulance",
+#         "entryPoint": "-E2"  # E0, -E2, -E8, -E4, -E5
+#     }
+# }
+# result = collection.insert_one(emergency_record)
+# inserted_ids.append(result.inserted_id)
+# print(f"Added emergency vehicle: {result.inserted_id}")
+# print(f"  Timestamp: {to_iso_display(emergency_record['timestamp'])}")
 
 police_record = {
     "timestamp": get_ist_timestamp(6),
@@ -99,18 +99,18 @@ inserted_ids.append(result.inserted_id)
 print(f"Added police vehicle: {result.inserted_id}")
 print(f"  Timestamp: {to_iso_display(police_record['timestamp'])}")
 
-fireTruck_record = {
-    "timestamp": get_ist_timestamp(6),
-    "type": "emergency_vehicle",
-    "data": {
-        "vehicle_type": "firetruck",
-        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
-    }
-}
-result = collection.insert_one(fireTruck_record)
-inserted_ids.append(result.inserted_id)
-print(f"Added firetruck vehicle: {result.inserted_id}")
-print(f"  Timestamp: {to_iso_display(fireTruck_record['timestamp'])}")
+# fireTruck_record = {
+#     "timestamp": get_ist_timestamp(6),
+#     "type": "emergency_vehicle",
+#     "data": {
+#         "vehicle_type": "firetruck",
+#         "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
+#     }
+# }
+# result = collection.insert_one(fireTruck_record)
+# inserted_ids.append(result.inserted_id)
+# print(f"Added firetruck vehicle: {result.inserted_id}")
+# print(f"  Timestamp: {to_iso_display(fireTruck_record['timestamp'])}")
 
 print("\nRecords inserted in this run:")
 query = {"_id": {"$in": inserted_ids}}
