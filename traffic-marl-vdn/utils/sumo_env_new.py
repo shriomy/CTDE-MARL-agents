@@ -57,6 +57,8 @@ class SumoEnv:
 
         self.prev_reward_snapshot: Dict[str, float] = {}
         self.prev_arrived_delta: float = 0.0
+        self.vehicle_speed_sums: Dict[str, float] = {}
+        self.vehicle_speed_samples: Dict[str, int] = {}
 
         # Episode diagnostics for training logs.
         self.episode_diag = {
@@ -230,7 +232,117 @@ class SumoEnv:
             "emergency_stopped_ids": defaultdict(set),
             "emergency_seen_outgoing_ids": defaultdict(set),
         }
+        self.vehicle_speed_sums = {}
+        self.vehicle_speed_samples = {}
         return self.get_state()
+
+    def _update_vehicle_speed_history(self) -> None:
+        """Track per-vehicle historical speed so lane Avg Speed reflects full lane stay."""
+        active_ids = set(traci.vehicle.getIDList())
+
+        for veh_id in active_ids:
+            try:
+                speed = float(traci.vehicle.getSpeed(veh_id))
+            except Exception:
+                continue
+            self.vehicle_speed_sums[veh_id] = float(self.vehicle_speed_sums.get(veh_id, 0.0)) + speed
+            self.vehicle_speed_samples[veh_id] = int(self.vehicle_speed_samples.get(veh_id, 0)) + 1
+
+        stale_ids = set(self.vehicle_speed_sums.keys()) - active_ids
+        for veh_id in stale_ids:
+            self.vehicle_speed_sums.pop(veh_id, None)
+            self.vehicle_speed_samples.pop(veh_id, None)
+
+    def _vehicle_historical_avg_speed(self, veh_id: str) -> float:
+        samples = int(self.vehicle_speed_samples.get(veh_id, 0))
+        if samples <= 0:
+            return 0.0
+        return float(self.vehicle_speed_sums.get(veh_id, 0.0) / samples)
+
+    def _lane_live_metrics(self, lane_id: str) -> Dict[str, float]:
+        """Exact lane metrics used for both training diagnostics and dashboard telemetry."""
+        vehicle_ids = traci.lane.getLastStepVehicleIDs(lane_id)
+        total_vehicles = float(len(vehicle_ids))
+        stopped_vehicles = 0.0
+        stopped_wait_sum = 0.0
+        weighted_sum_all = 0.0
+        emergency_total = 0.0
+        lane_hist_speed_sum = 0.0
+
+        for veh_id in vehicle_ids:
+            speed = float(traci.vehicle.getSpeed(veh_id))
+            veh_type = traci.vehicle.getTypeID(veh_id)
+            weight = float(self.vehicle_weights.get(veh_type, 1.0))
+            is_emergency = veh_type in self.EMERGENCY_TYPES
+
+            weighted_sum_all += weight
+            lane_hist_speed_sum += self._vehicle_historical_avg_speed(veh_id)
+
+            if is_emergency:
+                emergency_total += 1.0
+            if speed < 0.1:
+                stopped_vehicles += 1.0
+                stopped_wait_sum += float(traci.vehicle.getWaitingTime(veh_id))
+
+        avg_wait_stopped = (stopped_wait_sum / stopped_vehicles) if stopped_vehicles > 0 else 0.0
+        vehicle_density = (weighted_sum_all / total_vehicles) if total_vehicles > 0 else 0.0
+        lane_avg_speed_hist = (lane_hist_speed_sum / total_vehicles) if total_vehicles > 0 else 0.0
+
+        return {
+            "total_vehicles": total_vehicles,
+            "stopped_vehicles": stopped_vehicles,
+            "stopped_wait_sum": stopped_wait_sum,
+            "avg_wait_stopped": avg_wait_stopped,
+            "weighted_sum_all": weighted_sum_all,
+            "vehicle_density": vehicle_density,
+            "emergency_total": emergency_total,
+            "avg_speed_hist": lane_avg_speed_hist,
+        }
+
+    def _collect_junction_live_metrics(self) -> Dict[str, Dict[str, Any]]:
+        """Exact per-junction metrics based on upstream lanes for telemetry and training checks."""
+        out: Dict[str, Dict[str, Any]] = {}
+
+        for tl_id in self.tl_ids:
+            lane_metrics: Dict[str, Dict[str, float]] = {}
+            vehicles_waiting = 0.0
+            stopped_wait_sum = 0.0
+            weighted_sum_all = 0.0
+            total_vehicles_all = 0.0
+            emergency_total = 0.0
+            lane_counts = []
+            lane_counts_by_edge: Dict[str, int] = {}
+
+            for lane_id in self.incoming_lanes.get(tl_id, []):
+                metrics = self._lane_live_metrics(lane_id)
+                lane_metrics[lane_id] = metrics
+
+                vehicles_waiting += metrics["stopped_vehicles"]
+                stopped_wait_sum += metrics["stopped_wait_sum"]
+                weighted_sum_all += metrics["weighted_sum_all"]
+                total_vehicles_all += metrics["total_vehicles"]
+                emergency_total += metrics["emergency_total"]
+
+                q_len = int(round(metrics["total_vehicles"]))
+                lane_counts.append(q_len)
+                edge_id = lane_id.split("_")[0] if "_" in lane_id else lane_id
+                lane_counts_by_edge[edge_id] = int(lane_counts_by_edge.get(edge_id, 0)) + q_len
+
+            avg_wait_time = (stopped_wait_sum / vehicles_waiting) if vehicles_waiting > 0 else 0.0
+            vehicle_density = (weighted_sum_all / total_vehicles_all) if total_vehicles_all > 0 else 0.0
+
+            out[tl_id] = {
+                "vehicles_waiting": float(vehicles_waiting),
+                "avg_wait_time": float(avg_wait_time),
+                "vehicle_density": float(vehicle_density),
+                "emergency": int(round(emergency_total)),
+                "pedestrians": int(self._count_persons_for_tl(tl_id)),
+                "lane_metrics": lane_metrics,
+                "lane_counts": lane_counts,
+                "lane_counts_by_edge": lane_counts_by_edge,
+            }
+
+        return out
 
     def _count_persons_for_tl(self, tl_id: str) -> int:
         """Count pedestrians relevant to a junction using known crossing and incoming edges."""
@@ -332,30 +444,13 @@ class SumoEnv:
         return out
 
     def _lane_wait_features(self, lane_id: str) -> Tuple[float, float, float, float, float, float]:
-        vehicle_ids = traci.lane.getLastStepVehicleIDs(lane_id)
-        queue = 0.0
-        total_wait = 0.0
-        priority_score = 0.0
-        emergency_count = 0.0
+        metrics = self._lane_live_metrics(lane_id)
+        queue = float(metrics["stopped_vehicles"])
+        total_wait = float(metrics["stopped_wait_sum"])
+        avg_wait = float(metrics["avg_wait_stopped"])
+        priority_score = float(metrics["weighted_sum_all"])
+        emergency_count = float(metrics["emergency_total"])
         emergency_stopped = 0.0
-
-        for veh_id in vehicle_ids:
-            speed = traci.vehicle.getSpeed(veh_id)
-            veh_type = traci.vehicle.getTypeID(veh_id)
-            weight = self.vehicle_weights.get(veh_type, 1.0)
-            is_emergency = veh_type in self.EMERGENCY_TYPES
-
-            if speed < 0.1:
-                queue += 1.0
-                wait_t = traci.vehicle.getWaitingTime(veh_id)
-                total_wait += wait_t
-                priority_score += weight
-                if is_emergency:
-                    emergency_stopped += 1.0
-            if is_emergency:
-                emergency_count += 1.0
-
-        avg_wait = (total_wait / queue) if queue > 0 else 0.0
         return queue, total_wait, avg_wait, priority_score, emergency_count, emergency_stopped
 
     def _pedestrian_wait_pressure(self, tl_id: str) -> float:
@@ -385,6 +480,7 @@ class SumoEnv:
             total_priority = 0.0
             total_emergency = 0.0
             total_emergency_stopped = 0.0
+            total_vehicle_count = 0.0
 
             for lane_id in self.incoming_lanes.get(tl_id, []):
                 q, t_wait, avg_wait, p_score, emg_cnt, emg_stop = self._lane_wait_features(lane_id)
@@ -393,6 +489,7 @@ class SumoEnv:
                 total_priority += p_score
                 total_emergency += emg_cnt
                 total_emergency_stopped += emg_stop
+                total_vehicle_count += float(len(traci.lane.getLastStepVehicleIDs(lane_id)))
                 lane_vectors.append((lane_id, q, t_wait, avg_wait, p_score, emg_cnt))
 
             lane_vectors.sort(key=lambda x: x[4], reverse=True)
@@ -428,7 +525,7 @@ class SumoEnv:
                 min(total_queue / 100.0, 1.0),
                 min(total_wait / 600.0, 1.0),
                 min((total_wait / max(total_queue, 1.0)) / 90.0, 1.0),
-                min(total_priority / 120.0, 1.0),
+                min((total_priority / max(total_vehicle_count, 1.0)) / 8.0, 1.0),
                 min(total_emergency / 20.0, 1.0),
                 min(total_emergency_stopped / 20.0, 1.0),
                 min(ped_wait / 180.0, 1.0),
@@ -586,6 +683,7 @@ class SumoEnv:
 
         traci.simulationStep()
         self.episode_step += 1
+        self._update_vehicle_speed_history()
 
         snapshot_now = self._reward_snapshot()
         snapshot_prev = self.prev_reward_snapshot or snapshot_now
@@ -594,6 +692,7 @@ class SumoEnv:
         next_state = self.get_state()
         reward, reward_components = self.get_reward(step_meta)
         junction_diagnostics = self._collect_junction_diagnostics(step_meta, arrived_delta)
+        junction_live_metrics = self._collect_junction_live_metrics()
         done = self.episode_step >= self.max_steps
 
         vehicle_ids = traci.vehicle.getIDList()
@@ -607,6 +706,7 @@ class SumoEnv:
             "step_meta": step_meta,
             "injection_stats": injection_stats,
             "junction_diagnostics": junction_diagnostics,
+            "junction_live_metrics": junction_live_metrics,
         }
 
         return next_state, reward, done, info

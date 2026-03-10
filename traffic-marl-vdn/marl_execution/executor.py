@@ -4,7 +4,7 @@ import sys
 import time
 import base64
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import traci
@@ -13,6 +13,11 @@ try:
     import pymongo
 except Exception:
     pymongo = None
+
+try:
+    from bson import ObjectId
+except Exception:
+    ObjectId = None
 
 # Add the project root to Python path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -95,6 +100,7 @@ class MARLExecutor:
         self._init_live_frame_stream()
         self._init_dashboard()
         self._init_iot_signal_store()
+        self._init_accident_store()
 
     def _load_config(self, path: str) -> dict:
         if not os.path.exists(path):
@@ -151,6 +157,7 @@ class MARLExecutor:
         self._live_frame_last_step = -10**9
         self._live_frame_failures = 0
         self._sumo_view_id = ""
+        self.stream_frames_to_dashboard = False
 
         self.live_frames_dir = os.path.join(self.logs_dir, "live_frames")
         os.makedirs(self.live_frames_dir, exist_ok=True)
@@ -264,6 +271,173 @@ class MARLExecutor:
             print(f"IOT signal publishing disabled (MongoDB error): {exc}")
             self.iot_client = None
             self.iot_collection = None
+
+    def _init_accident_store(self) -> None:
+        """Initialize MongoDB collection used for accident alert ingestion."""
+        self.accident_client = None
+        self.accident_collection = None
+
+        if pymongo is None:
+            print("Accident alert ingestion disabled: pymongo is not installed")
+            return
+
+        env_cfg = self.config.get("env_config", {})
+        mongo_uri = str(
+            env_cfg.get(
+                "mongo_uri",
+                "mongodb+srv://rolexultimate23_db_user:qwerty12345@cluster0.axqeteq.mongodb.net/?appName=Cluster0",
+            )
+        )
+        db_name = str(env_cfg.get("accident_mongo_db", env_cfg.get("iot_mongo_db", "EmergencyDetection")))
+        collection_name = str(env_cfg.get("accident_collection", "accident_detect"))
+
+        try:
+            # Reuse IOT Mongo client when it targets the same URI, to reduce connection churn.
+            if self.iot_client is not None and mongo_uri == getattr(self, "iot_mongo_uri", ""):
+                self.accident_client = self.iot_client
+            else:
+                self.accident_client = pymongo.MongoClient(mongo_uri)
+                self.accident_client.admin.command("ping")
+            self.accident_collection = self.accident_client[db_name][collection_name]
+            print(f"Accident alert ingestion enabled: {db_name}.{collection_name}")
+        except Exception as exc:
+            print(f"Accident alert ingestion disabled (MongoDB error): {exc}")
+            self.accident_client = None
+            self.accident_collection = None
+
+    def _entrypoint_to_junction_lane(self, entry_point: str) -> Tuple[str, str]:
+        mapping = {
+            "-E0": ("J4", "west"),
+            "E0": ("J4", "east"),
+            "J4_c0": ("J4", "pedestrian"),
+            "J4_c1": ("J4", "pedestrian"),
+            "-E3": ("J1", "west"),
+            "-E2": ("J1", "north"),
+            "E00": ("J1", "east"),
+            "-E5": ("J8", "north"),
+            "-E4": ("J8", "east"),
+            "-E8": ("J8", "south"),
+            "E3": ("J8", "west"),
+        }
+        return mapping.get(str(entry_point), ("", ""))
+
+    def _junction_display_name(self, junction_id: str) -> str:
+        names = {
+            "J1": "Weliwita Junction",
+            "J4": "SLIIT Junction",
+            "J8": "Kaduwela Junction",
+        }
+        return names.get(str(junction_id), str(junction_id))
+
+    def _lane_display_name(self, lane_id: str) -> str:
+        names = {
+            "west": "West lane",
+            "east": "East lane",
+            "north": "North lane",
+            "south": "South lane",
+            "pedestrian": "Pedestrian crossing",
+        }
+        return names.get(str(lane_id), str(lane_id))
+
+    def _serialize_accident_doc(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+        payload = dict(doc.get("data", {}) or {})
+        entry_point = str(payload.get("entryPoint", "") or "")
+        road_id = str(payload.get("roadId", "") or "").lower()
+        junction_id, lane_id = self._entrypoint_to_junction_lane(entry_point)
+
+        if not lane_id and road_id in {"west", "east", "north", "south", "pedestrian"}:
+            lane_id = road_id
+
+        return {
+            "id": str(doc.get("_id", "")),
+            "timestamp": str(doc.get("timestamp", "")),
+            "type": str(doc.get("type", "accident")),
+            "status": str(payload.get("status", "")),
+            "entryPoint": entry_point,
+            "roadId": road_id,
+            "camera": str(payload.get("camera", "")),
+            "label": str(payload.get("label", "Accident")),
+            "confidence": float(payload.get("confidence", 0.0) or 0.0),
+            "detectedArea": str(payload.get("detectedArea", "")),
+            "manualCommand": str(payload.get("manualCommand", "")),
+            "junction_id": junction_id,
+            "junction_name": self._junction_display_name(junction_id) if junction_id else "Unknown Junction",
+            "lane_id": lane_id,
+            "lane_name": self._lane_display_name(lane_id) if lane_id else "Unknown lane",
+        }
+
+    def _read_active_accidents(self) -> Dict[str, Any]:
+        """Read active accidents and aggregate by junction and entry edge for dashboard use."""
+        base = {
+            "count": 0,
+            "active": [],
+            "by_junction": {},
+            "by_edge": {},
+            "updated_at": self._iso_utc_now(),
+        }
+
+        if self.accident_collection is None:
+            return base
+
+        try:
+            cursor = self.accident_collection.find({
+                "type": {"$in": ["accident", "Accident"]},
+                "data.status": {"$in": ["ACTIVE", "active"]},
+            }).sort("timestamp", pymongo.DESCENDING).limit(50)
+
+            active: List[Dict[str, Any]] = []
+            by_junction: Dict[str, int] = {}
+            by_edge: Dict[str, Dict[str, int]] = {}
+
+            for doc in cursor:
+                event = self._serialize_accident_doc(dict(doc))
+                active.append(event)
+
+                junction_id = str(event.get("junction_id", "") or "")
+                entry_point = str(event.get("entryPoint", "") or "")
+                if junction_id:
+                    by_junction[junction_id] = int(by_junction.get(junction_id, 0)) + 1
+                    if entry_point:
+                        by_edge.setdefault(junction_id, {})
+                        by_edge[junction_id][entry_point] = int(by_edge[junction_id].get(entry_point, 0)) + 1
+
+            base["count"] = len(active)
+            base["active"] = active
+            base["by_junction"] = by_junction
+            base["by_edge"] = by_edge
+            return base
+        except Exception:
+            return base
+
+    def _resolve_accident(self, accident_id: str) -> None:
+        if self.accident_collection is None:
+            return
+        doc_id: Any = str(accident_id or "").strip()
+        if not doc_id:
+            return
+
+        filters: List[Dict[str, Any]] = [{"_id": doc_id}]
+        if ObjectId is not None:
+            try:
+                filters.append({"_id": ObjectId(doc_id)})
+            except Exception:
+                pass
+
+        for query in filters:
+            try:
+                result = self.accident_collection.update_one(
+                    query,
+                    {
+                        "$set": {
+                            "data.status": "CONTROLLED",
+                            "data.resolvedAt": self._iso_utc_now(),
+                        }
+                    },
+                )
+                if int(getattr(result, "matched_count", 0)) > 0:
+                    break
+            except Exception:
+                continue
 
     def _iso_utc_now(self) -> str:
         return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
@@ -474,6 +648,15 @@ class MARLExecutor:
             elif ctype == "set_fixed_timing":
                 self._set_fixed_timing(str(cmd.get("junction_id", "*")), int(cmd.get("green_steps", 20)))
                 changed = True
+            elif ctype == "resolve_accident":
+                payload = cmd.get("payload", {}) if isinstance(cmd.get("payload"), dict) else {}
+                accident_id = str(payload.get("accident_id", "") or cmd.get("accident_id", ""))
+                self._resolve_accident(accident_id)
+                changed = True
+            elif ctype == "set_frame_streaming":
+                payload = cmd.get("payload", {}) if isinstance(cmd.get("payload"), dict) else {}
+                enabled = bool(payload.get("enabled", cmd.get("enabled", False)))
+                self.stream_frames_to_dashboard = enabled
             elif ctype == "get_runtime_state":
                 changed = True
 
@@ -511,6 +694,8 @@ class MARLExecutor:
         self,
         state: Dict[str, np.ndarray],
         info: Dict[str, object],
+        accidents_by_edge: Optional[Dict[str, Dict[str, int]]] = None,
+        accidents_by_junction: Optional[Dict[str, int]] = None,
     ) -> Dict[str, Dict[str, float]]:
         """Build compact per-junction metrics for dashboard and detailed junction page."""
         out: Dict[str, Dict[str, float]] = {}
@@ -518,6 +703,38 @@ class MARLExecutor:
         step_meta = dict(info.get("step_meta", {}))
 
         for tl_id in self.agent_ids:
+            live_metrics = dict(info.get("junction_live_metrics", {}).get(tl_id, {}))
+            if live_metrics:
+                phase = -1
+                try:
+                    phase = int(dict(step_meta.get(tl_id, {})).get("phase", -1))
+                except Exception:
+                    phase = -1
+                if phase < 0:
+                    try:
+                        phase = int(traci.trafficlight.getPhase(tl_id))
+                    except Exception:
+                        phase = -1
+
+                signal_state = self._junction_signal_payload(tl_id, phase)
+                edge_accidents = dict((accidents_by_edge or {}).get(tl_id, {}))
+                junction_accidents = int((accidents_by_junction or {}).get(tl_id, 0))
+
+                out[tl_id] = {
+                    "vehicles_waiting": float(live_metrics.get("vehicles_waiting", 0.0)),
+                    "vehicle_density": float(live_metrics.get("vehicle_density", 0.0)),
+                    "avg_wait_time": float(live_metrics.get("avg_wait_time", 0.0)),
+                    "pedestrians": int(live_metrics.get("pedestrians", 0)),
+                    "emergency": int(live_metrics.get("emergency", 0)),
+                    "lane_counts": list(live_metrics.get("lane_counts", [])),
+                    "lane_counts_by_edge": dict(live_metrics.get("lane_counts_by_edge", {})),
+                    "signal_state": signal_state,
+                    "accidents": junction_accidents,
+                    "accidents_by_edge": edge_accidents,
+                    "lane_metrics": dict(live_metrics.get("lane_metrics", {})),
+                }
+                continue
+
             vec = np.asarray(state.get(tl_id, np.zeros(9, dtype=np.float32)), dtype=np.float32)
             diag = dict(diagnostics.get(tl_id, {}))
 
@@ -558,6 +775,8 @@ class MARLExecutor:
                     phase = -1
 
             signal_state = self._junction_signal_payload(tl_id, phase)
+            edge_accidents = dict((accidents_by_edge or {}).get(tl_id, {}))
+            junction_accidents = int((accidents_by_junction or {}).get(tl_id, 0))
 
             out[tl_id] = {
                 "vehicles_waiting": total_queue,
@@ -568,6 +787,8 @@ class MARLExecutor:
                 "lane_counts": lane_counts,
                 "lane_counts_by_edge": counts_by_edge,
                 "signal_state": signal_state,
+                "accidents": junction_accidents,
+                "accidents_by_edge": edge_accidents,
             }
 
         return out
@@ -623,8 +844,14 @@ class MARLExecutor:
                     # print(f"  modes: {self.junction_modes}")
 
                 if self.dashboard is not None and step % 2 == 0:
-                    frame_data = self._capture_live_frame(step)
-                    junction_live = self._build_junction_live_metrics(next_state, info)
+                    frame_data = self._capture_live_frame(step) if self.stream_frames_to_dashboard else ""
+                    accident_snapshot = self._read_active_accidents()
+                    junction_live = self._build_junction_live_metrics(
+                        next_state,
+                        info,
+                        accidents_by_edge=dict(accident_snapshot.get("by_edge", {})),
+                        accidents_by_junction=dict(accident_snapshot.get("by_junction", {})),
+                    )
                     telemetry = {
                         "step": int(step),
                         "reward": float(reward),
@@ -636,6 +863,7 @@ class MARLExecutor:
                         "step_meta": dict(info.get("step_meta", {})),
                         "junction_diagnostics": dict(info.get("junction_diagnostics", {})),
                         "junction_live": junction_live,
+                        "accidents": accident_snapshot,
                     }
                     if frame_data:
                         telemetry["sumo_live_frame"] = frame_data
@@ -658,6 +886,8 @@ class MARLExecutor:
             self.env.close()
             if self.iot_client is not None:
                 self.iot_client.close()
+            if self.accident_client is not None and self.accident_client is not self.iot_client:
+                self.accident_client.close()
             if self.dashboard is not None:
                 self.dashboard.send_system_status("stopped", "Execution stopped")
             print("Execution cleanup complete")

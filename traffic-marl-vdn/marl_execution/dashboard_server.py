@@ -47,6 +47,8 @@ class SimpleDashboardServer:
                 out["green_steps"] = int(data.get("green_steps"))
             except Exception:
                 pass
+        if "enabled" in data:
+            out["enabled"] = bool(data.get("enabled"))
         if "payload" in data and isinstance(data.get("payload"), dict):
             out["payload"] = dict(data.get("payload"))
 

@@ -36,23 +36,23 @@
         "enable_data_injection": true,
         "injection_poll_interval": 1.0,
         "min_green_time": 20,
-        "max_green_time": 80,
-        "yellow_time": 10,
-        "green_extension": 30,
+        "max_green_time": 100,
+        "yellow_time": 3,
+        "green_extension": 20,
         "min_ped_green_time": 10,
         "max_ped_green_time": 30,
         "top_k_lanes": 6,
         "vehicle_priority_weights": {
-            "bike": 0.8,
+            "bike": 0.2,
             "real_car": 1.0,
             "car": 1.0,
-            "auto": 1.2,
-            "bus": 2.2,
-            "truck": 2.4,
-            "lorry": 2.5,
+            "auto": 1.0,
+            "bus": 2.0,
+            "truck": 1.5,
+            "lorry": 1.5,
             "ambulance": 8.0,
-            "police": 6.8,
-            "firetruck": 8.2
+            "police": 7.0,
+            "firetruck": 8.0
         }
     }
 }
