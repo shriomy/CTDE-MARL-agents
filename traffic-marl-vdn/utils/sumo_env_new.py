@@ -36,11 +36,32 @@ class SumoEnv:
 
         self.sumo_cmd: List[str] = []
         self.episode_step = 0
-        self.max_steps = int(self.env_config.get("max_steps_per_episode", 3600))
+        self.max_steps = int(self.env_config.get("max_steps_per_episode", 1800))
 
         self.top_k_lanes = int(self.env_config.get("top_k_lanes", 6))
         self.vehicle_weights = dict(self.DEFAULT_VEHICLE_WEIGHTS)
         self.vehicle_weights.update(self.env_config.get("vehicle_priority_weights", {}))
+        self.pedestrian_wait_weights = {
+            "elderly": 1.2,
+            "mobility_aided": 2.2,
+            "student": 1.0,
+            "adult": 0.9,
+        }
+        self.pedestrian_wait_weights.update(self.env_config.get("pedestrian_wait_weights", {}))
+
+        self.reward_weights = {
+            # Positive rewards (ordered by importance)
+            "no_emergency_stopped": 3.0,
+            "throughput": 1.2,
+            "priority_throughput": 1.8,
+            # Negative rewards (ordered by importance)
+            "empty_ped_green": 3.5,
+            "avg_wait_emergency": 0.45,
+            "avg_wait_vehicle": 0.10,
+            "avg_wait_pedestrian_type": 0.20,
+            "green_no_stopped": 1.6,
+        }
+        self.reward_weights.update(self.env_config.get("reward_weights", {}))
 
         self.pedestrian_wait_edges = {
             "J4": {"E00", "-E0.80", "-E0", "E0"},
@@ -51,6 +72,7 @@ class SumoEnv:
         self.incoming_lanes: Dict[str, List[str]] = {}
         self.incoming_edges: Dict[str, List[str]] = {}
         self.outgoing_lanes: Dict[str, List[str]] = {}
+        self.pedestrian_controlled_edges: Dict[str, List[str]] = {}
 
         self.current_phase: Dict[str, int] = {}
         self.current_phase_duration: Dict[str, float] = {}
@@ -77,6 +99,17 @@ class SumoEnv:
         self._last_injection_poll = 0.0
 
         self.state_dim = self._build_state_dim()
+
+    @staticmethod
+    def _normalize_ped_type_id(type_id: str) -> str:
+        p_type = str(type_id or "").lower()
+        if p_type in {"elder", "elderly"}:
+            return "elderly"
+        if p_type in {"mobility_aid", "mobility_aided", "mobility-aided"}:
+            return "mobility_aided"
+        if p_type == "student":
+            return "student"
+        return "adult"
 
     def _build_state_dim(self) -> int:
         lane_features = 5 * self.top_k_lanes
@@ -130,6 +163,22 @@ class SumoEnv:
             self.incoming_lanes[tl_id] = dedup_lanes
             self.incoming_edges[tl_id] = sorted({lane.split("_")[0] for lane in dedup_lanes if "_" in lane})
 
+            ped_edges = set(self.pedestrian_wait_edges.get(tl_id, set()))
+            for lane_id in traci.trafficlight.getControlledLanes(tl_id):
+                if not lane_id:
+                    continue
+                try:
+                    allowed = set(traci.lane.getAllowed(lane_id) or [])
+                    disallowed = set(traci.lane.getDisallowed(lane_id) or [])
+                    is_ped_accessible = ("pedestrian" in allowed) or (not allowed and "pedestrian" not in disallowed)
+                    if is_ped_accessible:
+                        edge_id = self._edge_from_lane_id(lane_id)
+                        if edge_id:
+                            ped_edges.add(edge_id)
+                except Exception:
+                    continue
+            self.pedestrian_controlled_edges[tl_id] = sorted(ped_edges)
+
             outgoing = set()
             for lane_id in dedup_lanes:
                 try:
@@ -140,6 +189,20 @@ class SumoEnv:
                 except Exception:
                     continue
             self.outgoing_lanes[tl_id] = sorted(outgoing)
+
+    @staticmethod
+    def _edge_from_lane_id(lane_id: str) -> str:
+        """Extract edge id from a SUMO lane id like E0_0 or :J4_w0_0."""
+        if not lane_id or "_" not in lane_id:
+            return ""
+        return lane_id.rsplit("_", 1)[0]
+
+    def _pedestrian_relevant_edges(self, tl_id: str) -> set:
+        """Edges where pedestrians should be considered for a junction."""
+        relevant_edges = set(self.pedestrian_wait_edges.get(tl_id, set()))
+        relevant_edges.update(self.pedestrian_controlled_edges.get(tl_id, []))
+        relevant_edges.update(self.incoming_edges.get(tl_id, []))
+        return relevant_edges
 
     def _build_default_specs(self) -> None:
         """Build per-junction phase specs matching the provided 6/6/8 patterns."""
@@ -330,6 +393,8 @@ class SumoEnv:
 
             avg_wait_time = (stopped_wait_sum / vehicles_waiting) if vehicles_waiting > 0 else 0.0
             vehicle_density = (weighted_sum_all / total_vehicles_all) if total_vehicles_all > 0 else 0.0
+            ped_waiting_count, ped_wait_total, ped_avg_wait = self._pedestrian_wait_metrics_for_tl(tl_id)
+            pedestrian_types = self._count_person_types_for_tl(tl_id)
 
             out[tl_id] = {
                 "vehicles_waiting": float(vehicles_waiting),
@@ -337,6 +402,10 @@ class SumoEnv:
                 "vehicle_density": float(vehicle_density),
                 "emergency": int(round(emergency_total)),
                 "pedestrians": int(self._count_persons_for_tl(tl_id)),
+                "pedestrians_waiting": int(ped_waiting_count),
+                "pedestrian_wait_total": float(ped_wait_total),
+                "pedestrian_avg_wait_time": float(ped_avg_wait),
+                "pedestrian_types": pedestrian_types,
                 "lane_metrics": lane_metrics,
                 "lane_counts": lane_counts,
                 "lane_counts_by_edge": lane_counts_by_edge,
@@ -346,8 +415,7 @@ class SumoEnv:
 
     def _count_persons_for_tl(self, tl_id: str) -> int:
         """Count pedestrians relevant to a junction using known crossing and incoming edges."""
-        relevant_edges = set(self.pedestrian_wait_edges.get(tl_id, set()))
-        relevant_edges.update(self.incoming_edges.get(tl_id, []))
+        relevant_edges = self._pedestrian_relevant_edges(tl_id)
 
         count = 0
         for person_id in traci.person.getIDList():
@@ -357,6 +425,48 @@ class SumoEnv:
             except Exception:
                 continue
         return count
+
+    def _count_person_types_for_tl(self, tl_id: str) -> Dict[str, int]:
+        """Count relevant pedestrians by type for junction telemetry."""
+        relevant_edges = self._pedestrian_relevant_edges(tl_id)
+
+        out = {
+            "elderly": 0,
+            "mobility_aided": 0,
+            "student": 0,
+            "adult": 0,
+        }
+
+        for person_id in traci.person.getIDList():
+            try:
+                if traci.person.getRoadID(person_id) not in relevant_edges:
+                    continue
+                ped_type = self._normalize_ped_type_id(traci.person.getTypeID(person_id))
+                out[ped_type] += 1
+            except Exception:
+                continue
+
+        return out
+
+    def _pedestrian_wait_metrics_for_tl(self, tl_id: str) -> Tuple[int, float, float]:
+        """Return waiting pedestrians count, total wait and average wait for a junction."""
+        relevant_edges = self._pedestrian_relevant_edges(tl_id)
+        waiting_count = 0
+        total_wait = 0.0
+
+        for person_id in traci.person.getIDList():
+            try:
+                if traci.person.getRoadID(person_id) not in relevant_edges:
+                    continue
+                speed = float(traci.person.getSpeed(person_id))
+                if speed < 0.05:
+                    waiting_count += 1
+                    total_wait += float(traci.person.getWaitingTime(person_id))
+            except Exception:
+                continue
+
+        avg_wait = (total_wait / waiting_count) if waiting_count > 0 else 0.0
+        return waiting_count, total_wait, avg_wait
 
     def _collect_junction_diagnostics(
         self,
@@ -454,19 +564,9 @@ class SumoEnv:
         return queue, total_wait, avg_wait, priority_score, emergency_count, emergency_stopped
 
     def _pedestrian_wait_pressure(self, tl_id: str) -> float:
-        if tl_id not in self.pedestrian_wait_edges:
+        waiting_count, total_wait, _ = self._pedestrian_wait_metrics_for_tl(tl_id)
+        if waiting_count <= 0:
             return 0.0
-
-        relevant_edges = self.pedestrian_wait_edges[tl_id]
-        total_wait = 0.0
-        for person_id in traci.person.getIDList():
-            try:
-                edge_id = traci.person.getRoadID(person_id)
-                speed = traci.person.getSpeed(person_id)
-                if edge_id in relevant_edges and speed < 0.05:
-                    total_wait += traci.person.getWaitingTime(person_id)
-            except Exception:
-                continue
         return total_wait
 
     def get_state(self) -> Dict[str, np.ndarray]:
@@ -544,6 +644,8 @@ class SumoEnv:
         waiting_emergency = 0.0
         stopped_normal = 0.0
         stopped_emergency = 0.0
+        vehicle_count_normal = 0.0
+        vehicle_count_emergency = 0.0
 
         for veh_id in traci.vehicle.getIDList():
             veh_type = traci.vehicle.getTypeID(veh_id)
@@ -551,24 +653,57 @@ class SumoEnv:
             is_stopped = traci.vehicle.getSpeed(veh_id) < 0.1
             if veh_type in self.EMERGENCY_TYPES:
                 waiting_emergency += wait_t
+                vehicle_count_emergency += 1.0
                 stopped_emergency += 1.0 if is_stopped else 0.0
             else:
                 waiting_normal += wait_t
+                vehicle_count_normal += 1.0
                 stopped_normal += 1.0 if is_stopped else 0.0
 
         ped_wait = 0.0
         ped_stopped = 0.0
+        ped_wait_sum_by_type = {
+            "elderly": 0.0,
+            "mobility_aided": 0.0,
+            "student": 0.0,
+            "adult": 0.0,
+        }
+        ped_wait_count_by_type = {
+            "elderly": 0.0,
+            "mobility_aided": 0.0,
+            "student": 0.0,
+            "adult": 0.0,
+        }
         for person_id in traci.person.getIDList():
             try:
                 wt = traci.person.getWaitingTime(person_id)
                 ped_wait += wt
                 if traci.person.getSpeed(person_id) < 0.05:
                     ped_stopped += 1.0
+                    ped_type = self._normalize_ped_type_id(traci.person.getTypeID(person_id))
+                    ped_wait_sum_by_type[ped_type] += wt
+                    ped_wait_count_by_type[ped_type] += 1.0
             except Exception:
                 continue
 
         # Arrivals is the right throughput signal for "vehicles left the network".
         departed = float(traci.simulation.getArrivedNumber())
+        arrived_priority = 0.0
+        try:
+            for veh_id in traci.simulation.getArrivedIDList():
+                veh_type = traci.vehicle.getTypeID(veh_id)
+                arrived_priority += float(self.vehicle_weights.get(veh_type, 1.0))
+        except Exception:
+            arrived_priority = 0.0
+
+        avg_wait_emergency = waiting_emergency / vehicle_count_emergency if vehicle_count_emergency > 0 else 0.0
+        total_vehicles = vehicle_count_normal + vehicle_count_emergency
+        avg_wait_vehicle = (waiting_normal + waiting_emergency) / total_vehicles if total_vehicles > 0 else 0.0
+
+        ped_avg_wait_by_type = {}
+        for ped_type in ped_wait_sum_by_type:
+            denom = ped_wait_count_by_type[ped_type]
+            ped_avg_wait_by_type[ped_type] = (ped_wait_sum_by_type[ped_type] / denom) if denom > 0 else 0.0
 
         return {
             "waiting_normal": waiting_normal,
@@ -578,47 +713,51 @@ class SumoEnv:
             "ped_wait": ped_wait,
             "ped_stopped": ped_stopped,
             "arrived": departed,
+            "arrived_priority": arrived_priority,
+            "avg_wait_emergency": avg_wait_emergency,
+            "avg_wait_vehicle": avg_wait_vehicle,
+            "ped_avg_wait_elderly": ped_avg_wait_by_type["elderly"],
+            "ped_avg_wait_mobility_aided": ped_avg_wait_by_type["mobility_aided"],
+            "ped_avg_wait_student": ped_avg_wait_by_type["student"],
+            "ped_avg_wait_adult": ped_avg_wait_by_type["adult"],
         }
 
     def get_reward(self, step_meta: Dict[str, Dict[str, float]]) -> Tuple[float, Dict[str, float]]:
-        """Global reward with stronger emergency/pedestrian penalties."""
+        """Global reward aligned with emergency-first and pedestrian-aware priorities."""
         snap = self._reward_snapshot()
         prev = self.prev_reward_snapshot or snap
-
-        delta_wait_normal = snap["waiting_normal"] - prev["waiting_normal"]
-        delta_wait_emergency = snap["waiting_emergency"] - prev["waiting_emergency"]
-        delta_wait_ped = snap["ped_wait"] - prev["ped_wait"]
-
-        delta_stop_normal = snap["stopped_normal"] - prev["stopped_normal"]
-        delta_stop_emergency = snap["stopped_emergency"] - prev["stopped_emergency"]
-        delta_stop_ped = snap["ped_stopped"] - prev["ped_stopped"]
-
         throughput = max(0.0, snap["arrived"] - prev["arrived"])
+        priority_throughput = max(0.0, snap["arrived_priority"])
 
         # Penalty: pedestrian green with no pedestrians waiting.
         empty_ped_green_penalty = 0.0
         for tl_id, meta in step_meta.items():
-            if meta.get("is_ped_green", 0.0) > 0.5 and meta.get("ped_wait", 0.0) <= 0.01:
+            if meta.get("is_ped_green", 0.0) > 0.5 and meta.get("ped_count", 0.0) <= 0.01:
                 empty_ped_green_penalty += 1.0
 
-        # Positive reward if remaining stopped vehicles is reduced after action.
-        previous_total_stopped = prev["stopped_normal"] + prev["stopped_emergency"]
-        current_total_stopped = snap["stopped_normal"] + snap["stopped_emergency"]
-        reduced_stop_bonus = 1.0 if current_total_stopped < previous_total_stopped else 0.0
+        green_with_no_stopped_penalty = 0.0
+        for tl_id, meta in step_meta.items():
+            if meta.get("switched", 0.0) > 0.5 and meta.get("is_yellow", 0.0) <= 0.5 and meta.get("stopped_incoming", 0.0) <= 0.01:
+                green_with_no_stopped_penalty += 1.0
+
+        ped_type_wait_penalty = (
+            self.pedestrian_wait_weights.get("elderly", 1.0) * snap["ped_avg_wait_elderly"]
+            + self.pedestrian_wait_weights.get("mobility_aided", 1.0) * snap["ped_avg_wait_mobility_aided"]
+            + self.pedestrian_wait_weights.get("student", 1.0) * snap["ped_avg_wait_student"]
+            + self.pedestrian_wait_weights.get("adult", 1.0) * snap["ped_avg_wait_adult"]
+        )
 
         no_emergency_stop_bonus = 1.0 if snap["stopped_emergency"] <= 0 else 0.0
 
         reward_components = {
-            "wait_normal_penalty": -0.01 * delta_wait_normal,
-            "wait_emergency_penalty": -0.05 * delta_wait_emergency,
-            "wait_ped_penalty": -0.03 * delta_wait_ped,
-            "stop_normal_penalty": -0.30 * delta_stop_normal,
-            "stop_emergency_penalty": -1.00 * delta_stop_emergency,
-            "stop_ped_penalty": -0.60 * delta_stop_ped,
-            "throughput_bonus": 2.0 * throughput,
-            "no_emergency_stop_bonus": 0.60 * no_emergency_stop_bonus,
-            "priority_flow_bonus": 0.50 * reduced_stop_bonus,
-            "empty_ped_green_penalty": -0.60 * empty_ped_green_penalty,
+            "no_emergency_stop_bonus": self.reward_weights["no_emergency_stopped"] * no_emergency_stop_bonus,
+            "throughput_bonus": self.reward_weights["throughput"] * throughput,
+            "priority_throughput_bonus": self.reward_weights["priority_throughput"] * priority_throughput,
+            "empty_ped_green_penalty": -self.reward_weights["empty_ped_green"] * empty_ped_green_penalty,
+            "avg_wait_emergency_penalty": -self.reward_weights["avg_wait_emergency"] * snap["avg_wait_emergency"],
+            "avg_wait_vehicle_penalty": -self.reward_weights["avg_wait_vehicle"] * snap["avg_wait_vehicle"],
+            "avg_wait_pedestrian_type_penalty": -self.reward_weights["avg_wait_pedestrian_type"] * ped_type_wait_penalty,
+            "green_no_stopped_penalty": -self.reward_weights["green_no_stopped"] * green_with_no_stopped_penalty,
         }
 
         reward = float(sum(reward_components.values()))
@@ -676,6 +815,8 @@ class SumoEnv:
                 "is_yellow": 1.0 if current_phase in spec.yellow_phases else 0.0,
                 "is_ped_green": 1.0 if current_phase in spec.pedestrian_green_phases else 0.0,
                 "ped_wait": self._pedestrian_wait_pressure(tl_id),
+                "ped_count": float(self._count_persons_for_tl(tl_id)),
+                "stopped_incoming": float(sum(traci.lane.getLastStepHaltingNumber(l) for l in self.incoming_lanes.get(tl_id, []))),
                 "switched": float(transition["switched"]),
             }
 
