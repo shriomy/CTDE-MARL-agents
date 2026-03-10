@@ -150,6 +150,17 @@ class SimpleDashboardServer:
         }
         asyncio.run_coroutine_threadsafe(self.broadcast(msg), self.loop)
 
+    def send_analytics_update(self, payload: Dict[str, Any]) -> None:
+        """Broadcast analytics query response payload."""
+        if self.loop is None:
+            return
+        msg = {
+            "type": "analytics_update",
+            "timestamp": time.time(),
+            "data": payload,
+        }
+        asyncio.run_coroutine_threadsafe(self.broadcast(msg), self.loop)
+
     def get_pending_commands(self, max_items: int = 100) -> List[Dict[str, Any]]:
         """Drain received control commands from websocket clients."""
         out: List[Dict[str, Any]] = []

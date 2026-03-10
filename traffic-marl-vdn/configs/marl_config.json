@@ -42,6 +42,12 @@
         "green_extension": 20,
         "min_ped_green_time": 10,
         "max_ped_green_time": 30,
+        "analytics_enabled": true,
+        "analytics_window_sec": 300,
+        "analytics_step_sec": 1.0,
+        "analytics_mongo_db": "EmergencyDetection",
+        "analytics_collection": "System_Analytics",
+        "analytics_scenario_id": "3junctions",
         "top_k_lanes": 6,
         "vehicle_priority_weights": {
             "bike": 0.2,

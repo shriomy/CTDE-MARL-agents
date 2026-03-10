@@ -26,6 +26,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, ".."))
 
 from agents.multi_agent_system import MultiAgentSystem
 from utils.sumo_env_new import SumoEnv
+from system_analytics import SystemAnalyticsStore
 
 try:
     from dashboard_server import SimpleDashboardServer
@@ -101,6 +102,7 @@ class MARLExecutor:
         self._init_dashboard()
         self._init_iot_signal_store()
         self._init_accident_store()
+        self._init_system_analytics_store()
 
     def _load_config(self, path: str) -> dict:
         if not os.path.exists(path):
@@ -227,6 +229,13 @@ class MARLExecutor:
             for tl_id in self.agent_ids
         }
         self.manual_state: Dict[str, int] = {tl_id: 4 for tl_id in self.agent_ids}
+
+    def _init_system_analytics_store(self) -> None:
+        env_cfg = dict(self.config.get("env_config", {}))
+        self.analytics_store = SystemAnalyticsStore(
+            env_config=env_cfg,
+            sumo_cfg=str(self.config.get("sumo_config_path", "")),
+        )
 
     def _is_pedestrian_action(self, junction_id: str, action: int) -> bool:
         spec = self.env.tl_specs.get(junction_id)
@@ -688,6 +697,13 @@ class MARLExecutor:
                 self.stream_frames_to_dashboard = enabled
             elif ctype == "get_runtime_state":
                 changed = True
+            elif ctype == "get_analytics_summary":
+                payload = cmd.get("payload", {}) if isinstance(cmd.get("payload"), dict) else {}
+                range_key = str(payload.get("range", "6h"))
+                mode_variant = str(payload.get("mode_variant", "all"))
+                if self.dashboard is not None and self.analytics_store is not None:
+                    result = self.analytics_store.query_summary(range_key=range_key, mode_variant=mode_variant)
+                    self.dashboard.send_analytics_update(result)
 
         if changed:
             self._broadcast_runtime_state(reason="command")
@@ -873,6 +889,15 @@ class MARLExecutor:
                 self.metrics["injection_history"].append(info.get("injection_stats", {}))
                 self.metrics["mode_history"].append(dict(self.junction_modes))
 
+                if self.analytics_store is not None:
+                    self.analytics_store.observe_step(
+                        step_meta=dict(info.get("step_meta", {})),
+                        actions={aid: int(a) for aid, a in actions.items()},
+                        junction_modes=dict(self.junction_modes),
+                        fixed_state={k: dict(v) for k, v in self.fixed_state.items()},
+                        junction_live_metrics=dict(info.get("junction_live_metrics", {})),
+                    )
+
                 if step % 50 == 0:
                     print(
                         # f"Step {step} | reward={reward:.3f} | "
@@ -928,6 +953,9 @@ class MARLExecutor:
                 self.accident_client.close()
             if self.dashboard is not None:
                 self.dashboard.send_system_status("stopped", "Execution stopped")
+            if self.analytics_store is not None:
+                self.analytics_store.flush()
+                self.analytics_store.close()
             print("Execution cleanup complete")
 
     def save_logs(self) -> None:
