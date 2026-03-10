@@ -49,6 +49,7 @@ class TrafficActions:
         action: int,
         spec: TrafficLightSpec,
         ignore_timing_rules: bool = False,
+        force_pedestrian_extension: bool = False,
     ) -> Dict[str, float]:
         """
         Execute one action at a traffic light using junction-specific rules.
@@ -86,6 +87,15 @@ class TrafficActions:
                 except Exception:
                     pass
             TrafficActions._pending_targets.pop(tl_id, None)
+            return result
+
+        # Safety-first hold: if pedestrians are actively crossing, keep ped green.
+        if force_pedestrian_extension and current_phase in spec.pedestrian_green_phases:
+            try:
+                current_programmed = float(traci.trafficlight.getPhaseDuration(tl_id))
+                traci.trafficlight.setPhaseDuration(tl_id, current_programmed + spec.extension_step)
+            except Exception:
+                pass
             return result
 
         # If we are in yellow/all-red, complete the safety interval before any choice.

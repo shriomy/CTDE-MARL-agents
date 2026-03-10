@@ -26,40 +26,28 @@ class MongoDBListener:
         self.database_name = database
         self.collection_name = collection
         self.poll_interval = poll_interval
+        self.checkpoint_collection_name = "_listener_checkpoints"
         
         # Connect to MongoDB Atlas
         try:
             self.client = pymongo.MongoClient(connection_string)
             self.db = self.client[database]
             self.collection = self.db[collection]
+            self.checkpoint_collection = self.db[self.checkpoint_collection_name]
             
             # Test connection
             self.client.admin.command('ping')
             logger.info(f"Connected to MongoDB Atlas")
             logger.info(f"Database: {database}, Collection: {collection}")
 
-            # Only process documents inserted AFTER listener startup.
-            startup_utc = datetime.now(timezone.utc)
-            self.start_object_id = ObjectId.from_datetime(startup_utc)
-            logger.info(
-                "Startup insertion checkpoint set to ObjectId > %s (%s)",
-                str(self.start_object_id),
-                startup_utc.isoformat(),
-            )
-            
-            # Start from current wall-clock time so restarts only process NEW inserts.
-            self.last_timestamp = time.time()
-            logger.debug(
-                "Startup checkpoint set to now: %s (numeric: %.3f). Existing records will be ignored.",
-                self._numeric_to_iso(self.last_timestamp),
-                self.last_timestamp,
-            )
+            # Load or create checkpoint
+            self._load_or_create_checkpoint()
             
         except Exception as e:
             logger.error(f"Failed to connect to MongoDB: {e}")
             raise
         
-        self.processed_ids = set()  # Track processed document IDs
+        self.processed_ids = set()  # Track processed document IDs during this session
         
         # Statistics
         self.stats = {
@@ -112,39 +100,91 @@ class MongoDBListener:
         dt = datetime.fromtimestamp(numeric_timestamp, tz=timezone.utc)
         return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+00:00"
     
+    def _load_or_create_checkpoint(self):
+        """Load last processed ObjectId from checkpoint or initialize new one"""
+        checkpoint_key = f"{self.database_name}:{self.collection_name}"
+        
+        try:
+            checkpoint_doc = self.checkpoint_collection.find_one({"_id": checkpoint_key})
+            
+            if checkpoint_doc and "last_processed_id" in checkpoint_doc:
+                self.start_object_id = checkpoint_doc["last_processed_id"]
+                logger.info(
+                    "Loaded checkpoint: will process documents with _id > %s",
+                    str(self.start_object_id)
+                )
+            else:
+                # First time: use current time, effectively ignoring all existing documents
+                startup_utc = datetime.now(timezone.utc)
+                self.start_object_id = ObjectId.from_datetime(startup_utc)
+                logger.info(
+                    "No previous checkpoint found. Created new checkpoint at ObjectId > %s (%s). "
+                    "All existing documents will be skipped.",
+                    str(self.start_object_id),
+                    startup_utc.isoformat(),
+                )
+                # Create initial checkpoint
+                self.checkpoint_collection.update_one(
+                    {"_id": checkpoint_key},
+                    {"$set": {"last_processed_id": self.start_object_id}},
+                    upsert=True
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load checkpoint: {e}. Starting fresh.")
+            startup_utc = datetime.now(timezone.utc)
+            self.start_object_id = ObjectId.from_datetime(startup_utc)
+        
+        # Start from current wall-clock time for diagnostic display
+        self.last_timestamp = time.time()
+    
+    def _save_checkpoint(self, last_processed_id: ObjectId):
+        """Save the last processed ObjectId to checkpoint"""
+        checkpoint_key = f"{self.database_name}:{self.collection_name}"
+        
+        try:
+            self.checkpoint_collection.update_one(
+                {"_id": checkpoint_key},
+                {"$set": {
+                    "last_processed_id": last_processed_id,
+                    "last_updated": datetime.now(timezone.utc)
+                }},
+                upsert=True
+            )
+        except Exception as e:
+            logger.warning(f"Failed to save checkpoint: {e}")
+    
     def get_new_records(self) -> List[Dict[str, Any]]:
         """
-        Poll for new records since last timestamp.
+        Poll for new records since last checkpoint.
         Returns list of new records.
         """
         try:
-            # Primary gate: insertion order via ObjectId to exclude pre-start records.
+            # Query for documents with _id > last checkpoint
             query = {'_id': {'$gt': self.start_object_id}}
             all_records = list(self.collection.find(query).sort('_id', pymongo.ASCENDING))
             
             new_records = []
+            last_processed_id = self.start_object_id
             
             for doc in all_records:
-                # Skip if already processed
+                # Skip if already processed in this session
                 if doc['_id'] in self.processed_ids:
                     continue
                 
-                # Get timestamp from document (ISO or numeric)
+                # Get timestamp from document (ISO or numeric) - for diagnostics only
                 doc_raw_time = doc.get('timestamp')
                 if doc_raw_time is None:
-                    continue
+                    doc_time = None
+                else:
+                    doc_time = self._to_numeric_timestamp(doc_raw_time)
                 
-                # Convert to numeric for comparison
-                doc_time = self._to_numeric_timestamp(doc_raw_time)
-                if doc_time is None:
-                    continue
-                
-                # Accept all post-start inserts (ObjectId gate), regardless of payload timestamp.
+                # Accept all post-checkpoint documents
                 new_records.append(doc)
                 self.processed_ids.add(doc['_id'])
+                last_processed_id = doc['_id']
 
-                # Keep timestamp only for diagnostic printouts.
-                if doc_time > self.last_timestamp:
+                # Keep timestamp only for diagnostic printouts
+                if doc_time is not None and doc_time > self.last_timestamp:
                     self.last_timestamp = doc_time
 
                 # Update statistics
@@ -162,6 +202,8 @@ class MongoDBListener:
             
             if new_records:
                 logger.info(f"Total new records this poll: {len(new_records)}")
+                # Save checkpoint after successfully processing records
+                self._save_checkpoint(last_processed_id)
             
             return new_records
             
@@ -184,6 +226,13 @@ class MongoDBListener:
     def close(self):
         """Close MongoDB connection"""
         if hasattr(self, 'client'):
+            # Save final checkpoint before closing
+            if hasattr(self, 'start_object_id') and self.processed_ids:
+                # Find the max ObjectId we've processed
+                max_processed_id = max(self.processed_ids)
+                self._save_checkpoint(max_processed_id)
+                logger.info(f"Final checkpoint saved with processed _id: {max_processed_id}")
+            
             self.print_stats()
             self.client.close()
             logger.info("MongoDB connection closed")

@@ -36,7 +36,7 @@ class SumoEnv:
 
         self.sumo_cmd: List[str] = []
         self.episode_step = 0
-        self.max_steps = int(self.env_config.get("max_steps_per_episode", 3600))
+        self.max_steps = int(self.env_config.get("max_steps_per_episode", 1800))
 
         self.top_k_lanes = int(self.env_config.get("top_k_lanes", 6))
         self.vehicle_weights = dict(self.DEFAULT_VEHICLE_WEIGHTS)
@@ -52,14 +52,15 @@ class SumoEnv:
         self.reward_weights = {
             # Positive rewards (ordered by importance)
             "no_emergency_stopped": 3.0,
-            "throughput": 1.2,
-            "priority_throughput": 1.8,
+            "throughput": 2.5,
+            "priority_throughput": 2.8,
             # Negative rewards (ordered by importance)
-            "empty_ped_green": 3.5,
-            "avg_wait_emergency": 0.45,
-            "avg_wait_vehicle": 0.10,
-            "avg_wait_pedestrian_type": 0.20,
-            "green_no_stopped": 1.6,
+            "empty_ped_green": 1.5,
+            "avg_wait_emergency": 2.45,
+            "avg_wait_vehicle": 1.00,
+            "avg_wait_pedestrian_type": 0.2,
+            "green_no_stopped": 2.0,
+            "early_red_ped_crossing": 1.0,
         }
         self.reward_weights.update(self.env_config.get("reward_weights", {}))
 
@@ -468,6 +469,19 @@ class SumoEnv:
         avg_wait = (total_wait / waiting_count) if waiting_count > 0 else 0.0
         return waiting_count, total_wait, avg_wait
 
+    def _count_pedestrians_crossing_for_tl(self, tl_id: str) -> int:
+        """Count pedestrians currently on crossing edges of this junction."""
+        crossing_prefix = f":{tl_id}_c"
+        count = 0
+        for person_id in traci.person.getIDList():
+            try:
+                road_id = str(traci.person.getRoadID(person_id) or "")
+                if road_id.startswith(crossing_prefix):
+                    count += 1
+            except Exception:
+                continue
+        return count
+
     def _collect_junction_diagnostics(
         self,
         step_meta: Dict[str, Dict[str, float]],
@@ -741,6 +755,11 @@ class SumoEnv:
             if meta.get("switched", 0.0) > 0.5 and meta.get("is_yellow", 0.0) <= 0.5 and meta.get("stopped_incoming", 0.0) <= 0.01:
                 green_with_no_stopped_penalty += 1.0
 
+        early_red_ped_crossing_penalty = 0.0
+        for _, meta in step_meta.items():
+            if meta.get("ped_crossing_cut", 0.0) > 0.5:
+                early_red_ped_crossing_penalty += 1.0
+
         ped_type_wait_penalty = (
             self.pedestrian_wait_weights.get("elderly", 1.0) * snap["ped_avg_wait_elderly"]
             + self.pedestrian_wait_weights.get("mobility_aided", 1.0) * snap["ped_avg_wait_mobility_aided"]
@@ -759,6 +778,7 @@ class SumoEnv:
             "avg_wait_vehicle_penalty": -self.reward_weights["avg_wait_vehicle"] * snap["avg_wait_vehicle"],
             "avg_wait_pedestrian_type_penalty": -self.reward_weights["avg_wait_pedestrian_type"] * ped_type_wait_penalty,
             "green_no_stopped_penalty": -self.reward_weights["green_no_stopped"] * green_with_no_stopped_penalty,
+            "early_red_ped_crossing_penalty": -self.reward_weights["early_red_ped_crossing"] * early_red_ped_crossing_penalty,
         }
 
         reward = float(sum(reward_components.values()))
@@ -800,14 +820,25 @@ class SumoEnv:
 
         for tl_id, action in actions.items():
             spec = self.tl_specs[tl_id]
+            phase_before = int(traci.trafficlight.getPhase(tl_id))
+            ped_crossing_before = float(self._count_pedestrians_crossing_for_tl(tl_id))
+            force_ped_extension = (
+                phase_before in spec.pedestrian_green_phases and ped_crossing_before > 0.0
+            )
             transition = TrafficActions.execute_action(
                 tl_id,
                 int(action),
                 spec,
                 ignore_timing_rules=bool(ignore_timing_for.get(tl_id, False)),
+                force_pedestrian_extension=force_ped_extension,
             )
             new_phase = int(transition["new_phase"])
             current_phase = int(traci.trafficlight.getPhase(tl_id))
+            ped_crossing_cut = (
+                1.0
+                if (phase_before in spec.pedestrian_green_phases and new_phase != phase_before and ped_crossing_before > 0.0)
+                else 0.0
+            )
 
             step_meta[tl_id] = {
                 "action": float(action),
@@ -817,6 +848,8 @@ class SumoEnv:
                 "is_ped_green": 1.0 if current_phase in spec.pedestrian_green_phases else 0.0,
                 "ped_wait": self._pedestrian_wait_pressure(tl_id),
                 "ped_count": float(self._count_persons_for_tl(tl_id)),
+                "ped_crossing": ped_crossing_before,
+                "ped_crossing_cut": ped_crossing_cut,
                 "stopped_incoming": float(sum(traci.lane.getLastStepHaltingNumber(l) for l in self.incoming_lanes.get(tl_id, []))),
                 "switched": float(transition["switched"]),
             }

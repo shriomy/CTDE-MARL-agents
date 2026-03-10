@@ -168,7 +168,7 @@ class SUMOVehicleFactory:
             except Exception:
                 continue
 
-        logger.warning(f"No valid runtime route from {from_edge} to candidates {candidate_destinations}")
+        # logger.warning(f"No valid runtime route from {from_edge} to candidates {candidate_destinations}")
         return None
 
     def _create_runtime_route_random(

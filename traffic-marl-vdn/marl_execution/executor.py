@@ -849,7 +849,7 @@ class MARLExecutor:
 
     def _load_models(self) -> str:
         model_dirs = [
-            os.path.join(self.root, "models", "final"),
+            os.path.join(self.root, "models", "episode_20"),
         ]
 
         for mdir in model_dirs:
