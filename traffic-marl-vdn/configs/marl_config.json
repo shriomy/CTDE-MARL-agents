@@ -38,9 +38,9 @@
         "min_green_time": 20,
         "max_green_time": 80,
         "yellow_time": 10,
-        "green_extension": 40,
-        "min_ped_green_time": 12,
-        "max_ped_green_time": 45,
+        "green_extension": 30,
+        "min_ped_green_time": 10,
+        "max_ped_green_time": 30,
         "top_k_lanes": 6,
         "vehicle_priority_weights": {
             "bike": 0.8,
