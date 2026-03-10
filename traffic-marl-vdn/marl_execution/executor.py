@@ -118,12 +118,13 @@ class MARLExecutor:
 
         cfg.setdefault("agent_config", {})
         cfg.setdefault("env_config", {})
-        cfg.setdefault("max_steps_per_episode", 1800)
+        cfg.setdefault("max_steps_per_episode", 3600)
         cfg.setdefault("control_modes", {})
 
         control_cfg = cfg["control_modes"]
         control_cfg.setdefault("default_mode", "marl")
-        control_cfg.setdefault("fixed_green_steps", 20)
+        control_cfg.setdefault("fixed_green_steps", 40)
+        control_cfg.setdefault("fixed_pedestrian_steps", 15)
         control_cfg.setdefault("dashboard_enabled", True)
         control_cfg.setdefault("dashboard_host", "localhost")
         control_cfg.setdefault("dashboard_port", 8765)
@@ -208,15 +209,37 @@ class MARLExecutor:
         valid_modes = {"marl", "fixed", "manual"}
         requested_default = str(self.config.get("control_modes", {}).get("default_mode", "marl")).lower()
         default_mode = requested_default if requested_default in valid_modes else "marl"
-        fixed_green_steps = int(self.config.get("control_modes", {}).get("fixed_green_steps", 20))
-        fixed_green_steps = max(5, fixed_green_steps)
+        fixed_green_steps = int(self.config.get("control_modes", {}).get("fixed_green_steps", 40))
+        fixed_green_steps = fixed_green_steps if fixed_green_steps in {20, 40, 60} else 40
+        fixed_pedestrian_steps = int(self.config.get("control_modes", {}).get("fixed_pedestrian_steps", 15))
+        fixed_pedestrian_steps = max(5, fixed_pedestrian_steps)
 
         self.default_mode = default_mode
         self.junction_modes: Dict[str, str] = {tl_id: default_mode for tl_id in self.agent_ids}
         self.fixed_state: Dict[str, Dict[str, int]] = {
-            tl_id: {"action": 0, "elapsed": 0, "green_steps": fixed_green_steps} for tl_id in self.agent_ids
+            tl_id: {
+                "action": 0,
+                "elapsed": 0,
+                "green_steps": fixed_green_steps,
+                "vehicle_green_steps": fixed_green_steps,
+                "pedestrian_green_steps": fixed_pedestrian_steps,
+            }
+            for tl_id in self.agent_ids
         }
         self.manual_state: Dict[str, int] = {tl_id: 4 for tl_id in self.agent_ids}
+
+    def _is_pedestrian_action(self, junction_id: str, action: int) -> bool:
+        spec = self.env.tl_specs.get(junction_id)
+        if spec is None:
+            return False
+        green_phase = spec.action_to_green.get(int(action))
+        return green_phase in spec.pedestrian_green_phases
+
+    def _fixed_steps_for_action(self, junction_id: str, action: int) -> int:
+        state = self.fixed_state.get(junction_id, {})
+        if self._is_pedestrian_action(junction_id, action):
+            return int(state.get("pedestrian_green_steps", 15))
+        return int(state.get("vehicle_green_steps", state.get("green_steps", 40)))
 
     def _init_dashboard(self) -> None:
         self.dashboard = None
@@ -617,15 +640,21 @@ class MARLExecutor:
         self._record_mode_event("set_manual_action", {"junction_id": junction_id, "action": action})
 
     def _set_fixed_timing(self, junction_id: str, green_steps: int) -> None:
-        green_steps = max(5, int(green_steps))
+        green_steps = int(green_steps)
+        if green_steps not in {20, 40, 60}:
+            return
         if junction_id == "*":
             for tl_id in self.agent_ids:
                 self.fixed_state[tl_id]["green_steps"] = green_steps
+                self.fixed_state[tl_id]["vehicle_green_steps"] = green_steps
+                self.fixed_state[tl_id]["pedestrian_green_steps"] = 15
             self._record_mode_event("set_fixed_timing", {"junction_id": "*", "green_steps": green_steps})
             return
 
         if junction_id in self.fixed_state:
             self.fixed_state[junction_id]["green_steps"] = green_steps
+            self.fixed_state[junction_id]["vehicle_green_steps"] = green_steps
+            self.fixed_state[junction_id]["pedestrian_green_steps"] = 15
             self._record_mode_event("set_fixed_timing", {"junction_id": junction_id, "green_steps": green_steps})
 
     def _process_dashboard_commands(self) -> None:
@@ -646,7 +675,7 @@ class MARLExecutor:
                 self._set_manual_action(str(cmd.get("junction_id", "")), int(cmd.get("action", 4)))
                 changed = True
             elif ctype == "set_fixed_timing":
-                self._set_fixed_timing(str(cmd.get("junction_id", "*")), int(cmd.get("green_steps", 20)))
+                self._set_fixed_timing(str(cmd.get("junction_id", "*")), int(cmd.get("green_steps", 40)))
                 changed = True
             elif ctype == "resolve_accident":
                 payload = cmd.get("payload", {}) if isinstance(cmd.get("payload"), dict) else {}
@@ -667,10 +696,15 @@ class MARLExecutor:
         state = self.fixed_state[junction_id]
         tl_spec = self.env.tl_specs.get(junction_id)
         action_count = max(1, len(tl_spec.action_to_green)) if tl_spec is not None else 4
-        if state["elapsed"] >= state["green_steps"]:
+        current_action = int(state["action"])
+        current_steps = self._fixed_steps_for_action(junction_id, current_action)
+        state["green_steps"] = current_steps
+
+        if state["elapsed"] >= current_steps:
             state["action"] = (state["action"] + 1) % action_count
             state["elapsed"] = 0
         action = int(state["action"])
+        state["green_steps"] = self._fixed_steps_for_action(junction_id, action)
         state["elapsed"] += 1
         return action
 

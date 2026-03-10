@@ -36,7 +36,7 @@ class SumoEnv:
 
         self.sumo_cmd: List[str] = []
         self.episode_step = 0
-        self.max_steps = int(self.env_config.get("max_steps_per_episode", 1800))
+        self.max_steps = int(self.env_config.get("max_steps_per_episode", 3600))
 
         self.top_k_lanes = int(self.env_config.get("top_k_lanes", 6))
         self.vehicle_weights = dict(self.DEFAULT_VEHICLE_WEIGHTS)
