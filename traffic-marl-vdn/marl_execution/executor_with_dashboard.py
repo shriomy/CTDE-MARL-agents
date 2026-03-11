@@ -145,7 +145,7 @@ class DashboardMARLExecutor:
         print("Loading trained models...")
         model_dirs = [
             # os.path.join(project_root, "..", "models", "final"),
-            os.path.join(project_root, "..", "models", "episode_20"),
+            os.path.join(project_root, "..", "models", "episode_30"),
         ]
         
         loaded = False

@@ -39,14 +39,14 @@ normal_record = {
     "timestamp": get_ist_timestamp(4),  # 4 seconds later
     "type": "normal_vehicle",
     "data": {
-        "entryPoint": "-E0",  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E5",  # E0, -E2, -E8, -E4, -E5
         "vehicles": [
             {"type": "truck", "count": 2},
             {"type": "car", "count": 10},
             {"type": "lorry", "count": 4},
             {"type": "bus", "count": 10},
             {"type": "auto", "count": 10},
-            {"type": "bike", "count": 20},
+            {"type": "bike", "count": 30},
         ]
     }
 }
@@ -90,7 +90,7 @@ police_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "police",
-        "entryPoint": "-E2"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E0"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(police_record)
@@ -103,7 +103,7 @@ fireTruck_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "firetruck",
-        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E2"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(fireTruck_record)
