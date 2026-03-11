@@ -7,7 +7,7 @@ import random
 import logging
 import time
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,12 @@ class SUMOVehicleFactory:
     def _timestamp_to_int(self, raw_timestamp: Any) -> int:
         """Convert numeric/ISO timestamp to integer seconds for stable IDs."""
         try:
+            if isinstance(raw_timestamp, datetime):
+                # MongoDB Date values are returned as datetime; treat naive as UTC.
+                if raw_timestamp.tzinfo is None:
+                    raw_timestamp = raw_timestamp.replace(tzinfo=timezone.utc)
+                return int(raw_timestamp.timestamp())
+
             if isinstance(raw_timestamp, (int, float)):
                 return int(float(raw_timestamp))
 
@@ -83,14 +89,14 @@ class SUMOVehicleFactory:
                 except ValueError:
                     pass
 
-                if '+' in ts:
-                    dt_str = ts.split('+')[0]
-                    dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%f")
+                try:
+                    normalized = ts.replace('Z', '+00:00')
+                    dt = datetime.fromisoformat(normalized)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
                     return int(dt.timestamp())
-
-                if ts.endswith('Z'):
-                    dt = datetime.strptime(ts[:-1], "%Y-%m-%dT%H:%M:%S.%f")
-                    return int(dt.timestamp())
+                except ValueError:
+                    pass
 
             logger.warning(f"Unsupported timestamp format for ID generation: {raw_timestamp}")
             return int(time.time())
@@ -162,7 +168,7 @@ class SUMOVehicleFactory:
             except Exception:
                 continue
 
-        logger.warning(f"No valid runtime route from {from_edge} to candidates {candidate_destinations}")
+        # logger.warning(f"No valid runtime route from {from_edge} to candidates {candidate_destinations}")
         return None
 
     def _create_runtime_route_random(
