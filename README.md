@@ -162,6 +162,11 @@ Simply put; the whole workflow for this component begins in two main phases.
 29. connected mongoDB -> python test_atlas_connection.py
 30. testing the injector with SUMO -> python -m data_injection.run_injector --sumo-config sumo_configs/3junctions.sumocfg --gui --interval 1.0 --traci-port 8813
 31. to create dummy data -> python -m data_injection.add_test_data
+32. created training phase and trained
+32. executed
+33. created frontend
+34. connected via sockets
+35. created execution 3 environments thats switches between one persistent sumo map
 
 
 

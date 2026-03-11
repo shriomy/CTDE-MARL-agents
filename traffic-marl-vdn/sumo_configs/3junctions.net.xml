@@ -44,7 +44,7 @@
         <lane id=":J0_w0_0" index="0" allow="pedestrian" speed="2.78" length="14.80" width="2.00" shape="-784.05,12.83 -784.04,10.83 -784.06,27.63 -784.05,25.63"/>
     </edge>
     <edge id=":J1_0" function="internal">
-        <lane id=":J1_0_0" index="0" speed="5.99" length="7.50" shape="-127.98,23.74 -129.56,24.08 -130.68,25.14 -131.36,26.89 -131.59,29.34"/>
+        <lane id=":J1_0_0" index="0" speed="13.89" length="7.50" shape="-127.98,23.74 -129.56,24.08 -130.68,25.14 -131.36,26.89 -131.59,29.34"/>
     </edge>
     <edge id=":J1_1" function="internal">
         <lane id=":J1_1_0" index="0" disallow="pedestrian" speed="13.89" length="16.81" shape="-127.98,23.74 -144.79,23.74"/>
@@ -55,14 +55,14 @@
         <lane id=":J1_3_1" index="1" disallow="pedestrian" speed="13.89" length="16.82" shape="-144.80,17.34 -127.98,17.34"/>
     </edge>
     <edge id=":J1_5" function="internal">
-        <lane id=":J1_5_0" index="0" disallow="pedestrian" speed="8.89" length="17.79" shape="-144.80,17.34 -140.41,18.09 -137.29,20.33 -135.41,24.09 -134.79,29.34"/>
+        <lane id=":J1_5_0" index="0" disallow="pedestrian" speed="13.89" length="17.79" shape="-144.80,17.34 -140.41,18.09 -137.29,20.33 -135.41,24.09 -134.79,29.34"/>
     </edge>
     <edge id=":J1_6" function="internal">
-        <lane id=":J1_6_0" index="0" disallow="pedestrian" speed="5.99" length="7.49" shape="-141.19,29.34 -141.41,26.89 -142.09,25.14 -143.21,24.09 -144.79,23.74"/>
-        <lane id=":J1_6_1" index="1" disallow="pedestrian" speed="7.58" length="12.63" shape="-137.99,29.34 -138.41,25.49 -139.69,22.74 -141.81,21.09 -144.79,20.54"/>
+        <lane id=":J1_6_0" index="0" disallow="pedestrian" speed="13.89" length="7.49" shape="-141.19,29.34 -141.41,26.89 -142.09,25.14 -143.21,24.09 -144.79,23.74"/>
+        <lane id=":J1_6_1" index="1" disallow="pedestrian" speed="13.89" length="12.63" shape="-137.99,29.34 -138.41,25.49 -139.69,22.74 -141.81,21.09 -144.79,20.54"/>
     </edge>
     <edge id=":J1_8" function="internal">
-        <lane id=":J1_8_0" index="0" speed="8.89" length="17.78" shape="-137.99,29.34 -137.36,24.09 -135.48,20.33 -132.35,18.08 -127.98,17.34"/>
+        <lane id=":J1_8_0" index="0" speed="13.89" length="17.78" shape="-137.99,29.34 -137.36,24.09 -135.48,20.33 -132.35,18.08 -127.98,17.34"/>
     </edge>
     <edge id=":J1_w0" function="walkingarea">
         <lane id=":J1_w0_0" index="0" allow="pedestrian" speed="2.78" length="14.99" width="3.20" shape="-144.79,25.34 -144.79,27.34 -142.79,29.34 -139.59,29.34 -136.39,29.34 -133.19,29.34 -129.99,29.34 -127.98,25.34 -127.98,22.14 -127.98,18.94 -127.98,15.74 -127.98,12.54 -144.80,10.54 -144.80,12.54"/>
@@ -106,37 +106,37 @@
         <lane id=":J8_1_1" index="1" speed="13.89" length="20.80" shape="442.34,29.68 442.34,8.87"/>
     </edge>
     <edge id=":J8_3" function="internal">
-        <lane id=":J8_3_0" index="0" speed="9.26" length="19.36" shape="442.34,29.68 443.09,24.43 445.34,20.68 449.09,18.42 454.35,17.67"/>
+        <lane id=":J8_3_0" index="0" speed="13.89" length="19.36" shape="442.34,29.68 443.09,24.43 445.34,20.68 449.09,18.42 454.35,17.67"/>
     </edge>
     <edge id=":J8_4" function="internal">
-        <lane id=":J8_4_0" index="0" speed="6.52" length="9.05" shape="454.35,24.07 451.90,24.42 450.14,25.47 449.09,27.22 448.74,29.68"/>
+        <lane id=":J8_4_0" index="0" speed="13.89" length="9.05" shape="454.35,24.07 451.90,24.42 450.14,25.47 449.09,27.22 448.74,29.68"/>
     </edge>
     <edge id=":J8_5" function="internal">
         <lane id=":J8_5_0" index="0" speed="13.89" length="20.82" shape="454.35,24.07 433.53,24.07"/>
         <lane id=":J8_5_1" index="1" speed="13.89" length="20.82" shape="454.35,20.87 433.54,20.87"/>
     </edge>
     <edge id=":J8_7" function="internal">
-        <lane id=":J8_7_0" index="0" speed="9.26" length="19.36" shape="454.35,20.87 449.10,20.12 445.34,17.88 443.09,14.12 442.34,8.87"/>
+        <lane id=":J8_7_0" index="0" speed="13.89" length="19.36" shape="454.35,20.87 449.10,20.12 445.34,17.88 443.09,14.12 442.34,8.87"/>
     </edge>
     <edge id=":J8_8" function="internal">
-        <lane id=":J8_8_0" index="0" speed="6.50" length="9.03" shape="448.74,8.87 449.09,11.32 450.14,13.07 451.89,14.12 454.34,14.47"/>
+        <lane id=":J8_8_0" index="0" speed="13.89" length="9.03" shape="448.74,8.87 449.09,11.32 450.14,13.07 451.89,14.12 454.34,14.47"/>
     </edge>
     <edge id=":J8_9" function="internal">
         <lane id=":J8_9_0" index="0" speed="13.89" length="20.80" shape="448.74,8.87 448.74,29.68"/>
         <lane id=":J8_9_1" index="1" speed="13.89" length="20.80" shape="445.54,8.87 445.54,29.68"/>
     </edge>
     <edge id=":J8_11" function="internal">
-        <lane id=":J8_11_0" index="0" speed="9.26" length="19.36" shape="445.54,8.87 444.79,14.13 442.54,17.88 438.79,20.13 433.54,20.87"/>
+        <lane id=":J8_11_0" index="0" speed="13.89" length="19.36" shape="445.54,8.87 444.79,14.13 442.54,17.88 438.79,20.13 433.54,20.87"/>
     </edge>
     <edge id=":J8_12" function="internal">
-        <lane id=":J8_12_0" index="0" speed="6.51" length="9.04" shape="433.54,14.47 435.99,14.12 437.74,13.07 438.79,11.32 439.14,8.87"/>
+        <lane id=":J8_12_0" index="0" speed="13.89" length="9.04" shape="433.54,14.47 435.99,14.12 437.74,13.07 438.79,11.32 439.14,8.87"/>
     </edge>
     <edge id=":J8_13" function="internal">
         <lane id=":J8_13_0" index="0" speed="13.89" length="20.81" shape="433.54,14.47 454.34,14.47"/>
         <lane id=":J8_13_1" index="1" speed="13.89" length="20.81" shape="433.54,17.67 454.35,17.67"/>
     </edge>
     <edge id=":J8_15" function="internal">
-        <lane id=":J8_15_0" index="0" speed="9.26" length="19.35" shape="433.54,17.67 438.79,18.43 442.54,20.68 444.79,24.43 445.54,29.68"/>
+        <lane id=":J8_15_0" index="0" speed="13.89" length="19.35" shape="433.54,17.67 438.79,18.43 442.54,20.68 444.79,24.43 445.54,29.68"/>
     </edge>
     <edge id=":J8_w0" function="walkingarea">
         <lane id=":J8_w0_0" index="0" allow="pedestrian" speed="2.78" length="16.45" width="12.80" shape="437.54,29.68 450.34,29.68 450.79,27.45 451.34,26.67 452.13,26.11 453.13,25.78 454.36,25.67 454.34,12.87 452.12,12.43 451.34,11.87 450.79,11.09 450.45,10.09 450.34,8.87 437.54,8.87 437.10,11.10 436.54,11.87 435.76,12.43 434.76,12.76 433.54,12.87 433.53,25.67 435.76,26.12 436.54,26.68 437.10,27.45 437.43,28.45"/>
@@ -207,20 +207,17 @@
     </edge>
 
     <tlLogic id="J1" type="static" programID="0" offset="0">
-        <phase duration="140" state="GGGrrrrrr"/>
+        <phase duration="140" state="GGGrrrrrr"/> 
         <phase duration="30"  state="yyyyyyrrr"/>
-        <phase duration="140" state="rrrGGGrrr"/>
+        <phase duration="140" state="rrrGGGrrr"/> 
         <phase duration="30"  state="rrryyyyyy"/>
         <phase duration="140" state="rrrrrrGGG"/>
         <phase duration="30"  state="yyyrrryyy"/>
     </tlLogic>
     <tlLogic id="J4" type="static" programID="0" offset="0">
         <phase duration="260" state="GGGGGGrr"/>
-        <phase duration="15"  state="yyyyyyrr"/>
-        <phase duration="10"  state="rrrrrryy"/>
+        <phase duration="15"  state="yyyyyyyy"/>
         <phase duration="130" state="rrrrrrGG"/>
-        <phase duration="30"  state="rrrrrryy"/>
-        <phase duration="20"  state="yyyyyyrr"/>
     </tlLogic>
     <tlLogic id="J8" type="static" programID="0" offset="0">
         <phase duration="140" state="GGGGrrrrrrrrrrrr"/>

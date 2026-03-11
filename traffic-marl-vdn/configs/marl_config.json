@@ -1,13 +1,25 @@
 {
-    "sumo_config_path": "sumo_configs/1x2.sumocfg",
-    "use_gui": false,
-    "num_episodes": 100,
+    "sumo_config_path": "sumo_configs/3junctions.sumocfg",
+    "use_gui": true,
+    "num_episodes": 50,
     "max_steps_per_episode": 1800,
     "save_frequency": 10,
     "log_frequency": 1,
+    "control_modes": {
+        "default_mode": "marl",
+        "fixed_green_steps": 40,
+        "fixed_pedestrian_steps": 15,
+        "dashboard_enabled": true,
+        "dashboard_host": "localhost",
+        "dashboard_port": 8765,
+        "stream_sumo_gui": true,
+        "stream_frame_interval_steps": 20,
+        "stream_frame_width": 1950,
+        "stream_frame_height": 1100
+    },
     
     "agent_config": {
-        "learning_rate": 0.00001,     
+        "learning_rate": 0.0001,
         "gamma": 0.95,               
         "epsilon_start": 1.0,
         "epsilon_min": 0.05,
@@ -16,8 +28,38 @@
         "central_buffer_size": 50000,
         "batch_size": 32,            
         "target_update_freq": 50,    
-        "enable_communication": false,
+        "enable_communication": true,
+        "neighbor_feature_dim": 8,
         "grad_clip": 1.0,
         "num_actions": 5
+    },
+    "env_config": {
+        "enable_data_injection": true,
+        "injection_poll_interval": 1.0,
+        "min_green_time": 20, 
+        "max_green_time": 200,
+        "yellow_time": 5, 
+        "green_extension": 20,
+        "min_ped_green_time": 10, 
+        "max_ped_green_time": 40,
+        "analytics_enabled": true,
+        "analytics_window_sec": 300,
+        "analytics_step_sec": 1.0,
+        "analytics_mongo_db": "EmergencyDetection",
+        "analytics_collection": "System_Analytics",
+        "analytics_scenario_id": "3junctions",
+        "top_k_lanes": 6,
+        "vehicle_priority_weights": {
+            "bike": 0.2,
+            "real_car": 1.0,
+            "car": 1.0,
+            "auto": 1.0,
+            "bus": 2.0,
+            "truck": 1.5,
+            "lorry": 1.5,
+            "ambulance": 8.0,
+            "police": 7.0,
+            "firetruck": 8.0
+        }
     }
 }
