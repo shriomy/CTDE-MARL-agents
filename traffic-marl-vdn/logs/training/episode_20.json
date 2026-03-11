@@ -1,0 +1,115 @@
+{
+  "episode": 20,
+  "reward": -16961.71167595556,
+  "avg_loss": 4391.864920315213,
+  "episode_length": 1800,
+  "epsilon": {
+    "J1": 0.6978913841278123,
+    "J4": 0.6978913841278123,
+    "J8": 0.6978913841278123
+  },
+  "reward_breakdown": {
+    "no_emergency_stop_bonus": 4986.0,
+    "throughput_bonus": 377.5,
+    "priority_throughput_bonus": 0.0,
+    "empty_ped_green_penalty": -784.5,
+    "avg_wait_emergency_penalty": -5398.881249999999,
+    "avg_wait_vehicle_penalty": -15911.317092622241,
+    "avg_wait_pedestrian_type_penalty": -94.5133333333334,
+    "green_no_stopped_penalty": -136.0,
+    "early_red_ped_crossing_penalty": 0.0
+  },
+  "injected": {
+    "emergency": 9,
+    "normal": 138,
+    "pedestrian": 42
+  },
+  "junction_diagnostics": {
+    "J1": {
+      "emergency_detected_by_lane": {
+        "-E3_0": 43,
+        "-E3_1": 44,
+        "E00_1": 0,
+        "E00_2": 0,
+        "-E2_0": 30,
+        "-E2_1": 181
+      },
+      "normal_detected_by_lane": {
+        "-E3_0": 8207,
+        "-E3_1": 2433,
+        "E00_1": 5330,
+        "E00_2": 3947,
+        "-E2_0": 4198,
+        "-E2_1": 3691
+      },
+      "pedestrians_detected_total": 218,
+      "pedestrians_detected_max": 9,
+      "green_change_checks": 136,
+      "green_change_drops": 6,
+      "green_change_left_vehicle_drop_rate": 0.04411764705882353,
+      "emergency_stops": 85,
+      "emergency_passed_without_stop": 1,
+      "most_priority_lane": "-E3_0",
+      "ped_green_when_empty": 0
+    },
+    "J4": {
+      "emergency_detected_by_lane": {
+        "-E0_0": 0,
+        "-E0_1": 0,
+        "-E0_2": 0,
+        "E0_0": 0,
+        "E0_1": 0,
+        "E0_2": 0
+      },
+      "normal_detected_by_lane": {
+        "-E0_0": 0,
+        "-E0_1": 4402,
+        "-E0_2": 578,
+        "E0_0": 0,
+        "E0_1": 4531,
+        "E0_2": 3981
+      },
+      "pedestrians_detected_total": 1115,
+      "pedestrians_detected_max": 20,
+      "green_change_checks": 129,
+      "green_change_drops": 7,
+      "green_change_left_vehicle_drop_rate": 0.05426356589147287,
+      "emergency_stops": 0,
+      "emergency_passed_without_stop": 0,
+      "most_priority_lane": "-E0_1",
+      "ped_green_when_empty": 524
+    },
+    "J8": {
+      "emergency_detected_by_lane": {
+        "-E4_0": 0,
+        "-E4_1": 0,
+        "-E5_0": 97,
+        "-E5_1": 280,
+        "-E8_0": 298,
+        "-E8_1": 171,
+        "E3_0": 42,
+        "E3_1": 79
+      },
+      "normal_detected_by_lane": {
+        "-E4_0": 5947,
+        "-E4_1": 3558,
+        "-E5_0": 10267,
+        "-E5_1": 6042,
+        "-E8_0": 2909,
+        "-E8_1": 4391,
+        "E3_0": 11565,
+        "E3_1": 4525
+      },
+      "pedestrians_detected_total": 0,
+      "pedestrians_detected_max": 0,
+      "green_change_checks": 136,
+      "green_change_drops": 11,
+      "green_change_left_vehicle_drop_rate": 0.08088235294117647,
+      "emergency_stops": 279,
+      "emergency_passed_without_stop": 0,
+      "most_priority_lane": "E3_0",
+      "ped_green_when_empty": 0
+    }
+  },
+  "timestamp": "2026-03-11T01:01:59.013420"
+}
