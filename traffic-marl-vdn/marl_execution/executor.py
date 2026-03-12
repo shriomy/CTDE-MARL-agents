@@ -79,7 +79,10 @@ class MARLExecutor:
         if loaded_path:
             print(f"Loaded trained models from: {loaded_path}")
         else:
-            print("WARNING: No models loaded, policy may act randomly")
+            raise RuntimeError(
+                "Failed to load required model directory: "
+                f"{os.path.join(self.root, 'models', 'episode_30')}"
+            )
 
         for agent in self.multi_agent.agents.values():
             agent.epsilon = 0.0
@@ -848,13 +851,11 @@ class MARLExecutor:
         return out
 
     def _load_models(self) -> str:
-        model_dirs = [
-            os.path.join(self.root, "models", "episode_30"),
-        ]
+        model_dir = os.path.join(self.root, "models", "episode_30")
+        print(f"Attempting to load model directory: {model_dir}")
 
-        for mdir in model_dirs:
-            if os.path.exists(mdir) and self.multi_agent.load_models(mdir):
-                return mdir
+        if os.path.exists(model_dir) and self.multi_agent.load_models(model_dir):
+            return model_dir
         return ""
 
     def run(self) -> None:

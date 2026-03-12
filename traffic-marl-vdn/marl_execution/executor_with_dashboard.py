@@ -143,22 +143,14 @@ class DashboardMARLExecutor:
     def load_models(self):
         """Load trained models"""
         print("Loading trained models...")
-        model_dirs = [
-            # os.path.join(project_root, "..", "models", "final"),
-            os.path.join(project_root, "..", "models", "episode_30"),
-        ]
-        
-        loaded = False
-        for model_dir in model_dirs:
-            if os.path.exists(model_dir):
-                print(f"  Trying: {model_dir}")
-                if self.multi_agent.load_models(model_dir):
-                    print(f"✓ Models loaded from {model_dir}")
-                    loaded = True
-                    break
-        
-        if not loaded:
-            print("⚠ WARNING: No trained models found, using random policies")
+        model_dir = os.path.join(project_root, "..", "models", "episode_30")
+        print(f"  Trying: {model_dir}")
+
+        if os.path.exists(model_dir) and self.multi_agent.load_models(model_dir):
+            print(f"✓ Models loaded from {model_dir}")
+            return
+
+        raise RuntimeError(f"Required model directory not loadable: {model_dir}")
     
     def prepare_dashboard_data(self, step: int, state: dict, actions: dict, reward: float, info: dict) -> dict:
         """Prepare data for dashboard"""
