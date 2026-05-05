@@ -1,10 +1,13 @@
 {
     "sumo_config_path": "sumo_configs/3junctions.sumocfg",
     "use_gui": true,
-    "num_episodes": 50,
+    "num_episodes": 75,
     "max_steps_per_episode": 3600,
     "save_frequency": 10,
     "log_frequency": 1,
+    "use_scenario_files": true,
+    "scenario_dir": "sumo_configs/scenarios",
+    "scenario_selection_strategy": "round_robin",
     "control_modes": {
         "default_mode": "marl",
         "fixed_green_steps": 40,

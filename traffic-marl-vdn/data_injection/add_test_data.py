@@ -35,25 +35,25 @@ def to_iso_display(dt):
     local_dt = dt.astimezone(IST)
     return local_dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+05:30"
 
-normal_record = {
-    "timestamp": get_ist_timestamp(4),  # 4 seconds later
-    "type": "normal_vehicle",
-    "data": {
-        "entryPoint": "-E5",  # E0, -E2, -E8, -E4, -E5
-        "vehicles": [
-            {"type": "truck", "count": 2},
-            {"type": "car", "count": 10},
-            {"type": "lorry", "count": 4},
-            {"type": "bus", "count": 10},
-            {"type": "auto", "count": 10},
-            {"type": "bike", "count": 30},
-        ]
-    }
-}
-result = collection.insert_one(normal_record)
-inserted_ids.append(result.inserted_id)
-print(f"Added normal vehicles: {result.inserted_id}")
-print(f"  Timestamp: {to_iso_display(normal_record['timestamp'])}")
+# normal_record = {
+#     "timestamp": get_ist_timestamp(4),  # 4 seconds later
+#     "type": "normal_vehicle",
+#     "data": {
+#         "entryPoint": "E0",  # E0, -E2, -E8, -E4, -E5
+#         "vehicles": [
+#             {"type": "truck", "count": 2},
+#             {"type": "car", "count": 10},
+#             {"type": "lorry", "count": 4},
+#             {"type": "bus", "count": 10},
+#             {"type": "auto", "count": 10},
+#             {"type": "bike", "count": 30},
+#         ]
+#     }
+# }
+# result = collection.insert_one(normal_record)
+# inserted_ids.append(result.inserted_id)
+# print(f"Added normal vehicles: {result.inserted_id}")
+# print(f"  Timestamp: {to_iso_display(normal_record['timestamp'])}")
 
 pedestrian_record = {
     "timestamp": get_ist_timestamp(2),  # 2 seconds later
@@ -77,7 +77,7 @@ emergency_record = {
     "type": "emergency_vehicle",
     "data": {
         "vehicle_type": "ambulance",
-        "entryPoint": "-E4"  # E0, -E2, -E8, -E4, -E5
+        "entryPoint": "-E8"  # E0, -E2, -E8, -E4, -E5
     }
 }
 result = collection.insert_one(emergency_record)

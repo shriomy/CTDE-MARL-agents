@@ -49,6 +49,18 @@ class Trainer:
         self.episode_rewards = []
         self.episode_lengths = []
         self.losses = []
+        
+        # Load scenarios if enabled
+        self.scenarios = []
+        self.scenario_index = 0
+        if self.config.get("use_scenario_files", False):
+            self.scenarios = self._load_scenarios()
+            if not self.scenarios:
+                raise ValueError(
+                    f"No scenarios found in {self.config.get('scenario_dir', 'sumo_configs/scenarios')}\n"
+                    f"Please run data_injection/scenario_generator.py first"
+                )
+            print(f"Loaded {len(self.scenarios)} scenarios for training")
 
     def load_config(self, config_path: str) -> dict:
         if not os.path.exists(config_path):
@@ -68,6 +80,9 @@ class Trainer:
             "max_steps_per_episode",
             "save_frequency",
             "log_frequency",
+            "use_scenario_files",
+            "scenario_dir",
+            "scenario_selection_strategy",
             "agent_config",
             "env_config",
         }
@@ -120,6 +135,37 @@ class Trainer:
             )
         
         return config
+
+    def _load_scenarios(self) -> list:
+        """Load all scenario route files from scenario directory."""
+        scenario_dir = self.config.get("scenario_dir", "sumo_configs/scenarios")
+        if not os.path.exists(scenario_dir):
+            return []
+        
+        scenarios = sorted([
+            os.path.join(scenario_dir, f)
+            for f in os.listdir(scenario_dir)
+            if f.endswith(".rou.xml")
+        ])
+        return scenarios
+    
+    def _get_scenario_for_episode(self, episode: int) -> str:
+        """Select scenario for episode based on selection strategy."""
+        if not self.scenarios:
+            return None
+        
+        strategy = self.config.get("scenario_selection_strategy", "round_robin")
+        
+        if strategy == "round_robin":
+            # Cycle through scenarios sequentially
+            scenario_idx = (episode - 1) % len(self.scenarios)
+        elif strategy == "random":
+            # Random selection
+            scenario_idx = np.random.randint(0, len(self.scenarios))
+        else:
+            scenario_idx = 0
+        
+        return self.scenarios[scenario_idx]
 
     def setup_directories(self) -> None:
         os.makedirs("models", exist_ok=True)
@@ -254,10 +300,22 @@ class Trainer:
     def train(self) -> None:
         print(f"Starting training for {self.config['num_episodes']} episodes...")
         print("=" * 50)
+        
+        if self.config.get("use_scenario_files", False):
+            print(f"Using scenario-based training: {len(self.scenarios)} scenarios")
+            print(f"Selection strategy: {self.config.get('scenario_selection_strategy', 'round_robin')}")
+            print("=" * 50)
+        
         start_time = time.time()
 
         try:
             for episode in range(1, self.config["num_episodes"] + 1):
+                # Load scenario route file for this episode if enabled
+                if self.config.get("use_scenario_files", False):
+                    scenario_file = self._get_scenario_for_episode(episode)
+                    self._update_route_file(scenario_file)
+                    print(f"Episode {episode}: {os.path.basename(scenario_file)}")
+                
                 episode_reward, avg_loss, episode_length, metrics = self.train_episode(episode)
 
                 self.episode_rewards.append(float(episode_reward))
@@ -294,6 +352,37 @@ class Trainer:
         finally:
             self.multi_agent.close()
             self.env.close()
+    
+    def _update_route_file(self, route_file: str) -> None:
+        """Update SUMO environment to use specific route file for current episode."""
+        if not route_file or not os.path.exists(route_file):
+            print(f"Warning: Route file not found: {route_file}")
+            return
+        
+        # Build a modified sumo_cmd that overrides the route file
+        # Original: [binary, "-c", config_path, "--start", "--quit-on-end", ...]
+        # We need to add: "-r", route_file
+        
+        if not hasattr(self, '_base_sumo_cmd'):
+            # Store the base command without route override on first call
+            self._base_sumo_cmd = self.env.sumo_cmd.copy()
+        
+        # Create new command with route file override
+        new_cmd = self._base_sumo_cmd.copy()
+        
+        # Remove any existing -r argument and its value
+        indices_to_remove = []
+        for i, arg in enumerate(new_cmd):
+            if arg == '-r' and i + 1 < len(new_cmd):
+                indices_to_remove = [i, i + 1]
+                break
+        
+        for i in sorted(indices_to_remove, reverse=True):
+            new_cmd.pop(i)
+        
+        # Add the new route file
+        new_cmd.extend(['-r', route_file])
+        self.env.sumo_cmd = new_cmd
 
     def save_training_progress(self, episode: int) -> None:
         epsilon_values = {agent_id: agent.epsilon for agent_id, agent in self.multi_agent.agents.items()}
