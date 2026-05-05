@@ -109,34 +109,58 @@ class MARLExecutor:
 
     def _load_config(self, path: str) -> dict:
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Config not found: {path}")
+            raise FileNotFoundError(
+                f"Config file not found: {path}\n"
+                f"Please ensure marl_config.json exists and contains all required settings."
+            )
 
         with open(path, "r") as f:
             cfg = json.load(f)
 
-        sumo_cfg = cfg.get("sumo_config_path", "sumo_configs/3junctions.sumocfg")
+        # Validate required top-level keys
+        required_keys = {
+            "sumo_config_path",
+            "use_gui",
+            "num_episodes",
+            "max_steps_per_episode",
+            "agent_config",
+            "env_config",
+            "control_modes",
+        }
+        missing_keys = required_keys - set(cfg.keys())
+        if missing_keys:
+            raise ValueError(
+                f"Missing required config keys in {path}: {missing_keys}\n"
+                f"Please add these keys to marl_config.json"
+            )
+        
+        # Resolve SUMO config path
+        sumo_cfg = cfg["sumo_config_path"]
         if not os.path.isabs(sumo_cfg):
             cfg["sumo_config_path"] = os.path.join(self.root, sumo_cfg)
 
         if not os.path.exists(cfg["sumo_config_path"]):
             raise FileNotFoundError(f"SUMO config not found: {cfg['sumo_config_path']}")
 
-        cfg.setdefault("agent_config", {})
-        cfg.setdefault("env_config", {})
-        cfg.setdefault("max_steps_per_episode", 3600)
-        cfg.setdefault("control_modes", {})
-
-        control_cfg = cfg["control_modes"]
-        control_cfg.setdefault("default_mode", "marl")
-        control_cfg.setdefault("fixed_green_steps", 40)
-        control_cfg.setdefault("fixed_pedestrian_steps", 15)
-        control_cfg.setdefault("dashboard_enabled", True)
-        control_cfg.setdefault("dashboard_host", "localhost")
-        control_cfg.setdefault("dashboard_port", 8765)
-        control_cfg.setdefault("stream_sumo_gui", True)
-        control_cfg.setdefault("stream_frame_interval_steps", 20)
-        control_cfg.setdefault("stream_frame_width", 960)
-        control_cfg.setdefault("stream_frame_height", 540)
+        # Validate control_modes required keys
+        required_control_keys = {
+            "default_mode",
+            "fixed_green_steps",
+            "fixed_pedestrian_steps",
+            "dashboard_enabled",
+            "dashboard_host",
+            "dashboard_port",
+            "stream_sumo_gui",
+            "stream_frame_interval_steps",
+            "stream_frame_width",
+            "stream_frame_height",
+        }
+        missing_control_keys = required_control_keys - set(cfg.get("control_modes", {}).keys())
+        if missing_control_keys:
+            raise ValueError(
+                f"Missing required control_modes keys: {missing_control_keys}\n"
+                f"Please add these keys to control_modes in marl_config.json"
+            )
 
         # Execution should run continuously until user stops it.
         execution_max_steps = int(cfg.get("execution_max_steps", 0))

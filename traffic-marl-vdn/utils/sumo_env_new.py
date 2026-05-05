@@ -51,13 +51,13 @@ class SumoEnv:
 
         self.reward_weights = {
             # Positive rewards (ordered by importance)
-            "no_emergency_stopped": 3.0,
-            "throughput": 2.5,
-            "priority_throughput": 2.8,
+            "no_emergency_stopped": 7.0,
+            "throughput": 5.0,
+            "priority_throughput": 6.0,
             # Negative rewards (ordered by importance)
             "empty_ped_green": 1.5,
-            "avg_wait_emergency": 2.45,
-            "avg_wait_vehicle": 1.00,
+            "avg_wait_emergency": 2.5,
+            "avg_wait_vehicle": 1.0,
             "avg_wait_pedestrian_type": 0.2,
             "green_no_stopped": 2.0,
             "early_red_ped_crossing": 1.0,
@@ -212,6 +212,7 @@ class SumoEnv:
                 self.tl_specs[tl_id] = TrafficLightSpec(
                     action_to_green={0: 4, 1: 2, 2: 0},
                     green_to_yellow={0: 1, 2: 3, 4: 5},
+                    yellow_to_next_green={1: 2, 3: 4, 5: 0},
                     yellow_phases={1, 3, 5},
                     pedestrian_green_phases=set(),
                     min_green=float(self.env_config.get("min_green_time", 20.0)),
@@ -225,6 +226,7 @@ class SumoEnv:
                 self.tl_specs[tl_id] = TrafficLightSpec(
                     action_to_green={0: 0, 1: 2},
                     green_to_yellow={0: 1, 2: 1},
+                    yellow_to_next_green={1: 0},
                     yellow_phases={1},
                     pedestrian_green_phases={2},
                     min_green=float(self.env_config.get("min_green_time", 20.0)),
@@ -237,8 +239,21 @@ class SumoEnv:
             elif tl_id == "J8":
                 self.tl_specs[tl_id] = TrafficLightSpec(
                     action_to_green={0: 0, 1: 6, 2: 2, 3: 4},
-                    green_to_yellow={0: 1, 2: 3, 4: 5, 6: 7},
-                    yellow_phases={1, 3, 5, 7},
+                    green_to_yellow={
+                        0: [1, 8],
+                        2: [3, 9],
+                        4: 5,
+                        6: 7,
+                    },
+                    yellow_to_next_green={
+                        1: 2,
+                        8: 4,
+                        3: 4,
+                        9: 6,
+                        5: 6,
+                        7: 0,
+                    },
+                    yellow_phases={1, 3, 5, 7, 8, 9},
                     pedestrian_green_phases=set(),
                     min_green=float(self.env_config.get("min_green_time", 20.0)),
                     max_green=float(self.env_config.get("max_green_time", 90.0)),
@@ -252,10 +267,12 @@ class SumoEnv:
                 even_green = [i for i in range(phase_count) if i % 2 == 0]
                 action_to_green = {a: even_green[min(a, len(even_green) - 1)] for a in range(4)}
                 green_to_yellow = {g: min(g + 1, phase_count - 1) for g in even_green}
+                yellow_to_next_green = {y: min(y + 1, phase_count - 1) for y in range(1, phase_count, 2)}
                 yellow_phases = {y for y in range(phase_count) if y not in even_green}
                 self.tl_specs[tl_id] = TrafficLightSpec(
                     action_to_green=action_to_green,
                     green_to_yellow=green_to_yellow,
+                    yellow_to_next_green=yellow_to_next_green,
                     yellow_phases=yellow_phases,
                     pedestrian_green_phases=set(),
                     min_green=float(self.env_config.get("min_green_time", 20.0)),
