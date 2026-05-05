@@ -53,7 +53,7 @@ EMERGENCY_TYPES = {
 PEDESTRIAN_TYPES = {
     "adult": {"maxSpeed": 1.4, "color": "0,255,0"},
     "student": {"maxSpeed": 1.5, "color": "0,0,255"},
-    "elderly": {"maxSpeed": 1.0, "color": "255,0,255"},
+    "elder": {"maxSpeed": 1.0, "color": "255,0,255"},
     "mobility_aid": {"maxSpeed": 0.8, "color": "255,100,0"},  # High priority
 }
 
@@ -246,7 +246,7 @@ class ScenarioGenerator:
                 elements.extend(self._generate_vehicle_flow(name, entry, exit_edge, vtype, 1, 0, 3600))
             
             # Some pedestrians (10-15)
-            for ptype in ["adult", "student", "elderly"]:
+            for ptype in ["adult", "student", "elder"]:
                 elements.extend(self._generate_pedestrians(name, ptype, random.randint(3, 5), 0, 3600))
             
             scenarios.append(self._save_scenario(name, elements))
@@ -292,7 +292,7 @@ class ScenarioGenerator:
                 elements.extend(self._generate_emergency_flow(name, etype, 1, random.randint(500, 2500), random.randint(1500, 3000)))
             
             # Moderate pedestrians
-            for ptype in ["adult", "elderly"]:
+            for ptype in ["adult", "elder"]:
                 elements.extend(self._generate_pedestrians(name, ptype, random.randint(8, 12), 0, 3600))
             
             scenarios.append(self._save_scenario(name, elements))
@@ -336,7 +336,7 @@ class ScenarioGenerator:
             
             # High pedestrian count (25-35 total)
             ped_count = random.randint(25, 35)
-            for ptype in ["adult", "student", "elderly", "mobility_aid"]:
+            for ptype in ["adult", "student", "elder", "mobility_aid"]:
                 elements.extend(self._generate_pedestrians(name, ptype, ped_count // 4, 0, 3600))
             
             scenarios.append(self._save_scenario(name, elements))
@@ -356,7 +356,7 @@ class ScenarioGenerator:
             # Many pedestrians of specific types (20-30)
             ped_count = random.randint(20, 30)
             elements.extend(self._generate_pedestrians(name, "adult", ped_count // 2, 0, 3600))
-            elements.extend(self._generate_pedestrians(name, "elderly", ped_count // 4, 0, 3600))
+            elements.extend(self._generate_pedestrians(name, "elder", ped_count // 4, 0, 3600))
             elements.extend(self._generate_pedestrians(name, "mobility_aid", ped_count // 4, 0, 3600))
             
             scenarios.append(self._save_scenario(name, elements))
@@ -390,7 +390,7 @@ class ScenarioGenerator:
             
             # Only pedestrians (20-30)
             ped_count = random.randint(20, 30)
-            for ptype in ["adult", "student", "elderly", "mobility_aid"]:
+            for ptype in ["adult", "student", "elder", "mobility_aid"]:
                 elements.extend(self._generate_pedestrians(name, ptype, ped_count // 4, 0, 3600))
             
             scenarios.append(self._save_scenario(name, elements))
@@ -474,7 +474,7 @@ class ScenarioGenerator:
                 elements.extend(self._generate_emergency_flow(name, etype, 1, random.randint(800, 1500), random.randint(1500, 2500)))
             
             # Pedestrians
-            for ptype in ["adult", "elderly"]:
+            for ptype in ["adult", "elder"]:
                 elements.extend(self._generate_pedestrians(name, ptype, random.randint(8, 12), 0, 3600))
             
             scenarios.append(self._save_scenario(name, elements))
@@ -496,7 +496,7 @@ class ScenarioGenerator:
                 elements.extend(self._generate_emergency_flow(name, random.choice(list(EMERGENCY_TYPES.keys())), 1, random.randint(500, 3000), random.randint(800, 3100)))
             
             # Many pedestrians
-            for ptype in ["adult", "student", "elderly", "mobility_aid"]:
+            for ptype in ["adult", "student", "elder", "mobility_aid"]:
                 elements.extend(self._generate_pedestrians(name, ptype, random.randint(6, 10), 0, 3600))
             
             scenarios.append(self._save_scenario(name, elements))
@@ -520,7 +520,7 @@ class ScenarioGenerator:
             # High pedestrian activity
             elements.extend(self._generate_pedestrians(name, "adult", 10, 900, 1600))
             elements.extend(self._generate_pedestrians(name, "mobility_aid", 8, 1900, 2600))
-            elements.extend(self._generate_pedestrians(name, "elderly", 6, 500, 3500))
+            elements.extend(self._generate_pedestrians(name, "elder", 6, 500, 3500))
             
             scenarios.append(self._save_scenario(name, elements))
 

@@ -85,20 +85,33 @@ class AgentCommunication:
                 socks = dict(poller.poll(100))  # 100ms timeout
                 
                 for sub in socks:
-                    message = sub.recv_json(zmq.NOBLOCK)
-                    
-                    with self.lock:
-                        sender = message["sender"]
-                        self.received_messages[sender] = {
-                            "data": message["data"],
-                            "timestamp": message["timestamp"],
-                            "type": message.get("type", "unknown")
-                        }
+                    try:
+                        message = sub.recv_json(zmq.NOBLOCK)
                         
-            except zmq.Again:
-                pass
-            except Exception as e:
-                print(f"Communication error: {e}")
+                        with self.lock:
+                            sender = message.get("sender")
+                            if sender:
+                                self.received_messages[sender] = {
+                                    "data": message.get("data", {}),
+                                    "timestamp": message.get("timestamp", time.time()),
+                                    "type": message.get("type", "unknown")
+                                }
+                    except zmq.Again:
+                        pass
+                    except zmq.ZMQError as ze:
+                        if ze.errno != zmq.EAGAIN:
+                            # Ignore EAGAIN errors (expected timeout)
+                            pass
+                    except Exception as e:
+                        # Silently ignore message parsing errors
+                        pass
+                        
+            except zmq.ZMQError:
+                # Silently ignore ZMQ errors in receiver loop
+                time.sleep(0.01)
+            except Exception:
+                # Silently ignore other exceptions to not disrupt training
+                time.sleep(0.01)
     
     def get_neighbor_messages(self) -> Dict[str, Any]:
         """Get all received messages from neighbors"""
