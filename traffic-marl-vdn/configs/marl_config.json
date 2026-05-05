@@ -38,7 +38,7 @@
     },
     
     "env_config": {
-        "enable_data_injection": true,
+        "enable_data_injection": false,
         "injection_poll_interval": 1.0,
         "min_green_time": 20, 
         "max_green_time": 200,

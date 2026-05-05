@@ -1,3 +1,4 @@
+import os
 import time
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple
@@ -42,10 +43,10 @@ class SumoEnv:
         self.vehicle_weights = dict(self.DEFAULT_VEHICLE_WEIGHTS)
         self.vehicle_weights.update(self.env_config.get("vehicle_priority_weights", {}))
         self.pedestrian_wait_weights = {
-            "elderly": 1.2,
-            "mobility_aided": 2.2,
-            "student": 1.0,
-            "adult": 0.9,
+            "elderly": 0.3,
+            "mobility_aided": 0.4,
+            "student": 0.1,
+            "adult": 0.1,
         }
         self.pedestrian_wait_weights.update(self.env_config.get("pedestrian_wait_weights", {}))
 
@@ -93,11 +94,15 @@ class SumoEnv:
         }
 
         # Optional live injection from MongoDB during training.
-        self.enable_data_injection = bool(self.env_config.get("enable_data_injection", False))
+        # Disabled when scenario files are used so training stays SUMO-only.
+        self.use_scenario_files = bool(self.env_config.get("use_scenario_files", False))
+        self.enable_data_injection = bool(self.env_config.get("enable_data_injection", False)) and not self.use_scenario_files
         self.mongo_listener = None
         self.vehicle_factory = None
         self.injection_poll_interval = float(self.env_config.get("injection_poll_interval", 1.0))
         self._last_injection_poll = 0.0
+
+        self.scenario_config_path = self.env_config.get("scenario_config_path")
 
         self.state_dim = self._build_state_dim()
 
@@ -120,14 +125,7 @@ class SumoEnv:
     def start(self) -> None:
         """Start SUMO process and discover traffic-light topology."""
         sumo_binary = sumolib.checkBinary("sumo-gui" if self.use_gui else "sumo")
-        self.sumo_cmd = [sumo_binary, "-c", self.config_path]
-        self.sumo_cmd.extend([
-            "--start",
-            "--quit-on-end",
-            "--step-length",
-            "1",
-            "--no-warnings",
-        ])
+        self.sumo_cmd = [sumo_binary] + self._build_sumo_args()
 
         print(f"Starting SUMO with command: {' '.join(self.sumo_cmd)}")
         traci.start(self.sumo_cmd)
@@ -299,8 +297,45 @@ class SumoEnv:
         self.vehicle_factory = SUMOVehicleFactory()
         self._last_injection_poll = time.monotonic()
 
+    def set_scenario_config(self, scenario_config_path: str) -> None:
+        """Set the scenario SUMO config used when reloading SUMO for the next episode."""
+        self.scenario_config_path = scenario_config_path
+        if scenario_config_path:
+            self.enable_data_injection = False
+
+    def _build_sumo_args(self) -> List[str]:
+        """Build SUMO command args, optionally overriding the route file.
+
+        This keeps marl_config.json as the single settings source while allowing
+        episode-specific SUMO route files to be selected from generated scenarios.
+        """
+        args = [
+            "-c",
+            self.config_path,
+            "--start",
+            "--quit-on-end",
+            "--step-length",
+            "1",
+            "--no-warnings",
+        ]
+
+        config_path = self.scenario_config_path or self.config_path
+        candidates = [config_path]
+        if not os.path.isabs(config_path):
+            candidates.append(os.path.normpath(os.path.join(os.path.dirname(self.config_path), config_path)))
+            candidates.append(os.path.normpath(os.path.join(os.path.dirname(self.config_path), "..", config_path)))
+
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                config_path = candidate
+                break
+
+        args[1] = config_path
+        return args
+
     def reset(self) -> Dict[str, np.ndarray]:
-        traci.load(self.sumo_cmd[1:])
+        self.sumo_cmd = self._build_sumo_args()
+        traci.load(self.sumo_cmd)
         self.episode_step = 0
         self.prev_reward_snapshot = self._reward_snapshot()
         self.prev_arrived_delta = 0.0
