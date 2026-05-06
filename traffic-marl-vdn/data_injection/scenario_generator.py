@@ -67,48 +67,51 @@ class ScenarioGenerator:
             root.remove(flow)
 
     @staticmethod
-    def _clean_person_flows(root: ET.Element) -> None:
-        for person_flow in list(root.findall("personFlow")):
-            root.remove(person_flow)
+    def _clean_persons(root: ET.Element) -> None:
+        """Remove all person elements (not personFlow)."""
+        for person in list(root.findall("person")):
+            root.remove(person)
 
     @staticmethod
-    def _add_person_flows(root: ET.Element, entries: Sequence[Tuple[str, str, str, float]]) -> None:
-        for flow_id, person_type, from_edge, persons_per_hour in entries:
-            to_edge = "-E0.80" if from_edge in {"E00", "E0"} else "E00"
-            person_flow = ET.Element(
-                "personFlow",
-                {
-                    "id": flow_id,
-                    "begin": "0.00",
-                    "end": "3600.00",
-                    "personsPerHour": f"{persons_per_hour:.2f}",
-                    "type": person_type,
-                },
-            )
-            trip = ET.SubElement(person_flow, "personTrip")
-            trip.set("from", from_edge)
-            trip.set("to", to_edge)
-            root.append(person_flow)
+    def _ensure_pedestrian_vtypes(root: ET.Element) -> None:
+        """Ensure all pedestrian vType definitions exist."""
+        existing_types = {elem.get("id") for elem in root.findall("vType")}
+        ped_types = {
+            "adult": ('pedestrian', '0.50', 'green'),
+            "elder": ('pedestrian', '0.45', 'gray'),
+            "student": ('pedestrian', '0.40', 'yellow'),
+            "mobility_aid": ('pedestrian', '0.30', 'blue'),
+        }
+        for ped_id, (vclass, max_speed, color) in ped_types.items():
+            if ped_id not in existing_types:
+                vtype = ET.Element("vType", {
+                    "id": ped_id,
+                    "vClass": vclass,
+                    "maxSpeed": max_speed,
+                    "color": color,
+                })
+                root.insert(len(list(root.findall("vType"))), vtype)
 
     @staticmethod
-    def _add_person_bursts(root: ET.Element, entries: Sequence[Tuple[str, str, str, int, int, float]]) -> None:
-        """Add pedestrian bursts over short windows for non-uniform arrivals."""
-        for flow_id, person_type, from_edge, begin, end, persons_per_hour in entries:
-            to_edge = "-E0.80" if from_edge in {"E00", "E0"} else "E00"
-            person_flow = ET.Element(
-                "personFlow",
-                {
-                    "id": flow_id,
-                    "begin": f"{max(0, begin):.2f}",
-                    "end": f"{min(3600, end):.2f}",
-                    "personsPerHour": f"{persons_per_hour:.2f}",
-                    "type": person_type,
-                },
-            )
-            trip = ET.SubElement(person_flow, "personTrip")
-            trip.set("from", from_edge)
-            trip.set("to", to_edge)
-            root.append(person_flow)
+    def _add_person_chunk(root: ET.Element, chunk_id: str, person_type: str, from_edge: str, 
+                          chunk_size: int, start_time: int, spacing: float = 1.0) -> None:
+        """Add a chunk of individual pedestrians (not personFlow) at a pedestrian crossing."""
+        to_edge = "-E0.80" if from_edge in {"E00", "E0"} else "E00"
+        
+        for i in range(chunk_size):
+            person_id = f"{chunk_id}_p{i}"
+            depart_time = start_time + (i * spacing)
+            
+            person = ET.Element("person", {
+                "id": person_id,
+                "type": person_type,
+                "depart": f"{depart_time:.2f}",
+            })
+            personTrip = ET.SubElement(person, "personTrip")
+            personTrip.set("from", from_edge)
+            personTrip.set("to", to_edge)
+            
+            root.append(person)
 
     @staticmethod
     def _add_emergency_flows(root: ET.Element, entries: Sequence[Tuple[str, str, int, int, float]]) -> None:
@@ -192,15 +195,22 @@ class ScenarioGenerator:
 
     @staticmethod
     def _sort_departure_items(route_root: ET.Element) -> None:
-        """Sort flows/personFlows by begin time so SUMO does not ignore unsorted demand."""
-        flow_items = [elem for elem in route_root if elem.tag in {"flow", "personFlow"}]
+        """Sort flows/personFlows/persons by begin/depart time so SUMO does not ignore unsorted demand."""
+        flow_items = [elem for elem in route_root if elem.tag in {"flow", "personFlow", "person"}]
         if not flow_items:
             return
 
         for elem in flow_items:
             route_root.remove(elem)
 
-        flow_items.sort(key=lambda elem: float(elem.get("begin", "0") or 0.0))
+        # Sort by begin (for flow/personFlow) or depart (for person)
+        def get_start_time(elem):
+            if elem.tag == "person":
+                return float(elem.get("depart", "0") or 0.0)
+            else:
+                return float(elem.get("begin", "0") or 0.0)
+        
+        flow_items.sort(key=get_start_time)
         for elem in flow_items:
             route_root.append(elem)
 
@@ -227,83 +237,64 @@ class ScenarioGenerator:
 
     def _scenario_route_coverage(self, target_flow_id: str) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern(
             {"car": 4, "auto": 3, "bike": 2, "truck": 2, "bus": 1, "lorry": 1}
         )
         self._scale_base_flows(
             route_root,
-            flow_scale=3.5,
-            min_vph=30,
-            max_vph=220,
+            flow_scale=2.0,
+            min_vph=15,
+            max_vph=120,
             type_pattern=pattern,
             emphasize_flow_id=target_flow_id,
-            emphasize_vph=420,
+            emphasize_vph=220,
             window_count_range=(8, 16),
         )
-        self._clean_person_flows(route_root)
-        self._add_person_bursts(
-            route_root,
-            [
-                (
-                    f"pf_route_{target_flow_id}_{idx}",
-                    random.choice(["adult", "student", "elder", "mobility_aid"]),
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    random.randint(0, 3000),
-                    random.randint(600, 3600),
-                    random.uniform(20, 70),
-                )
-                for idx in range(random.randint(6, 10))
-            ],
-        )
+        self._clean_persons(route_root)
+        # Add pedestrian chunks at crossings
+        for idx in range(random.randint(4, 8)):
+            chunk_size = random.randint(3, 8)
+            ped_type = random.choice(["adult", "student", "elder", "mobility_aid"])
+            from_edge = random.choice(["E00", "-E0.80", "E0"])
+            start_time = random.randint(100, 3200)
+            self._add_person_chunk(route_root, f"chunk_rc_{target_flow_id}_{idx}", ped_type, from_edge, chunk_size, start_time, spacing=1.5)
         return route_root, sumocfg_root
 
     def _scenario_light_traffic(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"bike": 3, "car": 4, "auto": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=2.0, min_vph=10, max_vph=70, type_pattern=pattern, window_count_range=(4, 9))
-        self._clean_person_flows(route_root)
-        if random.random() < 0.7:
-            self._add_person_bursts(
-                route_root,
-                [
-                    (
-                        f"pf_light_{idx}",
-                        random.choice(["adult", "student", "elder", "mobility_aid"]),
-                        random.choice(["E00", "-E0.80", "E0"]),
-                        random.randint(0, 3200),
-                        random.randint(120, 3600),
-                        random.uniform(10, 35),
-                    )
-                    for idx in range(random.randint(4, 8))
-                ],
-            )
+        self._scale_base_flows(route_root, flow_scale=1.2, min_vph=5, max_vph=40, type_pattern=pattern, window_count_range=(4, 9))
+        self._clean_persons(route_root)
+        if random.random() < 0.8:
+            for idx in range(random.randint(2, 4)):
+                chunk_size = random.randint(2, 5)
+                ped_type = random.choice(["adult", "student", "elder", "mobility_aid"])
+                from_edge = random.choice(["E00", "-E0.80"])
+                start_time = random.randint(200, 3200)
+                self._add_person_chunk(route_root, f"chunk_light_{idx}", ped_type, from_edge, chunk_size, start_time, spacing=1.2)
         return route_root, sumocfg_root
 
     def _scenario_heavy_traffic(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 5, "truck": 2, "bus": 2, "lorry": 2, "auto": 1, "bike": 1})
-        self._scale_base_flows(route_root, flow_scale=28.0, min_vph=120, max_vph=1100, type_pattern=pattern, window_count_range=(10, 20))
-        self._clean_person_flows(route_root)
-        self._add_person_bursts(
-            route_root,
-            [
-                (
-                    f"pf_heavy_{idx}",
-                    random.choice(["adult", "student", "elder", "mobility_aid"]),
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    random.randint(0, 3200),
-                    random.randint(300, 3600),
-                    random.uniform(40, 120),
-                )
-                for idx in range(random.randint(8, 16))
-            ],
-        )
+        self._scale_base_flows(route_root, flow_scale=16.0, min_vph=60, max_vph=650, type_pattern=pattern, window_count_range=(10, 20))
+        self._clean_persons(route_root)
+        for idx in range(random.randint(6, 10)):
+            chunk_size = random.randint(4, 10)
+            ped_type = random.choice(["adult", "student", "elder", "mobility_aid"])
+            from_edge = random.choice(["E00", "-E0.80", "E0"])
+            start_time = random.randint(300, 3200)
+            self._add_person_chunk(route_root, f"chunk_heavy_{idx}", ped_type, from_edge, chunk_size, start_time, spacing=1.5)
         return route_root, sumocfg_root
 
     def _scenario_single_emergency(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 4, "bike": 2, "auto": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=8.0, min_vph=45, max_vph=350, type_pattern=pattern, window_count_range=(8, 14))
+        self._scale_base_flows(route_root, flow_scale=5.0, min_vph=25, max_vph=200, type_pattern=pattern, window_count_range=(8, 14))
         self._add_emergency_flows(
             route_root,
             [
@@ -312,57 +303,48 @@ class ScenarioGenerator:
                     random.choice(EMERGENCY_TYPES),
                     random.randint(900, 1500),
                     random.randint(1501, 2600),
-                    random.uniform(120, 240),
+                    random.uniform(80, 200),
                 )
+                for _ in range(random.randint(1, 2))
             ],
         )
-        self._clean_person_flows(route_root)
-        self._add_person_bursts(
-            route_root,
-            [
-                ("pf_conflict_single_1", "mobility_aid", "E00", 900, 2100, 80.0),
-                ("pf_conflict_single_2", "adult", "-E0.80", 1000, 2200, 100.0),
-                ("pf_conflict_single_3", "elder", "E0", 1000, 2300, 70.0),
-            ],
-        )
+        self._clean_persons(route_root)
+        # High pedestrian chunks near emergency vehicle time
+        self._add_person_chunk(route_root, "ped_emergency_1", "mobility_aid", "E00", random.randint(8, 12), 900, 1.5)
+        self._add_person_chunk(route_root, "ped_emergency_2", "adult", "-E0.80", random.randint(6, 10), 1000, 1.5)
+        self._add_person_chunk(route_root, "ped_emergency_3", "elder", "E0", random.randint(5, 8), 1000, 1.5)
         return route_root, sumocfg_root
 
     def _scenario_multiple_emergencies(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 3, "truck": 2, "bus": 2, "auto": 2, "bike": 1, "lorry": 1})
-        self._scale_base_flows(route_root, flow_scale=11.0, min_vph=55, max_vph=420, type_pattern=pattern, window_count_range=(8, 16))
+        self._scale_base_flows(route_root, flow_scale=6.5, min_vph=30, max_vph=250, type_pattern=pattern, window_count_range=(8, 16))
         emergency_entries = [
             (
                 f"emg_multi_{idx}_{random.randint(1000, 9999)}",
                 random.choice(EMERGENCY_TYPES),
                 random.randint(400, 2600),
                 random.randint(2201, 3500),
-                random.uniform(120, 260),
+                random.uniform(100, 220),
             )
-            for idx in range(random.randint(8, 14))
+            for idx in range(random.randint(12, 20))
         ]
         self._add_emergency_flows(route_root, emergency_entries)
-        self._clean_person_flows(route_root)
-        self._add_person_bursts(
-            route_root,
-            [
-                (
-                    f"pf_multi_{idx}",
-                    random.choice(["adult", "elder", "student", "mobility_aid"]),
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    random.randint(0, 3200),
-                    random.randint(300, 3600),
-                    random.uniform(30, 90),
-                )
-                for idx in range(random.randint(8, 14))
-            ],
-        )
+        self._clean_persons(route_root)
+        for idx in range(random.randint(8, 12)):
+            chunk_size = random.randint(6, 15)
+            ped_type = random.choice(["adult", "elder", "student", "mobility_aid"])
+            from_edge = random.choice(["E00", "-E0.80", "E0"])
+            start_time = random.randint(400, 3200)
+            self._add_person_chunk(route_root, f"chunk_multi_emg_{idx}", ped_type, from_edge, chunk_size, start_time, spacing=1.2)
         return route_root, sumocfg_root
 
     def _scenario_emergency_vs_pedestrians(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 4, "bike": 2, "auto": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=7.0, min_vph=35, max_vph=320, type_pattern=pattern, window_count_range=(8, 15))
+        self._scale_base_flows(route_root, flow_scale=4.0, min_vph=20, max_vph=180, type_pattern=pattern, window_count_range=(8, 15))
         emergency_time = random.randint(1100, 2200)
         self._add_emergency_flows(
             route_root,
@@ -372,144 +354,117 @@ class ScenarioGenerator:
                     random.choice(EMERGENCY_TYPES),
                     emergency_time - 100,
                     emergency_time + 500,
-                    random.uniform(150, 280),
+                    random.uniform(120, 240),
                 )
-                for _ in range(random.randint(10, 25))
+                for _ in range(random.randint(8, 16))
             ],
         )
-        self._clean_person_flows(route_root)
-        self._add_person_bursts(
-            route_root,
-            [
-                (
-                    f"pf_ped_conflict_{idx}",
-                    random.choice(["adult", "elder", "student", "mobility_aid"]),
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    emergency_time - random.randint(100, 250),
-                    emergency_time + random.randint(250, 700),
-                    random.uniform(50, 140),
-                )
-                for idx in range(random.randint(10, 18))
-            ],
-        )
+        self._clean_persons(route_root)
+        # Large pedestrian chunks crossing while emergency vehicles approach
+        self._add_person_chunk(route_root, "ped_emg_cross_1", "mobility_aid", "E00", random.randint(12, 20), emergency_time - 200, 1.0)
+        self._add_person_chunk(route_root, "ped_emg_cross_2", "adult", "-E0.80", random.randint(10, 18), emergency_time - 100, 1.0)
+        self._add_person_chunk(route_root, "ped_emg_cross_3", "elder", "E0", random.randint(8, 14), emergency_time, 1.2)
+        self._add_person_chunk(route_root, "ped_emg_cross_4", "student", "E00", random.randint(6, 12), emergency_time + 100, 1.5)
         return route_root, sumocfg_root
 
     def _scenario_high_pedestrians(self, mobility_heavy: bool = False) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 3, "auto": 2, "bike": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=8.0, min_vph=40, max_vph=300, type_pattern=pattern, window_count_range=(7, 14))
-        self._clean_person_flows(route_root)
+        self._scale_base_flows(route_root, flow_scale=5.0, min_vph=20, max_vph=180, type_pattern=pattern, window_count_range=(7, 14))
+        self._clean_persons(route_root)
+        
         if mobility_heavy:
-            ped_plan = [
-                (
-                    f"pf_mob_{idx}",
-                    "mobility_aid",
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    random.randint(700, 2500),
-                    random.randint(1500, 3400),
-                    random.uniform(70, 160),
-                )
-                for idx in range(random.randint(16, 26))
-            ]
-            ped_plan += [
-                (
-                    f"pf_adult_{idx}",
-                    random.choice(["adult", "elder", "student"]),
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    random.randint(500, 2800),
-                    random.randint(1500, 3600),
-                    random.uniform(30, 100),
-                )
-                for idx in range(random.randint(8, 14))
-            ]
+            # Many mobility aid users (priority scenario)
+            for idx in range(random.randint(12, 18)):
+                chunk_size = random.randint(5, 12)
+                self._add_person_chunk(route_root, f"chunk_mob_{idx}", "mobility_aid", 
+                                     random.choice(["E00", "-E0.80"]), chunk_size, 
+                                     random.randint(600, 3000), spacing=1.0)
+            for idx in range(random.randint(8, 12)):
+                chunk_size = random.randint(3, 8)
+                ped_type = random.choice(["adult", "elder", "student"])
+                self._add_person_chunk(route_root, f"chunk_other_{idx}", ped_type,
+                                     random.choice(["E00", "-E0.80"]), chunk_size,
+                                     random.randint(500, 3200), spacing=1.2)
         else:
-            total = random.randint(80, 140)
-            ped_types = ["adult", "student", "elder", "mobility_aid"]
-            ped_plan = [
-                (
-                    f"pf_high_{idx}",
-                    random.choice(ped_types),
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    random.randint(200, 3200),
-                    random.randint(600, 3600),
-                    random.uniform(35, 120),
-                )
-                for idx in range(total)
-            ]
-        self._add_person_bursts(route_root, ped_plan)
+            # General high pedestrian traffic
+            for idx in range(random.randint(14, 22)):
+                chunk_size = random.randint(4, 10)
+                ped_type = random.choice(["adult", "student", "elder", "mobility_aid"])
+                from_edge = random.choice(["E00", "-E0.80", "E0"])
+                self._add_person_chunk(route_root, f"chunk_high_{idx}", ped_type,
+                                     from_edge, chunk_size, random.randint(200, 3300), spacing=1.0)
         return route_root, sumocfg_root
 
     def _scenario_no_vehicles(self, with_pedestrians: bool = True) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         self._clean_vehicle_flows(route_root)
-        self._clean_person_flows(route_root)
+        self._clean_persons(route_root)
         if with_pedestrians:
-            self._add_person_bursts(
-                route_root,
-                [
-                    (
-                        f"pf_noveh_{idx}",
-                        random.choice(["adult", "student", "elder", "mobility_aid"]),
-                        random.choice(["E00", "-E0.80", "E0"]),
-                        random.randint(0, 3200),
-                        random.randint(400, 3600),
-                        random.uniform(35, 120),
-                    )
-                    for idx in range(random.randint(10, 18))
-                ],
-            )
+            for idx in range(random.randint(8, 14)):
+                chunk_size = random.randint(4, 10)
+                ped_type = random.choice(["adult", "student", "elder", "mobility_aid"])
+                from_edge = random.choice(["E00", "-E0.80", "E0"])
+                start_time = random.randint(300, 3300)
+                self._add_person_chunk(route_root, f"chunk_noveh_{idx}", ped_type, from_edge, chunk_size, start_time, spacing=1.5)
         return route_root, sumocfg_root
 
     def _scenario_no_pedestrians(self, empty: bool = False) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
-        self._clean_person_flows(route_root)
+        self._ensure_pedestrian_vtypes(route_root)
+        self._clean_persons(route_root)
         if empty:
             self._clean_vehicle_flows(route_root)
         else:
             pattern = self._random_type_pattern({"car": 4, "truck": 2, "bus": 1, "auto": 2, "bike": 1})
-            self._scale_base_flows(route_root, flow_scale=13.0, min_vph=70, max_vph=550, type_pattern=pattern, window_count_range=(9, 16))
+            self._scale_base_flows(route_root, flow_scale=8.0, min_vph=40, max_vph=320, type_pattern=pattern, window_count_range=(9, 16))
         return route_root, sumocfg_root
 
     def _scenario_minimal(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"bike": 2, "car": 3, "auto": 1})
-        self._scale_base_flows(route_root, flow_scale=1.0, min_vph=5, max_vph=35, type_pattern=pattern, window_count_range=(2, 4))
-        self._clean_person_flows(route_root)
-        self._add_person_bursts(route_root, [("pf_minimal", "adult", "E00", 500, 2500, 20.0)])
+        self._scale_base_flows(route_root, flow_scale=0.6, min_vph=3, max_vph=20, type_pattern=pattern, window_count_range=(2, 4))
+        self._clean_persons(route_root)
+        self._add_person_chunk(route_root, "chunk_minimal", "adult", "E00", random.randint(2, 5), 500, 2.0)
         return route_root, sumocfg_root
 
     def _scenario_priority_stress(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
+        self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 3, "truck": 2, "bus": 2, "lorry": 2, "auto": 1})
-        self._scale_base_flows(route_root, flow_scale=14.0, min_vph=90, max_vph=700, type_pattern=pattern, window_count_range=(10, 18))
-        self._clean_person_flows(route_root)
-        self._add_person_bursts(
-            route_root,
-            [
-                (
-                    f"pf_priority_{idx}",
-                    "mobility_aid",
-                    random.choice(["E00", "-E0.80", "E0"]),
-                    random.randint(800, 2400),
-                    random.randint(1400, 3600),
-                    random.uniform(90, 220),
-                )
-                for idx in range(random.randint(16, 28))
-            ],
-        )
-        self._add_emergency_flows(
-            route_root,
-            [
-                (
-                    f"emg_priority_{idx}_{random.randint(1000, 9999)}",
-                    random.choice(EMERGENCY_TYPES),
-                    random.randint(900, 2500),
-                    random.randint(1500, 3500),
-                    random.uniform(150, 320),
-                )
-                for idx in range(random.randint(20, 38))
-            ],
-        )
+        self._scale_base_flows(route_root, flow_scale=8.5, min_vph=50, max_vph=420, type_pattern=pattern, window_count_range=(10, 18))
+        self._clean_persons(route_root)
+        
+        # Heavy mobility_aid pedestrian chunks (high priority)
+        for idx in range(random.randint(14, 22)):
+            chunk_size = random.randint(8, 18)
+            self._add_person_chunk(route_root, f"chunk_priority_mob_{idx}", "mobility_aid",
+                                 random.choice(["E00", "-E0.80"]), chunk_size,
+                                 random.randint(700, 3300), spacing=0.8)
+        
+        # Heavy emergency vehicle presence
+        emergency_entries = [
+            (
+                f"emg_priority_{idx}_{random.randint(1000, 9999)}",
+                random.choice(EMERGENCY_TYPES),
+                random.randint(600, 2800),
+                random.randint(1400, 3500),
+                random.uniform(200, 400),
+            )
+            for idx in range(random.randint(24, 40))
+        ]
+        self._add_emergency_flows(route_root, emergency_entries)
+        
+        # Additional normal pedestrians
+        for idx in range(random.randint(10, 16)):
+            chunk_size = random.randint(4, 10)
+            ped_type = random.choice(["adult", "elder", "student"])
+            self._add_person_chunk(route_root, f"chunk_priority_other_{idx}", ped_type,
+                                 random.choice(["E00", "-E0.80", "E0"]), chunk_size,
+                                 random.randint(300, 3200), spacing=1.2)
         return route_root, sumocfg_root
 
     def generate_scenarios(self) -> List[Path]:
