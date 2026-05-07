@@ -627,6 +627,14 @@ class SumoEnv:
         priority_score = float(metrics["weighted_sum_all"])
         emergency_count = float(metrics["emergency_total"])
         emergency_stopped = 0.0
+        for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
+            try:
+                if traci.vehicle.getTypeID(veh_id) in self.EMERGENCY_TYPES:
+                    if traci.vehicle.getSpeed(veh_id) < 0.1:
+                        emergency_stopped += 1.0
+            except Exception:
+                continue
+
         return queue, total_wait, avg_wait, priority_score, emergency_count, emergency_stopped
 
     def _pedestrian_wait_pressure(self, tl_id: str) -> float:
