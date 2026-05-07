@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from typing import List, Dict
+from collections import deque
 
 class VDNMixer(nn.Module):
     """Value Decomposition Network Mixer - Simplified"""
@@ -37,12 +38,12 @@ class CentralizedBuffer:
     
     def __init__(self, capacity: int):
         self.capacity = capacity
-        self.buffer = []
+        self.buffer = deque(maxlen=capacity)
         
     def add(self, experience: tuple):
         """Add experience: (states, joint_actions, reward, next_states, done)"""
-        if len(self.buffer) >= self.capacity:
-            self.buffer.pop(0)
+        # if len(self.buffer) >= self.capacity:
+        #     self.buffer.pop(0)
         self.buffer.append(experience)
     
     def sample(self, batch_size: int):

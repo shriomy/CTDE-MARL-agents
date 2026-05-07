@@ -862,10 +862,105 @@ class SumoEnv:
             "early_red_ped_crossing_penalty": -self.reward_weights["early_red_ped_crossing"] * early_red_ped_crossing_penalty,
         }
 
-        reward = float(sum(reward_components.values()))
+        reward = float(sum(reward_components.values())) / 1000.0
         self.prev_reward_snapshot = snap
         return reward, reward_components
 
+    def get_per_agent_rewards(self, step_meta: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+        """
+        Compute per-junction local reward for each agent.
+        Used for proper VDN credit assignment.
+        Each junction is rewarded/penalised based only on its own lanes.
+        """
+        per_agent = {}
+
+        for tl_id in self.tl_ids:
+            lanes = self.incoming_lanes.get(tl_id, [])
+            meta = step_meta.get(tl_id, {})
+
+            # --- local throughput: stopped vehicles released at this junction ---
+            local_stopped_now = 0.0
+            local_stopped_priority_now = 0.0
+            local_stopped_prev = 0.0
+            local_stopped_priority_prev = 0.0
+
+            prev_snap = self.prev_reward_snapshot or {}
+
+            for lane_id in lanes:
+                for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
+                    try:
+                        if traci.vehicle.getSpeed(veh_id) < 0.1:
+                            veh_type = traci.vehicle.getTypeID(veh_id)
+                            local_stopped_now += 1.0
+                            local_stopped_priority_now += float(self.vehicle_weights.get(veh_type, 1.0))
+                    except Exception:
+                        continue
+
+            # prev snapshot stores global counts — approximate local prev
+            # by scaling global prev by fraction of lanes this junction controls
+            total_lanes = sum(len(v) for v in self.incoming_lanes.values())
+            lane_fraction = len(lanes) / max(total_lanes, 1)
+            local_stopped_prev = prev_snap.get("junction_stopped_count", local_stopped_now) * lane_fraction
+            local_stopped_priority_prev = prev_snap.get("junction_stopped_priority", local_stopped_priority_now) * lane_fraction
+
+            local_throughput = max(0.0, local_stopped_prev - local_stopped_now)
+            local_priority_throughput = max(0.0, local_stopped_priority_prev - local_stopped_priority_now)
+
+            # --- local emergency wait ---
+            local_emg_wait = 0.0
+            local_emg_count = 0.0
+            local_emg_stopped = 0.0
+            for lane_id in lanes:
+                for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
+                    try:
+                        if traci.vehicle.getTypeID(veh_id) in self.EMERGENCY_TYPES:
+                            local_emg_wait += traci.vehicle.getWaitingTime(veh_id)
+                            local_emg_count += 1.0
+                            if traci.vehicle.getSpeed(veh_id) < 0.1:
+                                local_emg_stopped += 1.0
+                    except Exception:
+                        continue
+
+            avg_local_emg_wait = local_emg_wait / local_emg_count if local_emg_count > 0 else 0.0
+            no_emg_stop_bonus = 1.0 if local_emg_stopped <= 0 else 0.0
+
+            # --- local vehicle wait ---
+            local_veh_wait = 0.0
+            local_veh_count = 0.0
+            for lane_id in lanes:
+                for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
+                    try:
+                        local_veh_wait += traci.vehicle.getWaitingTime(veh_id)
+                        local_veh_count += 1.0
+                    except Exception:
+                        continue
+            avg_local_veh_wait = local_veh_wait / local_veh_count if local_veh_count > 0 else 0.0
+
+            # --- local pedestrian pressure ---
+            local_ped_wait = self._pedestrian_wait_pressure(tl_id)
+
+            # --- local penalties ---
+            empty_ped = 1.0 if (meta.get("is_ped_green", 0.0) > 0.5 and meta.get("ped_count", 0.0) <= 0.01) else 0.0
+            green_no_stopped = 1.0 if (meta.get("switched", 0.0) > 0.5 and meta.get("is_yellow", 0.0) <= 0.5 and meta.get("stopped_incoming", 0.0) <= 0.01) else 0.0
+            ped_cut = 1.0 if meta.get("ped_crossing_cut", 0.0) > 0.5 else 0.0
+
+            w = self.reward_weights
+            local_reward = (
+                w["no_emergency_stopped"]   * no_emg_stop_bonus
+                + w["throughput"]             * local_throughput
+                + w["priority_throughput"]    * local_priority_throughput
+                - w["avg_wait_emergency"]     * avg_local_emg_wait
+                - w["avg_wait_vehicle"]       * avg_local_veh_wait
+                - w["avg_wait_pedestrian_type"] * local_ped_wait
+                - w["empty_ped_green"]        * empty_ped
+                - w["green_no_stopped"]       * green_no_stopped
+                - w["early_red_ped_crossing"] * ped_cut
+            )
+
+            per_agent[tl_id] = local_reward / 1000.0   # scale down with global reward
+
+        return per_agent
+    
     def _inject_live_records(self) -> Dict[str, int]:
         stats = {"emergency": 0, "normal": 0, "pedestrian": 0}
         if not self.enable_data_injection or self.mongo_listener is None or self.vehicle_factory is None:
@@ -953,6 +1048,7 @@ class SumoEnv:
 
         vehicle_ids = traci.vehicle.getIDList()
         avg_speed = float(np.mean([traci.vehicle.getSpeed(v) for v in vehicle_ids])) if vehicle_ids else 0.0
+        per_agent_rewards = self.get_per_agent_rewards(step_meta)
 
         info = {
             "step": self.episode_step,
@@ -963,6 +1059,7 @@ class SumoEnv:
             "injection_stats": injection_stats,
             "junction_diagnostics": junction_diagnostics,
             "junction_live_metrics": junction_live_metrics,
+            "per_agent_rewards": per_agent_rewards,
         }
 
         return next_state, reward, done, info

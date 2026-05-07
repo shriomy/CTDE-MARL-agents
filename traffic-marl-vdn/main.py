@@ -219,10 +219,22 @@ class Trainer:
             action_array = np.array([actions[aid] for aid in self.agent_ids], dtype=np.int64)
             next_state_array = np.array(enhanced_next_states, dtype=np.float32)
 
-            experience = (state_array, action_array, float(reward), next_state_array, bool(done))
+            per_agent_rewards = info.get("per_agent_rewards", {})
+            reward_array = np.array(
+                [per_agent_rewards.get(aid, float(reward) / len(self.agent_ids)) for aid in self.agent_ids],
+                dtype=np.float32
+            )
+
+            experience = (state_array, action_array, reward_array, next_state_array, bool(done))
             self.multi_agent.remember(experience)
 
-            loss, _ = self.multi_agent.train_step(batch_size=self.config["agent_config"]["batch_size"])
+            warmup_steps = self.config["agent_config"].get("warmup_steps", 1000)
+            total_steps_so_far = (episode - 1) * self.config["max_steps_per_episode"] + step
+            if total_steps_so_far >= warmup_steps and len(self.multi_agent.central_buffer) >= self.config["agent_config"]["batch_size"]:
+                loss, _ = self.multi_agent.train_step(batch_size=self.config["agent_config"]["batch_size"])
+            else:
+                loss = 0.0
+
             if loss > 0:
                 episode_loss += float(loss)
 
