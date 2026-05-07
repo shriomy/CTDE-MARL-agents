@@ -384,6 +384,7 @@ class SumoEnv:
         weighted_sum_all = 0.0
         emergency_total = 0.0
         lane_hist_speed_sum = 0.0
+        weighted_sum_stopped = 0.0
 
         for veh_id in vehicle_ids:
             speed = float(traci.vehicle.getSpeed(veh_id))
@@ -399,6 +400,7 @@ class SumoEnv:
             if speed < 0.1:
                 stopped_vehicles += 1.0
                 stopped_wait_sum += float(traci.vehicle.getWaitingTime(veh_id))
+                weighted_sum_stopped += weight
 
         avg_wait_stopped = (stopped_wait_sum / stopped_vehicles) if stopped_vehicles > 0 else 0.0
         vehicle_density = (weighted_sum_all / total_vehicles) if total_vehicles > 0 else 0.0
@@ -410,6 +412,7 @@ class SumoEnv:
             "stopped_wait_sum": stopped_wait_sum,
             "avg_wait_stopped": avg_wait_stopped,
             "weighted_sum_all": weighted_sum_all,
+            "weighted_sum_stopped": weighted_sum_stopped,
             "vehicle_density": vehicle_density,
             "emergency_total": emergency_total,
             "avg_speed_hist": lane_avg_speed_hist,
@@ -624,7 +627,7 @@ class SumoEnv:
         queue = float(metrics["stopped_vehicles"])
         total_wait = float(metrics["stopped_wait_sum"])
         avg_wait = float(metrics["avg_wait_stopped"])
-        priority_score = float(metrics["weighted_sum_all"])
+        priority_score = float(metrics["weighted_sum_stopped"])
         emergency_count = float(metrics["emergency_total"])
         emergency_stopped = 0.0
         for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
