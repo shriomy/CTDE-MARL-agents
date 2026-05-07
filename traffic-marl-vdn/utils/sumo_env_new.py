@@ -764,15 +764,20 @@ class SumoEnv:
                 continue
 
         # Arrivals is the right throughput signal for "vehicles left the network".
-        departed = float(traci.simulation.getArrivedNumber())
-        arrived_priority = 0.0
-        for veh_id in traci.simulation.getArrivedIDList():
-            try:
-                veh_type = traci.vehicle.getTypeID(veh_id)
-                arrived_priority += float(self.vehicle_weights.get(veh_type, 1.0))
-            except Exception:
-                # Vehicle can be removed before variable lookup in the same step.
-                continue
+        junction_stopped_count = 0.0
+        junction_stopped_priority = 0.0
+        for tl_id in self.tl_ids:
+            for lane_id in self.incoming_lanes.get(tl_id, []):
+                for veh_id in traci.lane.getLastStepVehicleIDs(lane_id):
+                    try:
+                        if traci.vehicle.getSpeed(veh_id) < 0.1:
+                            veh_type = traci.vehicle.getTypeID(veh_id)
+                            junction_stopped_count += 1.0
+                            junction_stopped_priority += float(
+                                self.vehicle_weights.get(veh_type, 1.0)
+                            )
+                    except Exception:
+                        continue
 
         avg_wait_emergency = waiting_emergency / vehicle_count_emergency if vehicle_count_emergency > 0 else 0.0
         total_vehicles = vehicle_count_normal + vehicle_count_emergency
@@ -790,8 +795,8 @@ class SumoEnv:
             "stopped_emergency": stopped_emergency,
             "ped_wait": ped_wait,
             "ped_stopped": ped_stopped,
-            "arrived": departed,
-            "arrived_priority": arrived_priority,
+            "junction_stopped_count": junction_stopped_count,
+            "junction_stopped_priority": junction_stopped_priority,
             "avg_wait_emergency": avg_wait_emergency,
             "avg_wait_vehicle": avg_wait_vehicle,
             "ped_avg_wait_elderly": ped_avg_wait_by_type["elderly"],
@@ -804,8 +809,21 @@ class SumoEnv:
         """Global reward aligned with emergency-first and pedestrian-aware priorities."""
         snap = self._reward_snapshot()
         prev = self.prev_reward_snapshot or snap
-        throughput = max(0.0, snap["arrived"] - prev["arrived"])
-        priority_throughput = max(0.0, snap["arrived_priority"])
+        # throughput_bonus: how many stopped vehicles were released this step.
+        # Positive when total stopped count went DOWN (vehicles cleared).
+        # Negative delta (more vehicles stopped) gives 0 — no bonus, but the
+        # avg_wait_vehicle penalty already handles the cost of accumulation.
+        throughput = max(
+            0.0,
+            prev["junction_stopped_count"] - snap["junction_stopped_count"]
+        )
+
+        # priority_throughput_bonus: same delta but in priority-weight units.
+        # An ambulance clearing is worth 8x more than a car clearing.
+        priority_throughput = max(
+            0.0,
+            prev["junction_stopped_priority"] - snap["junction_stopped_priority"]
+        )
 
         # Penalty: pedestrian green with no pedestrians waiting.
         empty_ped_green_penalty = 0.0
