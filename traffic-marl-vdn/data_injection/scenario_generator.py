@@ -243,9 +243,9 @@ class ScenarioGenerator:
         )
         self._scale_base_flows(
             route_root,
-            flow_scale=2.0,
-            min_vph=15,
-            max_vph=120,
+            flow_scale=1.2,
+            min_vph=8,
+            max_vph=70,
             type_pattern=pattern,
             emphasize_flow_id=target_flow_id,
             emphasize_vph=220,
@@ -265,7 +265,7 @@ class ScenarioGenerator:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"bike": 3, "car": 4, "auto": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=1.2, min_vph=5, max_vph=40, type_pattern=pattern, window_count_range=(4, 9))
+        self._scale_base_flows(route_root, flow_scale=0.8, min_vph=3, max_vph=25, type_pattern=pattern, window_count_range=(4, 9))
         self._clean_persons(route_root)
         if random.random() < 0.8:
             for idx in range(random.randint(2, 4)):
@@ -280,7 +280,7 @@ class ScenarioGenerator:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 5, "truck": 2, "bus": 2, "lorry": 2, "auto": 1, "bike": 1})
-        self._scale_base_flows(route_root, flow_scale=16.0, min_vph=60, max_vph=650, type_pattern=pattern, window_count_range=(10, 20))
+        self._scale_base_flows(route_root, flow_scale=8.0, min_vph=30, max_vph=320, type_pattern=pattern, window_count_range=(10, 20))
         self._clean_persons(route_root)
         for idx in range(random.randint(6, 10)):
             chunk_size = random.randint(4, 10)
@@ -294,7 +294,7 @@ class ScenarioGenerator:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 4, "bike": 2, "auto": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=5.0, min_vph=25, max_vph=200, type_pattern=pattern, window_count_range=(8, 14))
+        self._scale_base_flows(route_root, flow_scale=3.0, min_vph=15, max_vph=120, type_pattern=pattern, window_count_range=(8, 14))
         self._add_emergency_flows(
             route_root,
             [
@@ -319,7 +319,7 @@ class ScenarioGenerator:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 3, "truck": 2, "bus": 2, "auto": 2, "bike": 1, "lorry": 1})
-        self._scale_base_flows(route_root, flow_scale=6.5, min_vph=30, max_vph=250, type_pattern=pattern, window_count_range=(8, 16))
+        self._scale_base_flows(route_root, flow_scale=4.0, min_vph=18, max_vph=150, type_pattern=pattern, window_count_range=(8, 16))
         emergency_entries = [
             (
                 f"emg_multi_{idx}_{random.randint(1000, 9999)}",
@@ -344,7 +344,7 @@ class ScenarioGenerator:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 4, "bike": 2, "auto": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=4.0, min_vph=20, max_vph=180, type_pattern=pattern, window_count_range=(8, 15))
+        self._scale_base_flows(route_root, flow_scale=2.5, min_vph=12, max_vph=100, type_pattern=pattern, window_count_range=(8, 15))
         emergency_time = random.randint(1100, 2200)
         self._add_emergency_flows(
             route_root,
@@ -371,7 +371,7 @@ class ScenarioGenerator:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 3, "auto": 2, "bike": 2, "truck": 1})
-        self._scale_base_flows(route_root, flow_scale=5.0, min_vph=20, max_vph=180, type_pattern=pattern, window_count_range=(7, 14))
+        self._scale_base_flows(route_root, flow_scale=3.0, min_vph=12, max_vph=100, type_pattern=pattern, window_count_range=(7, 14))
         self._clean_persons(route_root)
         
         if mobility_heavy:
@@ -419,14 +419,14 @@ class ScenarioGenerator:
             self._clean_vehicle_flows(route_root)
         else:
             pattern = self._random_type_pattern({"car": 4, "truck": 2, "bus": 1, "auto": 2, "bike": 1})
-            self._scale_base_flows(route_root, flow_scale=8.0, min_vph=40, max_vph=320, type_pattern=pattern, window_count_range=(9, 16))
+            self._scale_base_flows(route_root, flow_scale=4.0, min_vph=20, max_vph=160, type_pattern=pattern, window_count_range=(9, 16))
         return route_root, sumocfg_root
 
     def _scenario_minimal(self) -> Tuple[ET.Element, ET.Element]:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"bike": 2, "car": 3, "auto": 1})
-        self._scale_base_flows(route_root, flow_scale=0.6, min_vph=3, max_vph=20, type_pattern=pattern, window_count_range=(2, 4))
+        self._scale_base_flows(route_root, flow_scale=0.4, min_vph=2, max_vph=12, type_pattern=pattern, window_count_range=(2, 4))
         self._clean_persons(route_root)
         self._add_person_chunk(route_root, "chunk_minimal", "adult", "E00", random.randint(2, 5), 500, 2.0)
         return route_root, sumocfg_root
@@ -435,7 +435,7 @@ class ScenarioGenerator:
         route_root, sumocfg_root = self._base_scenario()
         self._ensure_pedestrian_vtypes(route_root)
         pattern = self._random_type_pattern({"car": 3, "truck": 2, "bus": 2, "lorry": 2, "auto": 1})
-        self._scale_base_flows(route_root, flow_scale=8.5, min_vph=50, max_vph=420, type_pattern=pattern, window_count_range=(10, 18))
+        self._scale_base_flows(route_root, flow_scale=5.0, min_vph=30, max_vph=250, type_pattern=pattern, window_count_range=(10, 18))
         self._clean_persons(route_root)
         
         # Heavy mobility_aid pedestrian chunks (high priority)
