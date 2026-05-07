@@ -228,6 +228,8 @@
         <phase duration="30"  state="rrrrrrrryyyyyyyy"/>
         <phase duration="140" state="rrrrrrrrrrrrGGGG"/>
         <phase duration="30"  state="yyyyrrrrrrrryyyy"/>
+        <phase duration="30"  state="yyyyrrrryyyyrrrr"/>
+        <phase duration="30"  state="rrrryyyyrrrryyyy"/>
     </tlLogic>
 
     <junction id="J0" type="dead_end" x="-784.05" y="19.23" incLanes="-E0.80_0 -E0.80_1 -E0.80_2" intLanes="" shape="-784.05,19.23 -784.06,27.63 -784.05,19.23"/>

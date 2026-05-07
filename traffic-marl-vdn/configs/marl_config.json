@@ -1,10 +1,13 @@
 {
     "sumo_config_path": "sumo_configs/3junctions.sumocfg",
     "use_gui": true,
-    "num_episodes": 50,
-    "max_steps_per_episode": 1800,
+    "num_episodes": 75,
+    "max_steps_per_episode": 3600,
     "save_frequency": 10,
     "log_frequency": 1,
+    "use_scenario_files": true,
+    "scenario_dir": "sumo_configs/scenarios",
+    "scenario_selection_strategy": "round_robin",
     "control_modes": {
         "default_mode": "marl",
         "fixed_green_steps": 40,
@@ -33,8 +36,9 @@
         "grad_clip": 1.0,
         "num_actions": 5
     },
+    
     "env_config": {
-        "enable_data_injection": true,
+        "enable_data_injection": false,
         "injection_poll_interval": 1.0,
         "min_green_time": 20, 
         "max_green_time": 200,

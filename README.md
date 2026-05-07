@@ -156,6 +156,7 @@ Simply put; the whole workflow for this component begins in two main phases.
     open the html file with a web browser.
 25. Run the fixed timed traffic to compare -> python normal_traffic/fixed_time_executor.py 
     Open fixed_time_dashboard.html
+    
 26. for the integration of all 4 components, the following steps were followed;
 27. Created the new 3 jucntion SUMO network with pedestrians and emergency vehicles
 28. created data_injection folder to process real time injections of other 3 components.

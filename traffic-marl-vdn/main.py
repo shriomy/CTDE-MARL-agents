@@ -18,13 +18,30 @@ class Trainer:
         self.config = self.load_config(config_path)
         self.setup_directories()
 
-        print("Initializing SUMO environment...")
+        self.scenarios = []
+        self.scenario_index = 0
+        if self.config.get("use_scenario_files", False):
+            self.scenarios = self._load_scenarios()
+            if not self.scenarios:
+                raise ValueError(
+                    f"No scenarios found in {self.config.get('scenario_dir', 'sumo_configs/scenarios')}\n"
+                    f"Please run data_injection/scenario_generator.py first"
+                )
+            print(f"Loaded {len(self.scenarios)} scenarios for training")
+
+        print("Starting SUMO...")
         env_config = dict(self.config.get("env_config", {}))
-        env_config["max_steps_per_episode"] = self.config.get("max_steps_per_episode", 1800)
+        env_config["max_steps_per_episode"] = self.config["max_steps_per_episode"]
+        # Inform the environment whether scenario files are used so it can skip
+        # runtime data injection (MongoDB polling) when scenarios drive traffic.
+        env_config["use_scenario_files"] = bool(self.config.get("use_scenario_files", False))
+        env_config["scenario_dir"] = self.config.get("scenario_dir", "sumo_configs/scenarios")
+        if self.scenarios:
+            env_config["scenario_config_path"] = self.scenarios[0]
 
         self.env = SumoEnv(
             config_path=self.config["sumo_config_path"],
-            use_gui=self.config.get("use_gui", False),
+            use_gui=self.config["use_gui"],                                             # overrided
             env_config=env_config,
         )
         self.env.start()
@@ -51,50 +68,109 @@ class Trainer:
         self.losses = []
 
     def load_config(self, config_path: str) -> dict:
-        default_config = {
-            "sumo_config_path": "sumo_configs/3junctions.sumocfg",
-            "use_gui": False,
-            "num_episodes": 50,
-            "max_steps_per_episode": 1800,
-            "save_frequency": 10,
-            "log_frequency": 1,
-            "agent_config": {
-                "learning_rate": 1e-4,
-                "gamma": 0.99,
-                "epsilon_start": 1.0,
-                "epsilon_min": 0.05,
-                "epsilon_decay": 0.9995,
-                "buffer_size": 10000,
-                "central_buffer_size": 50000,
-                "batch_size": 32,
-                "target_update_freq": 50,
-                "enable_communication": True,
-                "neighbor_feature_dim": 8,
-                "grad_clip": 1.0,
-                "num_actions": 5,
-            },
-            "env_config": {
-                "enable_data_injection": True,
-                "injection_poll_interval": 1.0,
-                "min_green_time": 20,
-                "max_green_time": 90,
-                "yellow_time": 3,
-                "green_extension": 5,
-                "min_ped_green_time": 12,
-                "max_ped_green_time": 45,
-            },
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(
+                f"Config file not found: {config_path}\n"
+                f"Please ensure marl_config.json exists and contains all required settings."
+            )
+        
+        with open(config_path, "r") as f:
+            config = json.load(f)
+        
+        # Validate all required top-level keys
+        required_keys = {
+            "sumo_config_path",
+            "use_gui",
+            "num_episodes",
+            "max_steps_per_episode",
+            "save_frequency",
+            "log_frequency",
+            "use_scenario_files",
+            "scenario_dir",
+            "scenario_selection_strategy",
+            "agent_config",
+            "env_config",
         }
+        missing_keys = required_keys - set(config.keys())
+        if missing_keys:
+            raise ValueError(
+                f"Missing required config keys in {config_path}: {missing_keys}\n"
+                f"Please add these keys to marl_config.json"
+            )
+        
+        # Validate agent_config required keys
+        required_agent_keys = {
+            "learning_rate",
+            "gamma",
+            "epsilon_start",
+            "epsilon_min",
+            "epsilon_decay",
+            "buffer_size",
+            "central_buffer_size",
+            "batch_size",
+            "target_update_freq",
+            "enable_communication",
+            "neighbor_feature_dim",
+            "grad_clip",
+            "num_actions",
+        }
+        missing_agent_keys = required_agent_keys - set(config.get("agent_config", {}).keys())
+        if missing_agent_keys:
+            raise ValueError(
+                f"Missing required agent_config keys: {missing_agent_keys}\n"
+                f"Please add these keys to agent_config in marl_config.json"
+            )
+        
+        # Validate env_config required keys
+        required_env_keys = {
+            "enable_data_injection",
+            "injection_poll_interval",
+            "min_green_time",
+            "max_green_time",
+            "yellow_time",
+            "green_extension",
+            "min_ped_green_time",
+            "max_ped_green_time",
+        }
+        missing_env_keys = required_env_keys - set(config.get("env_config", {}).keys())
+        if missing_env_keys:
+            raise ValueError(
+                f"Missing required env_config keys: {missing_env_keys}\n"
+                f"Please add these keys to env_config in marl_config.json"
+            )
+        
+        return config
 
-        if os.path.exists(config_path):
-            with open(config_path, "r") as f:
-                user_config = json.load(f)
-            for key, value in user_config.items():
-                if isinstance(value, dict) and isinstance(default_config.get(key), dict):
-                    default_config[key].update(value)
-                else:
-                    default_config[key] = value
-
-        return default_config
+    def _load_scenarios(self) -> list:
+        """Load all scenario SUMO config files from scenario directory."""
+        scenario_dir = self.config.get("scenario_dir", "sumo_configs/scenarios")
+        if not os.path.exists(scenario_dir):
+            return []
+        
+        scenarios = sorted([
+            os.path.join(scenario_dir, f)
+            for f in os.listdir(scenario_dir)
+            if f.endswith(".sumocfg")
+        ])
+        return scenarios
+    
+    def _get_scenario_for_episode(self, episode: int) -> str:
+        """Select scenario for episode based on selection strategy."""
+        if not self.scenarios:
+            return None
+        
+        strategy = self.config.get("scenario_selection_strategy", "round_robin")
+        
+        if strategy == "round_robin":
+            # Cycle through scenarios sequentially
+            scenario_idx = (episode - 1) % len(self.scenarios)
+        elif strategy == "random":
+            # Random selection
+            scenario_idx = np.random.randint(0, len(self.scenarios))
+        else:
+            scenario_idx = 0
+        
+        return self.scenarios[scenario_idx]
 
     def setup_directories(self) -> None:
         os.makedirs("models", exist_ok=True)
@@ -229,10 +305,22 @@ class Trainer:
     def train(self) -> None:
         print(f"Starting training for {self.config['num_episodes']} episodes...")
         print("=" * 50)
+        
+        if self.config.get("use_scenario_files", False):
+            print(f"Using scenario-based training: {len(self.scenarios)} scenarios")
+            print(f"Selection strategy: {self.config.get('scenario_selection_strategy', 'round_robin')}")
+            print("=" * 50)
+        
         start_time = time.time()
 
         try:
             for episode in range(1, self.config["num_episodes"] + 1):
+                # Load scenario route file for this episode if enabled
+                if self.config.get("use_scenario_files", False):
+                    scenario_file = self._get_scenario_for_episode(episode)
+                    self.env.set_scenario_config(scenario_file)
+                    print(f"Episode {episode}: {os.path.basename(scenario_file)}")
+                
                 episode_reward, avg_loss, episode_length, metrics = self.train_episode(episode)
 
                 self.episode_rewards.append(float(episode_reward))
@@ -269,6 +357,7 @@ class Trainer:
         finally:
             self.multi_agent.close()
             self.env.close()
+    
 
     def save_training_progress(self, episode: int) -> None:
         epsilon_values = {agent_id: agent.epsilon for agent_id, agent in self.multi_agent.agents.items()}

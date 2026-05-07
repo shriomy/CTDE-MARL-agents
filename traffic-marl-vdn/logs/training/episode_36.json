@@ -1,22 +1,22 @@
 {
-  "episode": 5,
-  "reward": -49651.62999211429,
-  "avg_loss": 365.2286552058326,
+  "episode": 36,
+  "reward": -117081.37210911221,
+  "avg_loss": 351.3858734671275,
   "episode_length": 3600,
   "epsilon": {
-    "J1": 0.8355284346305065,
-    "J4": 0.8355284346305065,
-    "J8": 0.8355284346305065
+    "J1": 0.273707166777303,
+    "J4": 0.273707166777303,
+    "J8": 0.273707166777303
   },
   "reward_breakdown": {
     "no_emergency_stop_bonus": 25200.0,
-    "throughput_bonus": 3425.0,
+    "throughput_bonus": 3505.0,
     "priority_throughput_bonus": 0.0,
-    "empty_ped_green_penalty": -498.0,
+    "empty_ped_green_penalty": -960.0,
     "avg_wait_emergency_penalty": 0.0,
-    "avg_wait_vehicle_penalty": -77685.36580163802,
-    "avg_wait_pedestrian_type_penalty": -25.264190476190475,
-    "green_no_stopped_penalty": -68.0,
+    "avg_wait_vehicle_penalty": -144742.33296625473,
+    "avg_wait_pedestrian_type_penalty": -46.039142857142885,
+    "green_no_stopped_penalty": -38.0,
     "early_red_ped_crossing_penalty": 0.0
   },
   "injected": {
@@ -35,18 +35,18 @@
         "-E2_1": 0
       },
       "normal_detected_by_lane": {
-        "-E3_0": 60127,
-        "-E3_1": 18392,
-        "E00_1": 113628,
-        "E00_2": 109756,
-        "-E2_0": 70425,
-        "-E2_1": 116122
+        "-E3_0": 190741,
+        "-E3_1": 89308,
+        "E00_1": 144080,
+        "E00_2": 146385,
+        "-E2_0": 91834,
+        "-E2_1": 127483
       },
-      "pedestrians_detected_total": 7943,
-      "pedestrians_detected_max": 8,
-      "green_change_checks": 270,
-      "green_change_drops": 39,
-      "green_change_left_vehicle_drop_rate": 0.14444444444444443,
+      "pedestrians_detected_total": 25,
+      "pedestrians_detected_max": 2,
+      "green_change_checks": 244,
+      "green_change_drops": 45,
+      "green_change_left_vehicle_drop_rate": 0.18442622950819673,
       "emergency_stops": 0,
       "emergency_passed_without_stop": 0,
       "most_priority_lane": "E00_1",
@@ -63,21 +63,21 @@
       },
       "normal_detected_by_lane": {
         "-E0_0": 0,
-        "-E0_1": 39628,
-        "-E0_2": 16980,
+        "-E0_1": 32181,
+        "-E0_2": 13798,
         "E0_0": 0,
-        "E0_1": 50663,
-        "E0_2": 45068
+        "E0_1": 76784,
+        "E0_2": 77150
       },
-      "pedestrians_detected_total": 17513,
-      "pedestrians_detected_max": 17,
-      "green_change_checks": 288,
-      "green_change_drops": 52,
-      "green_change_left_vehicle_drop_rate": 0.18055555555555555,
+      "pedestrians_detected_total": 14479,
+      "pedestrians_detected_max": 22,
+      "green_change_checks": 234,
+      "green_change_drops": 44,
+      "green_change_left_vehicle_drop_rate": 0.18803418803418803,
       "emergency_stops": 0,
       "emergency_passed_without_stop": 0,
       "most_priority_lane": "E0_1",
-      "ped_green_when_empty": 331
+      "ped_green_when_empty": 636
     },
     "J8": {
       "emergency_detected_by_lane": {
@@ -91,25 +91,25 @@
         "E3_1": 0
       },
       "normal_detected_by_lane": {
-        "-E4_0": 67587,
-        "-E4_1": 130146,
-        "-E5_0": 94542,
-        "-E5_1": 73547,
-        "-E8_0": 34873,
-        "-E8_1": 86932,
-        "E3_0": 128719,
-        "E3_1": 106007
+        "-E4_0": 151667,
+        "-E4_1": 135061,
+        "-E5_0": 199372,
+        "-E5_1": 159340,
+        "-E8_0": 109945,
+        "-E8_1": 125505,
+        "E3_0": 186271,
+        "E3_1": 178872
       },
       "pedestrians_detected_total": 0,
       "pedestrians_detected_max": 0,
-      "green_change_checks": 280,
-      "green_change_drops": 40,
-      "green_change_left_vehicle_drop_rate": 0.14285714285714285,
+      "green_change_checks": 268,
+      "green_change_drops": 49,
+      "green_change_left_vehicle_drop_rate": 0.1828358208955224,
       "emergency_stops": 0,
       "emergency_passed_without_stop": 0,
-      "most_priority_lane": "-E4_1",
+      "most_priority_lane": "E3_1",
       "ped_green_when_empty": 0
     }
   },
-  "timestamp": "2026-05-06T16:58:42.169294"
+  "timestamp": "2026-05-07T07:10:08.688810"
 }

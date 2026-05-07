@@ -3,7 +3,7 @@ Traffic action execution with scalable, junction-specific phase metadata.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, Union, List
 
 import traci
 
@@ -13,7 +13,8 @@ class TrafficLightSpec:
     """Per-junction signal behavior used by the policy action executor."""
 
     action_to_green: Dict[int, Optional[int]]
-    green_to_yellow: Dict[int, int]
+    green_to_yellow: Dict[int, Union[int, List[int]]]  # Can be single int or list of ints
+    yellow_to_next_green: Dict[int, int]  # Maps yellow phase to its next green phase
     yellow_phases: Set[int]
     pedestrian_green_phases: Set[int]
     min_green: float
@@ -121,13 +122,27 @@ class TrafficActions:
         if target_green != current_phase:
             if elapsed < min_hold:
                 return result
-            yellow_phase = spec.green_to_yellow.get(current_phase)
-            if yellow_phase is None:
+            yellow_option = spec.green_to_yellow.get(current_phase)
+            if yellow_option is None:
                 TrafficActions._apply_phase(tl_id, target_green, min_hold)
                 TrafficActions._pending_targets.pop(tl_id, None)
                 result["new_phase"] = float(target_green)
                 result["switched"] = 1.0
                 return result
+            
+            # Handle both single yellow and multiple yellow options
+            if isinstance(yellow_option, list):
+                # Multiple yellows available; select one that leads to target_green
+                yellow_phase = None
+                for y_candidate in yellow_option:
+                    if spec.yellow_to_next_green.get(y_candidate) == target_green:
+                        yellow_phase = y_candidate
+                        break
+                if yellow_phase is None:
+                    yellow_phase = yellow_option[0]  # Fallback to first option
+            else:
+                yellow_phase = int(yellow_option)
+            
             TrafficActions._pending_targets[tl_id] = int(target_green)
             TrafficActions._apply_phase(tl_id, yellow_phase, spec.yellow_hold)
             result["new_phase"] = float(yellow_phase)
