@@ -1,6 +1,6 @@
 {
     "sumo_config_path": "sumo_configs/3junctions.sumocfg",
-    "use_gui": true,
+    "use_gui": false,
     "num_episodes": 75,
     "max_steps_per_episode": 3600,
     "save_frequency": 10,

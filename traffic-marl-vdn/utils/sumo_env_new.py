@@ -943,7 +943,7 @@ class SumoEnv:
 
         snapshot_now = self._reward_snapshot()
         snapshot_prev = self.prev_reward_snapshot or snapshot_now
-        arrived_delta = max(0.0, snapshot_now["arrived"] - snapshot_prev["arrived"])
+        arrived_delta = max(0.0, snapshot_prev["junction_stopped_count"] - snapshot_now["junction_stopped_count"])
 
         next_state = self.get_state()
         reward, reward_components = self.get_reward(step_meta)
