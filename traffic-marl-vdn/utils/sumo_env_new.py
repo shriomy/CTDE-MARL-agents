@@ -52,12 +52,12 @@ class SumoEnv:
 
         self.reward_weights = {
             # Positive rewards (ordered by importance)
-            "no_emergency_stopped": 7.0,
-            "throughput": 5.0,
-            "priority_throughput": 6.0,
+            "no_emergency_stopped": 30.0,
+            "throughput": 15.0,
+            "priority_throughput": 18.0,
             # Negative rewards (ordered by importance)
             "empty_ped_green": 1.5,
-            "avg_wait_emergency": 2.5,
+            "avg_wait_emergency": 5.0,
             "avg_wait_vehicle": 1.0,
             "avg_wait_pedestrian_type": 0.2,
             "green_no_stopped": 2.0,
