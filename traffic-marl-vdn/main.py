@@ -219,10 +219,22 @@ class Trainer:
             action_array = np.array([actions[aid] for aid in self.agent_ids], dtype=np.int64)
             next_state_array = np.array(enhanced_next_states, dtype=np.float32)
 
-            experience = (state_array, action_array, float(reward), next_state_array, bool(done))
+            per_agent_rewards = info.get("per_agent_rewards", {})
+            reward_array = np.array(
+                [per_agent_rewards.get(aid, float(reward) / len(self.agent_ids)) for aid in self.agent_ids],
+                dtype=np.float32
+            )
+
+            experience = (state_array, action_array, reward_array, next_state_array, bool(done))
             self.multi_agent.remember(experience)
 
-            loss, _ = self.multi_agent.train_step(batch_size=self.config["agent_config"]["batch_size"])
+            warmup_steps = self.config["agent_config"].get("warmup_steps", 3600)
+            total_steps_so_far = (episode - 1) * self.config["max_steps_per_episode"] + step
+            if total_steps_so_far >= warmup_steps and len(self.multi_agent.central_buffer) >= self.config["agent_config"]["batch_size"]:
+                loss, _ = self.multi_agent.train_step(batch_size=self.config["agent_config"]["batch_size"])
+            else:
+                loss = 0.0
+
             if loss > 0:
                 episode_loss += float(loss)
 
@@ -349,6 +361,7 @@ class Trainer:
                     self.multi_agent.save_models(model_dir)
                     print(f"Models saved to {model_dir}")
                     self.save_training_progress(episode)
+                    self.plot_interim_progress(episode)
 
             training_time = time.time() - start_time
             print(f"\nTraining completed in {training_time:.2f} seconds")
@@ -452,6 +465,54 @@ class Trainer:
         plt.savefig(plot_path, dpi=300, bbox_inches="tight")
         plt.close()
         print(f"Training plots saved to {plot_path}")
+
+    def plot_interim_progress(self, episode: int) -> None:
+        """Plot loss and reward graphs up to the current episode, saved every save_frequency episodes."""
+        episodes = list(range(1, len(self.episode_rewards) + 1))
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+        fig.suptitle(f"Training Progress — Episode {episode}", fontsize=13)
+
+        # --- Reward plot ---
+        ax1.plot(episodes, self.episode_rewards, color="steelblue", linewidth=1.2, label="Reward")
+        if len(self.episode_rewards) >= 5:
+            window = min(5, len(self.episode_rewards))
+            moving_avg = np.convolve(self.episode_rewards, np.ones(window) / window, mode="valid")
+            ax1.plot(
+                range(window, len(self.episode_rewards) + 1),
+                moving_avg,
+                color="orange", linewidth=2.0, linestyle="--", label=f"{window}-ep avg"
+            )
+        ax1.set_title("Episode Reward")
+        ax1.set_xlabel("Episode")
+        ax1.set_ylabel("Total Reward")
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+
+        # --- Loss plot ---
+        non_zero_losses = [(e, l) for e, l in zip(episodes, self.losses) if l > 0]
+        if non_zero_losses:
+            loss_eps, loss_vals = zip(*non_zero_losses)
+            ax2.plot(loss_eps, loss_vals, color="crimson", linewidth=1.2, label="Avg Loss")
+            if len(loss_vals) >= 5:
+                window = min(5, len(loss_vals))
+                moving_avg_loss = np.convolve(loss_vals, np.ones(window) / window, mode="valid")
+                ax2.plot(
+                    [loss_eps[i] for i in range(window - 1, len(loss_vals))],
+                    moving_avg_loss,
+                    color="darkred", linewidth=2.0, linestyle="--", label=f"{window}-ep avg"
+                )
+        ax2.set_title("Training Loss")
+        ax2.set_xlabel("Episode")
+        ax2.set_ylabel("Avg Loss per Episode")
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plot_path = f"logs/training_progress_ep{episode}.png"
+        plt.savefig(plot_path, dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"Interim plots saved to logs/training_progress_ep{episode}.png")
 
 
 def main() -> None:

@@ -191,6 +191,7 @@ class MultiAgentSystem:
         states_tensor = torch.FloatTensor(states_batch).to(device)
         actions_tensor = torch.LongTensor(actions_batch).to(device)
         rewards_tensor = torch.FloatTensor(rewards_batch).to(device)
+        rewards_sum = rewards_tensor.sum(dim=1)
         next_states_tensor = torch.FloatTensor(next_states_batch).to(device)
         dones_tensor = torch.FloatTensor(dones_batch).to(device)
 
@@ -215,7 +216,7 @@ class MultiAgentSystem:
             target_qs_tensor = torch.stack(target_qs, dim=1)
             target_q_tot = self.mixer(target_qs_tensor)
             gamma = self.agents[self.agent_ids[0]].gamma
-            target = rewards_tensor + (1.0 - dones_tensor) * gamma * target_q_tot
+            target = rewards_sum + (1.0 - dones_tensor) * gamma * target_q_tot
 
         loss = nn.MSELoss()(q_tot, target)
 
