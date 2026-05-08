@@ -9,4 +9,5 @@ traffic-marl-vdn/utils/__pycache__/
 traffic-marl-vdn/venv/
 sumo_configs/
 sumo_config.zip
-.env
+config.bat
+node_modules
